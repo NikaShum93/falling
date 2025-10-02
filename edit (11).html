@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>Редактор Falling Words</title>
+  <style>
+    body { font-family: sans-serif; background: #111; color: #eee; padding: 20px; }
+    h1 { color: #ffd700; }
+    label { display: block; margin-top: 10px; }
+    input, textarea, select {
+      width: 100%; padding: 6px; margin-top: 4px;
+      background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;
+    }
+    button {
+      margin-top: 15px; padding: 10px 15px;
+      background: #ffd700; border: none; border-radius: 6px;
+      font-weight: bold; cursor: pointer;
+    }
+    button:hover { background: #ffbf00; }
+    #result { margin-top: 15px; height: 100px; }
+  </style>
+</head>
+<body>
+  <h1>Редактор игры «Падающие слова»</h1>
+
+  <label>Название уровня:
+    <input id="levelName" placeholder="Например: Level 1 - буква S">
+  </label>
+
+  <label>Целевая буква/категория (target):
+    <input id="target" placeholder="Например: S">
+  </label>
+
+  <label>Слова или картинки (по одному на строку):
+    <textarea id="items" placeholder="sun\nstar\nsnake\nship"></textarea>
+  </label>
+
+  <label>Время на уровень (секунды):
+    <input type="number" id="timer" value="30">
+  </label>
+
+  <label>Курсор (URL картинки):
+    <input id="cursor" placeholder="https://...png">
+  </label>
+
+  <button id="saveBtn">Сохранить и получить iframe</button>
+
+  <textarea id="result" readonly placeholder="Здесь появится iframe для вставки в Genially"></textarea>
+
+<script>
+async function saveFalling(cfg) {
+  const payload = { type: "falling", data: cfg };
+
+  const res = await fetch("https://<твой-сервер>.onrender.com/save", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  });
+
+  const data = await res.json();
+
+  if (data.id) {
+    const iframeCode = `<iframe src="https://NikaShum93.github.io/falling-items/main.html?id=${data.id}" width="800" height="600" style="border:0;"></iframe>`;
+    document.getElementById("result").value = iframeCode;
+  } else {
+    alert("Ошибка: " + (data.error || "Неизвестно"));
+  }
+}
+
+function collectConfigFromForm() {
+  return {
+    levelName: document.getElementById("levelName").value,
+    target: document.getElementById("target").value,
+    items: document.getElementById("items").value.split("\n").map(s => s.trim()).filter(Boolean),
+    timer: parseInt(document.getElementById("timer").value, 10) || 30,
+    cursor: document.getElementById("cursor").value
+  };
+}
+
+document.getElementById("saveBtn").addEventListener("click", () => {
+  const cfg = collectConfigFromForm();
+  saveFalling(cfg);
+});
+</script>
+</body>
+</html>

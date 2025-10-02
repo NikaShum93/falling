@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Falling Words — main</title>
+  <style>
+    body {margin:0; overflow:hidden; background:#111; color:#fff; font-family:sans-serif; cursor: none;}
+    #game {position:relative; width:100%; height:100vh; overflow:hidden;}
+    .hud {position:absolute; top:10px; left:10px; display:flex; gap:1rem; z-index:10;}
+    .hud div {display:flex; align-items:center; gap:.3rem; background:rgba(0,0,0,0.4); padding:4px 6px; border-radius:6px;}
+    .hud img {width:20px; height:20px;}
+    .item {position:absolute; top:-100px; cursor:pointer;}
+    .item span {display:inline-block; padding:4px 8px; border-radius:6px; background:rgba(0,0,0,0.5); border:1px solid #fff;}
+    .gone {opacity:0; transition:.2s ease;}
+    #timer {position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.4); padding:4px 8px; border-radius:6px;}
+    #cursorImg {position:absolute; pointer-events:none; width:40px; height:40px; z-index:100;}
+  </style>
+</head>
+<body>
+  <div id="game">
+    <div class="hud">
+      <div><img src="https://img.icons8.com/ios-glyphs/30/ffffff/target.png"/><span id="goal">?</span></div>
+      <div><img src="https://img.icons8.com/ios-glyphs/30/ffffff/like--v1.png"/><span id="score">0</span></div>
+      <div><img src="https://img.icons8.com/ios-glyphs/30/ffffff/delete-sign.png"/><span id="miss">0</span></div>
+    </div>
+    <div id="timer">00</div>
+    <img id="cursorImg" style="display:none;">
+  </div>
+
+<script>
+(async function(){
+  const urlParams = new URLSearchParams(location.search);
+  const id = urlParams.get("id");
+  const scoreEl=document.getElementById('score');
+  const missEl=document.getElementById('miss');
+  const goalEl=document.getElementById('goal');
+  const timerEl=document.getElementById('timer');
+  const cursorImg=document.getElementById('cursorImg');
+  const game=document.getElementById('game');
+  let cfg=null;
+
+  if(id){
+    try {
+      const res=await fetch(`https://NikaShum93.github.io/falling-items/data/${id}.json`);
+      cfg=await res.json();
+    } catch(e){
+      alert("Не удалось загрузить конфигурацию: "+e.message);
+      return;
+    }
+  } else {
+    alert("Не указан id уровня");
+    return;
+  }
+
+  // Настройки из конфигурации
+  const items=cfg.items||["cat","dog","sun"];
+  const target=cfg.target||"";
+  const timer=cfg.timer||30;
+  goalEl.textContent=target? target.toUpperCase() : "?";
+
+  if(cfg.cursor){
+    cursorImg.src=cfg.cursor;
+    cursorImg.style.display="block";
+    document.addEventListener("mousemove", e=>{
+      cursorImg.style.left=(e.pageX-20)+"px";
+      cursorImg.style.top=(e.pageY-20)+"px";
+    });
+  }
+
+  let score=0, miss=0;
+  let timeLeft=timer;
+
+  function spawn(){
+    const word=items[Math.floor(Math.random()*items.length)];
+    const el=document.createElement('div');
+    el.className='item';
+    if(word.startsWith('http')){
+      const img=document.createElement('img');
+      img.src=word; img.style.width='60px'; img.style.height='60px';
+      el.appendChild(img);
+    } else {
+      const span=document.createElement('span');
+      span.textContent=word;
+      el.appendChild(span);
+    }
+    el.style.left=Math.random()*(window.innerWidth-80)+"px";
+    el.__fall={y:-50,v:60+Math.random()*80, word};
+    el.addEventListener('click',()=>{
+      if(target && word.toLowerCase().startsWith(target.toLowerCase())){
+        score++; scoreEl.textContent=score;
+      } else { miss++; missEl.textContent=miss; }
+      el.classList.add('gone');
+      setTimeout(()=>el.remove(),200);
+    });
+    game.appendChild(el);
+  }
+
+  function step(){
+    requestAnimationFrame(step);
+    document.querySelectorAll('.item').forEach(el=>{
+      const f=el.__fall; if(!f) return;
+      f.y += f.v*0.016;
+      el.style.transform=`translateY(${f.y}px)`;
+      if(f.y>window.innerHeight){
+        el.remove(); miss++; missEl.textContent=miss;
+      }
+    });
+  }
+
+  // Таймер
+  timerEl.textContent=timeLeft;
+  const timerInt=setInterval(()=>{
+    timeLeft--; timerEl.textContent=timeLeft;
+    if(timeLeft<=0){
+      clearInterval(timerInt);
+      alert("⏰ Время вышло! Ваш счёт: "+score);
+    }
+  },1000);
+
+  setInterval(spawn,1000);
+  requestAnimationFrame(step);
+})();
+</script>
+</body>
+</html>
