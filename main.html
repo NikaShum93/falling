@@ -2,97 +2,90 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Falling Words — main</title>
+  <title>Falling Items Game</title>
   <style>
-    body {margin:0; overflow:hidden; background:#111; color:#fff; font-family:sans-serif; cursor: none;}
+    body {margin:0; overflow:hidden; background:#111; color:#fff;}
     #game {position:relative; width:100%; height:100vh; overflow:hidden;}
     .hud {position:absolute; top:10px; left:10px; display:flex; gap:1rem; z-index:10;}
-    .hud div {display:flex; align-items:center; gap:.3rem; background:rgba(0,0,0,0.4); padding:4px 6px; border-radius:6px;}
-    .hud img {width:20px; height:20px;}
+    .hud div {background:rgba(0,0,0,0.4); padding:6px 10px; border-radius:6px;}
     .item {position:absolute; top:-100px; cursor:pointer;}
-    .item span {display:inline-block; padding:4px 8px; border-radius:6px; background:rgba(0,0,0,0.5); border:1px solid #fff;}
+    .item span {display:inline-block; padding:6px 10px; border-radius:6px; background:rgba(0,0,0,0.5); border:1px solid #fff;}
     .gone {opacity:0; transition:.2s ease;}
-    #timer {position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.4); padding:4px 8px; border-radius:6px;}
-    #cursorImg {position:absolute; pointer-events:none; width:40px; height:40px; z-index:100;}
+    #timer {position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.4); padding:6px 10px; border-radius:6px;}
+    #message {position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:2rem; color:#ffd700;}
   </style>
+  <!-- MathJax для дробей, логарифмов и корней -->
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
   <div id="game">
     <div class="hud">
-      <div><img src="https://img.icons8.com/ios-glyphs/30/ffffff/target.png"/><span id="goal">?</span></div>
-      <div><img src="https://img.icons8.com/ios-glyphs/30/ffffff/like--v1.png"/><span id="score">0</span></div>
-      <div><img src="https://img.icons8.com/ios-glyphs/30/ffffff/delete-sign.png"/><span id="miss">0</span></div>
+      <div>🎯 <span id="goal">?</span></div>
+      <div>✅ <span id="score">0</span></div>
+      <div>❌ <span id="miss">0</span></div>
     </div>
-    <div id="timer">00</div>
-    <img id="cursorImg" style="display:none;">
+    <div id="timer">⏳ <span id="time">0</span></div>
+    <div id="message"></div>
   </div>
-
 <script>
 (async function(){
   const urlParams = new URLSearchParams(location.search);
   const id = urlParams.get("id");
-  const scoreEl=document.getElementById('score');
-  const missEl=document.getElementById('miss');
-  const goalEl=document.getElementById('goal');
-  const timerEl=document.getElementById('timer');
-  const cursorImg=document.getElementById('cursorImg');
-  const game=document.getElementById('game');
-  let cfg=null;
+  if(!id){ document.getElementById("message").textContent="❗ Нет ID"; return; }
 
-  if(id){
-    try {
-      // теперь берём JSON из texts/data
-      const res=await fetch(`https://nikashum93.github.io/texts/data/${id}.json`);
-      cfg=await res.json();
-    } catch(e){
-      alert("Не удалось загрузить конфигурацию: "+e.message);
-      return;
-    }
-  } else {
-    alert("Не указан id уровня");
-    return;
-  }
+  // Загружаем JSON конфиг
+  const res = await fetch(`https://nikashum93.github.io/texts/data/${id}.json`);
+  const cfg = await res.json();
 
-  // Настройки из конфигурации
-  const items=cfg.items||["cat","dog","sun"];
-  const target=cfg.target||"";
-  const timer=cfg.timer||30;
-  goalEl.textContent=target? target.toUpperCase() : "?";
+  // Настройка курсора
+  if(cfg.cursor){ document.body.style.cursor = `url(${cfg.cursor}), auto`; }
 
-  if(cfg.cursor){
-    cursorImg.src=cfg.cursor;
-    cursorImg.style.display="block";
-    document.addEventListener("mousemove", e=>{
-      cursorImg.style.left=(e.pageX-20)+"px";
-      cursorImg.style.top=(e.pageY-20)+"px";
-    });
-  }
+  let levels = cfg.levels || [];
+  if(cfg.randomLevels){ levels = levels.sort(()=>Math.random()-0.5); }
 
+  let currentLevel = -1;
   let score=0, miss=0;
-  let timeLeft=timer;
+  const scoreEl=document.getElementById("score");
+  const missEl=document.getElementById("miss");
+  const goalEl=document.getElementById("goal");
+  const timeEl=document.getElementById("time");
+  const msg=document.getElementById("message");
+  const game=document.getElementById("game");
 
-  function spawn(){
-    const word=items[Math.floor(Math.random()*items.length)];
+  function loadFont(font){
+    if(!font) return;
+    const link=document.createElement("link");
+    link.href=`https://fonts.googleapis.com/css2?family=${font.replace(/ /g,'+')}&display=swap`;
+    link.rel="stylesheet";
+    document.head.appendChild(link);
+    document.body.style.fontFamily=font;
+  }
+
+  function spawn(word,font,language,target){
     const el=document.createElement('div');
     el.className='item';
-    if(word.startsWith('http')){
-      const img=document.createElement('img');
-      img.src=word; img.style.width='60px'; img.style.height='60px';
+    if(language==="math"){
+      const span=document.createElement("span");
+      span.innerHTML="\\("+word+"\\)";
+      el.appendChild(span);
+      MathJax.typesetPromise([span]);
+    } else if(word.startsWith("http")){
+      const img=document.createElement("img");
+      img.src=word; img.style.width="60px"; img.style.height="60px";
       el.appendChild(img);
     } else {
       const span=document.createElement('span');
       span.textContent=word;
+      span.style.fontFamily=font || 'sans-serif';
       el.appendChild(span);
     }
     el.style.left=Math.random()*(window.innerWidth-80)+"px";
-    el.__fall={y:-50,v:60+Math.random()*80, word};
+    el.__fall={y:-50,v:50+Math.random()*80, word};
     el.addEventListener('click',()=>{
-      if(target && word.toLowerCase().startsWith(target.toLowerCase())){
+      if(target && (word.toLowerCase().startsWith(target.toLowerCase()) || word===target || cfg.target===word)){
         score++; scoreEl.textContent=score;
       } else { miss++; missEl.textContent=miss; }
-      el.classList.add('gone');
-      setTimeout(()=>el.remove(),200);
+      el.classList.add('gone'); setTimeout(()=>el.remove(),200);
     });
     game.appendChild(el);
   }
@@ -103,24 +96,45 @@
       const f=el.__fall; if(!f) return;
       f.y += f.v*0.016;
       el.style.transform=`translateY(${f.y}px)`;
-      if(f.y>window.innerHeight){
-        el.remove(); miss++; missEl.textContent=miss;
-      }
+      if(f.y>window.innerHeight){ el.remove(); miss++; missEl.textContent=miss; }
     });
   }
 
-  // Таймер
-  timerEl.textContent=timeLeft;
-  const timerInt=setInterval(()=>{
-    timeLeft--; timerEl.textContent=timeLeft;
-    if(timeLeft<=0){
-      clearInterval(timerInt);
-      alert("⏰ Время вышло! Ваш счёт: "+score);
-    }
-  },1000);
+  function playLevel(lv){
+    msg.textContent="";
+    goalEl.textContent=lv.target;
+    loadFont(lv.font);
 
-  setInterval(spawn,1000);
+    let allItems = [...lv.correct, ...lv.wrong];
+    let spawnInt=setInterval(()=>{
+      if(allItems.length===0) return;
+      const word=allItems.splice(Math.floor(Math.random()*allItems.length),1)[0];
+      spawn(word,lv.font,lv.language,lv.target);
+    },1000);
+
+    let t=lv.timer||30;
+    timeEl.textContent=t;
+    const timer=setInterval(()=>{
+      t--; timeEl.textContent=t;
+      if(t<=0){
+        clearInterval(timer); clearInterval(spawnInt);
+        document.querySelectorAll(".item").forEach(el=>el.remove());
+        nextLevel();
+      }
+    },1000);
+  }
+
+  function nextLevel(){
+    currentLevel++;
+    if(currentLevel>=levels.length){
+      msg.textContent="🎉 Игра окончена!";
+      return;
+    }
+    playLevel(levels[currentLevel]);
+  }
+
   requestAnimationFrame(step);
+  nextLevel();
 })();
 </script>
 </body>
