@@ -167,7 +167,7 @@ document.getElementById("levels").appendChild(createLevelForm());
 
 async function saveFalling(cfg) {
   const payload = { type: "falling", data: cfg };
-  const res = await fetch("https://<твой-сервер>.onrender.com/save", {
+  const res = await fetch("https://reading-trainer-server.onrender.com/save", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
