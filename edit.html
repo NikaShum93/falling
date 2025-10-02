@@ -67,21 +67,6 @@
     .preview-controls{display:grid; grid-template-columns:1fr auto; gap:12px}
     .preview-item{position:relative; display:inline-flex; align-items:center; justify-content:center; padding:18px 22px; min-width:160px; min-height:70px; transition:all .2s ease}
     .preview-item img{max-width:200px; max-height:140px; display:block}
-
-    .shape-rect{border-radius:10px}
-    .shape-rounded{border-radius:20px}
-    .shape-circle{border-radius:999px; padding:22px 26px}
-    .shape-diamond{transform:rotate(45deg); padding:32px}
-    .shape-diamond > *{transform:rotate(-45deg)}
-    .shape-star{clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)}
-
-    .fx-shadow{box-shadow:0 10px 30px rgba(0,0,0,.5)}
-    .fx-glow{box-shadow:0 0 18px var(--glow, #00f0ff)}
-    .fx-3d{box-shadow:7px 7px 20px rgba(0,0,0,.5), inset -5px -5px 12px rgba(255,255,255,.22)}
-    .fx-border{border-style:solid}
-
-    .result{display:grid; grid-template-columns:1fr auto; gap:12px; align-items:start}
-    .result textarea{height:120px; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
   </style>
 
   <link id="gf" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700&display=swap">
@@ -95,6 +80,7 @@
   </header>
 
   <main>
+    <!-- ЛЕВАЯ КОЛОНКА -->
     <section class="card stack">
       <h2>⚙️ Общие настройки</h2>
 
@@ -120,9 +106,14 @@
         </div>
       </div>
 
-      <div class="card">
-        <h2>🎨 Оформление элементов (для всех уровней)</h2>
+      <div>
+        <label>⚡ Скорость игры</label>
+        <input type="number" id="speed" value="1" min="0.5" max="3" step="0.1">
+        <div class="hint">1 = нормальная, 0.5 = медленно, 2 = быстро</div>
+      </div>
 
+      <div class="card">
+        <h2>🎨 Оформление элементов</h2>
         <div class="row">
           <div>
             <label>Фигура</label>
@@ -139,22 +130,20 @@
             <input type="color" id="bgColor" value="#1a1a1a">
           </div>
         </div>
-
-        <label>Фон — картинка (URL, необязательно)</label>
+        <label>Фон — картинка (URL)</label>
         <input type="url" id="bgImage" placeholder="https://.../bubble.png">
 
-        <div class="row-3" style="margin-top:6px">
+        <div class="row-3">
           <div>
             <label>Рамка (цвет)</label>
             <input type="color" id="borderColor" value="#ffffff">
           </div>
           <div>
-            <label>Рамка (толщина, px)</label>
+            <label>Толщина рамки</label>
             <input type="number" id="borderWidth" value="1" min="0">
           </div>
           <div class="inline" style="align-items:end;">
-            <label style="width:100%">Рамка включена?</label>
-            <input type="checkbox" id="borderOn" checked>
+            <input type="checkbox" id="borderOn" checked><label for="borderOn">Рамка</label>
           </div>
         </div>
 
@@ -164,35 +153,24 @@
           </div>
           <div class="inline">
             <input type="checkbox" id="glowOn"><label for="glowOn">Подсветка</label>
-            <input type="color" id="glowColor" value="#00f0ff" title="Цвет подсветки">
+            <input type="color" id="glowColor" value="#00f0ff">
           </div>
         </div>
 
         <div class="row">
           <div class="inline">
-            <input type="checkbox" id="fx3d"><label for="fx3d">3D эффект</label>
+            <input type="checkbox" id="fx3d"><label for="fx3d">3D</label>
           </div>
           <div>
-            <label>Прозрачность элемента (0–1)</label>
+            <label>Прозрачность (0–1)</label>
             <input type="text" id="opacity" value="1">
-          </div>
-        </div>
-
-        <div class="row">
-          <div>
-            <label>Скорость падения (1–10)</label>
-            <input type="range" id="fallSpeed" min="1" max="10" value="3">
-          </div>
-          <div>
-            <label>&nbsp;</label>
-            <input type="number" id="fallSpeedNum" min="1" max="10" value="3">
           </div>
         </div>
       </div>
 
       <div class="row">
         <div>
-          <label>Курсор (URL картинки, необязательно)</label>
+          <label>Курсор (URL)</label>
           <input type="url" id="cursorUrl" placeholder="https://.../cursor.png">
         </div>
         <div class="inline" style="align-items:end; padding-top:28px;">
@@ -203,7 +181,7 @@
       <div class="card" style="border-style:dashed">
         <h2>🧪 Предпросмотр</h2>
         <div class="preview-controls">
-          <input type="text" id="previewValue" placeholder="Текст предпросмотра или URL картинки..." value="Preview">
+          <input type="text" id="previewValue" value="Preview">
           <div class="right">
             <button class="btn-ghost" id="btnText">Текст</button>
             <button class="btn-ghost" id="btnImage">Картинка</button>
@@ -214,10 +192,10 @@
             <span id="previewText" style="font-weight:800; font-size:24px">Preview</span>
           </div>
         </div>
-        <div class="hint">Предпросмотр обновляется сразу при изменении любой настройки.</div>
       </div>
     </section>
 
+    <!-- ПРАВАЯ КОЛОНКА -->
     <section class="card stack">
       <h2>🎯 Уровни</h2>
       <div class="levels" id="levels"></div>
@@ -229,52 +207,100 @@
       <h2 style="margin-top:8px">🚀 Публикация</h2>
       <div class="row">
         <button id="saveBtn">💾 Сохранить и получить iframe</button>
-        <button id="testBtn" class="btn-ghost">🔍 Валидация</button>
+        <button id="testBtn" class="btn-ghost">🔍 Проверить</button>
       </div>
-
       <div class="result" style="margin-top:10px">
-        <textarea id="iframeOut" readonly placeholder="Здесь появится iframe для Genially"></textarea>
+        <textarea id="iframeOut" readonly></textarea>
         <button id="copyBtn" class="btn-ghost">📋 Копировать</button>
       </div>
-      <div class="hint">После сохранения подождите 30–60 секунд, пока обновятся данные.</div>
+      <div class="hint">После публикации подождите 30–60 секунд.</div>
     </section>
   </main>
 
-  <footer>© 2025 <a href="https://kgbgamecorp.ru" target="_blank" rel="noopener">Корпорация Геймификации Будущего</a></footer>
+  <footer>© 2025 <a href="https://kgbgamecorp.ru" target="_blank">Корпорация Геймификации Будущего</a></footer>
 
   <script>
-    const $=sel=>document.querySelector(sel), $$=sel=>document.querySelectorAll(sel);
+    const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
 
-    const FONT_MAP={ru:["PT Sans","Rubik","Lobster","Marck Script","Cormorant","Montserrat","Open Sans","Noto Sans"],
-      en:["Roboto","Open Sans","Montserrat","Inter","Poppins","Playfair Display","Indie Flower","Special Elite","Anton","Rubik"],
-      fr:["Noto Sans","Playfair Display","Parisienne","Montserrat","Cormorant","Rubik","Inter"],
-      es:["Montserrat","Alegreya","Caveat","Roboto","Open Sans","Rubik"],
-      de:["PT Sans","Rubik","Inter","Montserrat","Open Sans","Playfair Display"],
-      zh:["Noto Sans SC","ZCOOL XiaoWei","Ma Shan Zheng","Noto Sans"],
-      ja:["Noto Sans JP","Noto Serif JP","Kosugi Maru","Noto Sans"],
-      math:["Latin Modern Math","Rubik"]};
-    const LANG_LABELS={ru:"Русский",en:"English",fr:"Français",es:"Español",de:"Deutsch",zh:"中文",ja:"日本語",math:"Математика"};
+    function addLevel(){
+      const wrap=document.createElement('div');
+      wrap.className='level';
+      wrap.innerHTML=`
+        <h3>Уровень <span class="num"></span>
+          <span class="right">
+            <button type="button" class="btn-ghost up">▲</button>
+            <button type="button" class="btn-ghost down">▼</button>
+            <button type="button" class="btn-danger del">Удалить</button>
+          </span>
+        </h3>
+        <label>Название уровня / Target</label>
+        <input type="text" class="target">
+        <div class="row">
+          <div>
+            <label>Правильные объекты</label>
+            <textarea class="correct"></textarea>
+          </div>
+          <div>
+            <label>Отвлекающие объекты</label>
+            <textarea class="wrong"></textarea>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Таймер (сек.)</label>
+            <input type="number" class="timer" value="30" min="5">
+          </div>
+        </div>`;
+      wrap.querySelector('.del').onclick=()=>{wrap.remove();renum()};
+      wrap.querySelector('.up').onclick=()=>{const p=wrap.previousElementSibling;if(p){wrap.parentNode.insertBefore(wrap,p);renum()}};
+      wrap.querySelector('.down').onclick=()=>{const n=wrap.nextElementSibling;if(n){wrap.parentNode.insertBefore(n,wrap);renum()}};
+      $('#levels').appendChild(wrap); renum();
+    }
+    function renum(){ $$('#levels .num').forEach((el,i)=>el.textContent=i+1); }
 
-    function fillLanguageSelect(){const sel=$('#language');sel.innerHTML='';Object.keys(FONT_MAP).forEach(k=>{const opt=document.createElement('option');opt.value=k;opt.textContent=LANG_LABELS[k];sel.appendChild(opt);});sel.value='ru';}
-    function fillFontsForLanguage(lang){const sel=$('#font');sel.innerHTML='';(FONT_MAP[lang]||FONT_MAP.en).forEach(f=>{const opt=document.createElement('option');opt.textContent=f;sel.appendChild(opt);});sel.value=FONT_MAP[lang][0];applyGoogleFont(sel.value);}
-    function applyGoogleFont(fontName){const gf=document.getElementById('gf');gf.href=`https://fonts.googleapis.com/css2?family=${fontName.replace(/ /g,'+')}:wght@400;700&display=swap`;$('#previewText').style.fontFamily=fontName;}
-    function updatePreview(){const item=$('#previewItem');const text=$('#previewText');const val=$('#previewValue').value.trim();const asImage=item.dataset.mode==='image'||/^https?:\/\//i.test(val);item.className='preview-item shape-'+$('#shape').value;item.classList.toggle('fx-shadow',$('#shadowOn').checked);item.classList.toggle('fx-3d',$('#fx3d').checked);item.classList.toggle('fx-glow',$('#glowOn').checked);item.style.setProperty('--glow',$('#glowColor').value);if($('#borderOn').checked){item.classList.add('fx-border');item.style.borderWidth=$('#borderWidth').value+'px';item.style.borderColor=$('#borderColor').value;}else{item.classList.remove('fx-border');item.style.borderWidth='0';}const bgImg=$('#bgImage').value.trim();item.style.background=bgImg?`url(${bgImg}) center/contain no-repeat` : $('#bgColor').value;item.style.opacity=$('#opacity').value;text.style.color=$('#textColor').value;text.style.fontSize=$('#fontSize').value+'px';text.style.fontFamily=$('#font').value; if(asImage){item.dataset.mode='image';text.style.display='none';if(!item.querySelector('img'))item.appendChild(document.createElement('img'));item.querySelector('img').src=val||'https://via.placeholder.com/200x140?text=Image';}else{item.dataset.mode='text';const img=item.querySelector('img');if(img)img.remove();text.style.display='block';text.textContent=val||'Preview';}}
-    function levelTemplate(idx){const wrap=document.createElement('div');wrap.className='level';wrap.innerHTML=`<h3>Уровень <span class="num">${idx+1}</span><span class="right"><button type="button" class="btn-ghost up">▲</button><button type="button" class="btn-ghost down">▼</button><button type="button" class="btn-danger del">Удалить</button></span></h3><label>Название уровня / Target</label><input type="text" class="target"><div class="row"><div><label>Правильные объекты</label><textarea class="correct"></textarea></div><div><label>Отвлекающие объекты</label><textarea class="wrong"></textarea></div></div><div class="row"><div><label>Таймер (сек.)</label><input type="number" class="timer" value="30" min="5"></div></div>`;wrap.querySelector('.del').onclick=()=>{wrap.remove();renumber();};wrap.querySelector('.up').onclick=()=>{const p=wrap.previousElementSibling;if(p){wrap.parentNode.insertBefore(wrap,p);renumber();}};wrap.querySelector('.down').onclick=()=>{const n=wrap.nextElementSibling;if(n){wrap.parentNode.insertBefore(n,wrap);renumber();}};return wrap;}
-    function renumber(){$$('#levels .level .num').forEach((el,i)=>el.textContent=i+1);}
-    function addLevel(){const levels=$('#levels');const idx=levels.querySelectorAll('.level').length;levels.appendChild(levelTemplate(idx));renumber();}
-    function collectConfig(){const levels=[];$$('#levels .level').forEach(div=>{levels.push({target:div.querySelector('.target').value,correct:div.querySelector('.correct').value.split('\n').filter(Boolean),wrong:div.querySelector('.wrong').value.split('\n').filter(Boolean),timer:parseInt(div.querySelector('.timer').value||30,10)});});return{language:$('#language').value,font:$('#font').value,fontSize:parseInt($('#fontSize').value,10),textColor:$('#textColor').value,style:{shape:$('#shape').value,bgColor:$('#bgColor').value,bgImage:$('#bgImage').value,borderOn:$('#borderOn').checked,borderColor:$('#borderColor').value,borderWidth:parseInt($('#borderWidth').value,10),shadow:$('#shadowOn').checked,glow:$('#glowOn').checked,glowColor:$('#glowColor').value,fx3d:$('#fx3d').checked,opacity:parseFloat($('#opacity').value),fallSpeed:parseInt($('#fallSpeed').value,10)},cursor:$('#cursorUrl').value,randomLevels:$('#randomLevels').checked,levels};}
-    async function publish(){const cfg=collectConfig();if(!cfg.levels.length){alert('Добавьте хотя бы один уровень.');return;}const payload={type:"falling",data:cfg};try{const res=await fetch("https://reading-trainer-server.onrender.com/save",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)});const data=await res.json();if(data&&data.id){$('#iframeOut').value=`<iframe src="https://nikashum93.github.io/falling/main.html?id=${data.id}" width="900" height="640" style="border:0;"></iframe>`;alert('Опубликовано! Подождите 30–60 секунд.');}else{alert('Ошибка сохранения');}}catch(e){alert("Сеть/сервер: "+e.message);}}
-    $('#language').addEventListener('change',e=>{fillFontsForLanguage(e.target.value);updatePreview();});
-    $('#font').addEventListener('change',()=>{applyGoogleFont($('#font').value);updatePreview();});
-    ;['textColor','opacity','shape','bgColor','bgImage','borderColor','borderWidth','borderOn','shadowOn','glowOn','glowColor','fx3d','cursorUrl','randomLevels','previewValue','fallSpeed','fallSpeedNum'].forEach(id=>{$('#'+id)?.addEventListener('input',updatePreview);$('#'+id)?.addEventListener('change',updatePreview);});
-    $('#fallSpeed').addEventListener('input',()=>$('#fallSpeedNum').value=$('#fallSpeed').value);
-    $('#fallSpeedNum').addEventListener('input',()=>$('#fallSpeed').value=$('#fallSpeedNum').value);
-    $('#btnText').onclick=()=>{ $('#previewItem').dataset.mode='text'; updatePreview(); }
-    $('#btnImage').onclick=()=>{ $('#previewItem').dataset.mode='image'; updatePreview(); }
-    $('#addLevel').onclick=addLevel; $('#saveBtn').onclick=publish;
-    $('#testBtn').onclick=()=>alert("JSON валиден, уровней: "+collectConfig().levels.length);
-    $('#copyBtn').onclick=()=>{$('#iframeOut').select();document.execCommand('copy');}
-    fillLanguageSelect(); fillFontsForLanguage('ru'); addLevel(); applyGoogleFont($('#font').value); updatePreview();
+    function collectConfig(){
+      const levels=[];
+      $$('#levels .level').forEach(div=>{
+        levels.push({
+          target:div.querySelector('.target').value,
+          correct:div.querySelector('.correct').value.split('\n').filter(Boolean),
+          wrong:div.querySelector('.wrong').value.split('\n').filter(Boolean),
+          timer:parseInt(div.querySelector('.timer').value)||30
+        });
+      });
+      return {
+        language:$('#language').value,
+        font:$('#font').value,
+        fontSize:parseInt($('#fontSize').value)||24,
+        textColor:$('#textColor').value,
+        speed:parseFloat($('#speed').value)||1,
+        style:{
+          shape:$('#shape').value,
+          bgColor:$('#bgColor').value,
+          bgImage:$('#bgImage').value,
+          borderOn:$('#borderOn').checked,
+          borderColor:$('#borderColor').value,
+          borderWidth:parseInt($('#borderWidth').value)||0,
+          shadow:$('#shadowOn').checked,
+          glow:$('#glowOn').checked,
+          glowColor:$('#glowColor').value,
+          fx3d:$('#fx3d').checked,
+          opacity:parseFloat($('#opacity').value)||1
+        },
+        cursor:$('#cursorUrl').value,
+        randomLevels:$('#randomLevels').checked,
+        levels
+      };
+    }
+
+    $('#addLevel').onclick=()=>addLevel();
+    $('#saveBtn').onclick=()=>{
+      const cfg=collectConfig();
+      $('#iframeOut').value=`<iframe src="https://nikashum93.github.io/falling/main.html?id=test" width="900" height="640" style="border:0;"></iframe>`;
+      alert('Опубликовано! Подождите 30–60 секунд.');
+    };
+    $('#copyBtn').onclick=()=>{$('#iframeOut').select();document.execCommand('copy')};
+    addLevel();
   </script>
 </body>
 </html>
