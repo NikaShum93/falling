@@ -42,7 +42,8 @@
 
   if(id){
     try {
-      const res=await fetch(`https://NikaShum93.github.io/falling-items/data/${id}.json`);
+      // теперь берём JSON из texts/data
+      const res=await fetch(`https://nikashum93.github.io/texts/data/${id}.json`);
       cfg=await res.json();
     } catch(e){
       alert("Не удалось загрузить конфигурацию: "+e.message);
