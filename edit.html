@@ -2,26 +2,85 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-  <title>Редактор Falling Words</title>
+  <title>Редактор Falling Words — КГБ</title>
   <style>
-    body { font-family: sans-serif; background: #111; color: #eee; padding: 20px; }
-    h1 { color: #ffd700; }
-    label { display: block; margin-top: 10px; }
-    input, textarea, select {
-      width: 100%; padding: 6px; margin-top: 4px;
-      background: #222; color: #fff; border: 1px solid #444; border-radius: 4px;
+    body {
+      font-family: 'Rubik', sans-serif;
+      background: #0d0d0d;
+      color: #f5f5f5;
+      padding: 20px;
+      margin: 0;
     }
+    header {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    header img {
+      height: 50px;
+    }
+    header h1 {
+      font-size: 1.8rem;
+      color: #ffd700;
+      margin: 0;
+    }
+    label { display: block; margin-top: 15px; font-weight: 500; }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-top: 6px;
+      background: #1a1a1a;
+      color: #fff;
+      border: 1px solid #444;
+      border-radius: 6px;
+      font-size: 1rem;
+      box-shadow: 0 0 5px rgba(255,215,0,0.4);
+    }
+    textarea { min-height: 100px; }
     button {
-      margin-top: 15px; padding: 10px 15px;
-      background: #ffd700; border: none; border-radius: 6px;
-      font-weight: bold; cursor: pointer;
+      margin-top: 20px;
+      padding: 12px 18px;
+      background: linear-gradient(90deg, #ffbf00, #ffd700);
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 1rem;
+      color: #000;
+      cursor: pointer;
+      transition: transform .2s ease, box-shadow .2s ease;
     }
-    button:hover { background: #ffbf00; }
-    #result { margin-top: 15px; height: 100px; }
+    button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 12px #ffd700;
+    }
+    #result {
+      margin-top: 20px;
+      height: 120px;
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 6px;
+      color: #0f0;
+      font-family: monospace;
+      padding: 10px;
+    }
+    footer {
+      margin-top: 30px;
+      text-align: center;
+      font-size: 0.9rem;
+      color: #aaa;
+    }
+    footer a { color: #ffd700; text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
-  <h1>Редактор игры «Падающие слова»</h1>
+  <header>
+    <a href="https://kgbgamecorp.ru" target="_blank">
+      <img src="https://kgbgamecorp.ru/logo.png" alt="КГБ Лого">
+    </a>
+    <h1>Редактор игры «Падающие слова»</h1>
+  </header>
 
   <label>Название уровня:
     <input id="levelName" placeholder="Например: Level 1 - буква S">
@@ -47,6 +106,10 @@
 
   <textarea id="result" readonly placeholder="Здесь появится iframe для вставки в Genially"></textarea>
 
+  <footer>
+    © 2025 <a href="https://kgbgamecorp.ru" target="_blank">Корпорация Геймификации Будущего</a>
+  </footer>
+
 <script>
 async function saveFalling(cfg) {
   const payload = { type: "falling", data: cfg };
@@ -60,7 +123,7 @@ async function saveFalling(cfg) {
   const data = await res.json();
 
   if (data.id) {
-    const iframeCode = `<iframe src="https://NikaShum93.github.io/falling-items/main.html?id=${data.id}" width="800" height="600" style="border:0;"></iframe>`;
+    const iframeCode = `<iframe src="https://nikashum93.github.io/falling/main.html?id=${data.id}" width="800" height="600" style="border:0;"></iframe>`;
     document.getElementById("result").value = iframeCode;
   } else {
     alert("Ошибка: " + (data.error || "Неизвестно"));
