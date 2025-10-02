@@ -62,11 +62,29 @@
     footer{padding:14px 20px; color:#888; border-top:1px solid var(--stroke); display:flex; align-items:center; justify-content:center; gap:8px}
     footer a{color:var(--ui-acc); text-decoration:none}
 
+    /* ПРЕДПРОСМОТР */
     .preview-wrap{display:grid; grid-template-rows:auto 1fr; gap:12px; height:100%}
     .preview-stage{background:#0a0a0a; border:1px dashed #333; border-radius:12px; display:flex; align-items:center; justify-content:center; padding:24px; min-height:320px}
     .preview-controls{display:grid; grid-template-columns:1fr auto; gap:12px}
-    .preview-item{position:relative; display:inline-flex; align-items:center; justify-content:center; padding:18px 22px; min-width:160px; min-height:70px; transition:all .2s ease}
+    .preview-item{position:relative; display:inline-flex; align-items:center; justify-content:center; padding:18px 22px; min-width:160px; min-height:70px; transition:all .2s ease; background-size:cover !important; background-position:center !important}
     .preview-item img{max-width:200px; max-height:140px; display:block}
+
+    /* ФИГУРЫ */
+    .shape-rect{border-radius:10px}
+    .shape-rounded{border-radius:20px}
+    .shape-circle{border-radius:999px; padding:22px 26px}
+    .shape-diamond{clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);}
+    .shape-star{clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)}
+
+    /* ЭФФЕКТЫ */
+    .fx-shadow{box-shadow:0 10px 30px rgba(0,0,0,.5)}
+    .fx-glow{box-shadow:0 0 18px var(--glow, #00f0ff)}
+    .fx-3d{box-shadow:7px 7px 20px rgba(0,0,0,.5), inset -5px -5px 12px rgba(255,255,255,.22)}
+    .fx-border{border-style:solid}
+
+    /* РЕЗУЛЬТАТ */
+    .result{display:grid; grid-template-columns:1fr auto; gap:12px; align-items:start}
+    .result textarea{height:120px; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
   </style>
 
   <link id="gf" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700&display=swap">
@@ -106,14 +124,15 @@
         </div>
       </div>
 
-      <div>
-        <label>⚡ Скорость игры</label>
-        <input type="number" id="speed" value="1" min="0.5" max="3" step="0.1">
-        <div class="hint">1 = нормальная, 0.5 = медленно, 2 = быстро</div>
+      <div class="row">
+        <div>
+          <label>Скорость падения (1–10)</label>
+          <input type="number" id="speed" value="5" min="1" max="10">
+        </div>
       </div>
 
       <div class="card">
-        <h2>🎨 Оформление элементов</h2>
+        <h2>🎨 Оформление элементов (для всех уровней)</h2>
         <div class="row">
           <div>
             <label>Фигура</label>
@@ -130,20 +149,21 @@
             <input type="color" id="bgColor" value="#1a1a1a">
           </div>
         </div>
-        <label>Фон — картинка (URL)</label>
+        <label>Фон — картинка (URL, необязательно)</label>
         <input type="url" id="bgImage" placeholder="https://.../bubble.png">
 
-        <div class="row-3">
+        <div class="row-3" style="margin-top:6px">
           <div>
             <label>Рамка (цвет)</label>
             <input type="color" id="borderColor" value="#ffffff">
           </div>
           <div>
-            <label>Толщина рамки</label>
+            <label>Рамка (толщина, px)</label>
             <input type="number" id="borderWidth" value="1" min="0">
           </div>
           <div class="inline" style="align-items:end;">
-            <input type="checkbox" id="borderOn" checked><label for="borderOn">Рамка</label>
+            <label style="width:100%">Рамка включена?</label>
+            <input type="checkbox" id="borderOn" checked>
           </div>
         </div>
 
@@ -153,35 +173,25 @@
           </div>
           <div class="inline">
             <input type="checkbox" id="glowOn"><label for="glowOn">Подсветка</label>
-            <input type="color" id="glowColor" value="#00f0ff">
+            <input type="color" id="glowColor" value="#00f0ff" title="Цвет подсветки">
           </div>
         </div>
 
         <div class="row">
           <div class="inline">
-            <input type="checkbox" id="fx3d"><label for="fx3d">3D</label>
+            <input type="checkbox" id="fx3d"><label for="fx3d">3D эффект</label>
           </div>
           <div>
-            <label>Прозрачность (0–1)</label>
+            <label>Прозрачность фона (0–1)</label>
             <input type="text" id="opacity" value="1">
           </div>
-        </div>
-      </div>
-
-      <div class="row">
-        <div>
-          <label>Курсор (URL)</label>
-          <input type="url" id="cursorUrl" placeholder="https://.../cursor.png">
-        </div>
-        <div class="inline" style="align-items:end; padding-top:28px;">
-          <input type="checkbox" id="randomLevels"><label for="randomLevels">Рандом уровней</label>
         </div>
       </div>
 
       <div class="card" style="border-style:dashed">
         <h2>🧪 Предпросмотр</h2>
         <div class="preview-controls">
-          <input type="text" id="previewValue" value="Preview">
+          <input type="text" id="previewValue" placeholder="Текст предпросмотра или URL картинки..." value="Preview">
           <div class="right">
             <button class="btn-ghost" id="btnText">Текст</button>
             <button class="btn-ghost" id="btnImage">Картинка</button>
@@ -192,6 +202,7 @@
             <span id="previewText" style="font-weight:800; font-size:24px">Preview</span>
           </div>
         </div>
+        <div class="hint">Предпросмотр обновляется сразу при изменении любой настройки.</div>
       </div>
     </section>
 
@@ -207,26 +218,123 @@
       <h2 style="margin-top:8px">🚀 Публикация</h2>
       <div class="row">
         <button id="saveBtn">💾 Сохранить и получить iframe</button>
-        <button id="testBtn" class="btn-ghost">🔍 Проверить</button>
+        <button id="testBtn" class="btn-ghost">🔍 Валидация JSON</button>
       </div>
+
       <div class="result" style="margin-top:10px">
-        <textarea id="iframeOut" readonly></textarea>
+        <textarea id="iframeOut" readonly placeholder="Здесь появится iframe для Genially"></textarea>
         <button id="copyBtn" class="btn-ghost">📋 Копировать</button>
       </div>
-      <div class="hint">После публикации подождите 30–60 секунд.</div>
+      <div class="hint">После публикации может потребоваться подождать 30–60 секунд (кеш GitHub Pages).</div>
     </section>
   </main>
 
-  <footer>© 2025 <a href="https://kgbgamecorp.ru" target="_blank">Корпорация Геймификации Будущего</a></footer>
+  <footer>© 2025 <a href="https://kgbgamecorp.ru" target="_blank" rel="noopener">Корпорация Геймификации Будущего</a></footer>
 
   <script>
-    const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => document.querySelectorAll(sel);
 
-    function addLevel(){
-      const wrap=document.createElement('div');
-      wrap.className='level';
-      wrap.innerHTML=`
-        <h3>Уровень <span class="num"></span>
+    const FONT_MAP = {
+      ru: ["PT Sans","Rubik","Lobster","Marck Script","Cormorant","Montserrat","Open Sans","Noto Sans"],
+      en: ["Roboto","Open Sans","Montserrat","Inter","Poppins","Playfair Display","Indie Flower","Special Elite","Anton","Rubik"],
+      fr: ["Noto Sans","Playfair Display","Parisienne","Montserrat","Cormorant","Rubik","Inter"],
+      es: ["Montserrat","Alegreya","Caveat","Roboto","Open Sans","Rubik"],
+      de: ["PT Sans","Rubik","Inter","Montserrat","Open Sans","Playfair Display"],
+      zh: ["Noto Sans SC","ZCOOL XiaoWei","Ma Shan Zheng","Noto Sans"],
+      ja: ["Noto Sans JP","Noto Serif JP","Kosugi Maru","Noto Sans"],
+      math: ["Latin Modern Math","Rubik"]
+    };
+    const LANG_LABELS = {
+      ru:"Русский", en:"English (Latin)", fr:"Français", es:"Español",
+      de:"Deutsch", zh:"中文 (Chinese)", ja:"日本語 (Japanese)", math:"Математика (LaTeX)"
+    };
+
+    function fillLanguageSelect(){
+      const sel = $('#language');
+      sel.innerHTML = '';
+      Object.keys(FONT_MAP).forEach(k=>{
+        const opt = document.createElement('option');
+        opt.value = k; opt.textContent = LANG_LABELS[k];
+        sel.appendChild(opt);
+      });
+      sel.value = 'ru';
+    }
+    function fillFontsForLanguage(lang){
+      const sel = $('#font');
+      sel.innerHTML = '';
+      (FONT_MAP[lang] || FONT_MAP.en).forEach(f=>{
+        const opt = document.createElement('option');
+        opt.textContent = f;
+        sel.appendChild(opt);
+      });
+      sel.value = FONT_MAP[lang][0];
+      applyGoogleFont(sel.value);
+    }
+
+    function applyGoogleFont(fontName){
+      const gf = document.getElementById('gf');
+      const family = fontName.replace(/ /g, '+');
+      gf.href = `https://fonts.googleapis.com/css2?family=${family}:wght@400;700&display=swap`;
+      const text = $('#previewText');
+      text.style.fontFamily = fontName + ", system-ui, sans-serif";
+      text.style.fontSize = (parseInt($('#fontSize').value,10)||24) + 'px';
+    }
+
+    function updatePreview(){
+      const item = $('#previewItem');
+      const text = $('#previewText');
+      const val  = $('#previewValue').value.trim();
+      const asImage = item.dataset.mode === 'image' || /^https?:\/\//i.test(val);
+
+      // reset
+      item.className = 'preview-item';
+      item.style = '--glow:#00f0ff;';
+
+      item.classList.add('shape-' + $('#shape').value);
+      if($('#shadowOn').checked) item.classList.add('fx-shadow');
+      if($('#fx3d').checked) item.classList.add('fx-3d');
+      if($('#glowOn').checked) item.classList.add('fx-glow');
+      item.style.setProperty('--glow', $('#glowColor').value);
+
+      if($('#borderOn').checked && Number($('#borderWidth').value) > 0){
+        item.classList.add('fx-border');
+        item.style.borderWidth = Number($('#borderWidth').value) + 'px';
+        item.style.borderColor = $('#borderColor').value;
+      }
+
+      const bgImg = $('#bgImage').value.trim();
+      const bgCol = $('#bgColor').value;
+      item.style.background = bgImg ? `url(${bgImg}) center/contain no-repeat` : bgCol;
+      item.style.opacity = Math.max(0, Math.min(1, parseFloat($('#opacity').value||'1')));
+
+      text.style.color = $('#textColor').value;
+      text.style.fontSize = (parseInt($('#fontSize').value,10)||24) + 'px';
+      text.style.fontFamily = $('#font').value + ", system-ui, sans-serif";
+
+      if(asImage){
+        item.dataset.mode = 'image';
+        text.style.display = 'none';
+        if(!item.querySelector('img')){
+          const img = document.createElement('img');
+          item.appendChild(img);
+        }
+        const img = item.querySelector('img');
+        img.src = val || 'https://via.placeholder.com/200x140?text=Image';
+      } else {
+        item.dataset.mode = 'text';
+        const img = item.querySelector('img');
+        if(img) img.remove();
+        text.style.display = 'block';
+        text.textContent = val || 'Preview';
+      }
+    }
+
+    function levelTemplate(idx){
+      const wrap = document.createElement('div');
+      wrap.className = 'level';
+      wrap.innerHTML = `
+        <h3>Уровень <span class="num">${idx+1}</span>
           <span class="right">
             <button type="button" class="btn-ghost up">▲</button>
             <button type="button" class="btn-ghost down">▼</button>
@@ -234,73 +342,101 @@
           </span>
         </h3>
         <label>Название уровня / Target</label>
-        <input type="text" class="target">
+        <input type="text" class="target" placeholder="Например: буква S или Animals">
         <div class="row">
           <div>
-            <label>Правильные объекты</label>
-            <textarea class="correct"></textarea>
+            <label>Правильные объекты (по одному на строке)</label>
+            <textarea class="correct" placeholder="sun\nstar\nsnake\nhttps://.../cat.png\n\\frac{3}{4}"></textarea>
           </div>
           <div>
             <label>Отвлекающие объекты</label>
-            <textarea class="wrong"></textarea>
+            <textarea class="wrong" placeholder="dog\napple\ncar\nhttps://.../car.png\n\\log_{2}{8}"></textarea>
           </div>
         </div>
         <div class="row">
           <div>
-            <label>Таймер (сек.)</label>
+            <label>Таймер уровня (сек.)</label>
             <input type="number" class="timer" value="30" min="5">
           </div>
-        </div>`;
-      wrap.querySelector('.del').onclick=()=>{wrap.remove();renum()};
-      wrap.querySelector('.up').onclick=()=>{const p=wrap.previousElementSibling;if(p){wrap.parentNode.insertBefore(wrap,p);renum()}};
-      wrap.querySelector('.down').onclick=()=>{const n=wrap.nextElementSibling;if(n){wrap.parentNode.insertBefore(n,wrap);renum()}};
-      $('#levels').appendChild(wrap); renum();
+          <div class="hint" style="align-self:end">Поддерживаются: слова, URL картинок, LaTeX-формулы.</div>
+        </div>
+      `;
+      wrap.querySelector('.del').onclick = () => { wrap.remove(); renumber(); };
+      wrap.querySelector('.up').onclick  = () => { const p=wrap.previousElementSibling; if(p){ wrap.parentNode.insertBefore(wrap,p); renumber(); } };
+      wrap.querySelector('.down').onclick= () => { const n=wrap.nextElementSibling; if(n){ wrap.parentNode.insertBefore(n,wrap); renumber(); } };
+      return wrap;
     }
-    function renum(){ $$('#levels .num').forEach((el,i)=>el.textContent=i+1); }
+    function renumber(){ $$('#levels .level .num').forEach((el,i)=> el.textContent = i+1); }
+    function addLevel(){ const levels=$('#levels'); const idx=levels.querySelectorAll('.level').length; levels.appendChild(levelTemplate(idx)); renumber(); }
 
     function collectConfig(){
-      const levels=[];
+      const levels = [];
       $$('#levels .level').forEach(div=>{
         levels.push({
-          target:div.querySelector('.target').value,
-          correct:div.querySelector('.correct').value.split('\n').filter(Boolean),
-          wrong:div.querySelector('.wrong').value.split('\n').filter(Boolean),
-          timer:parseInt(div.querySelector('.timer').value)||30
+          target: div.querySelector('.target').value.trim(),
+          correct: div.querySelector('.correct').value.split('\n').map(s=>s.trim()).filter(Boolean),
+          wrong: div.querySelector('.wrong').value.split('\n').map(s=>s.trim()).filter(Boolean),
+          timer: Math.max(5, parseInt(div.querySelector('.timer').value||'30',10))
         });
       });
       return {
-        language:$('#language').value,
-        font:$('#font').value,
-        fontSize:parseInt($('#fontSize').value)||24,
-        textColor:$('#textColor').value,
-        speed:parseFloat($('#speed').value)||1,
-        style:{
-          shape:$('#shape').value,
-          bgColor:$('#bgColor').value,
-          bgImage:$('#bgImage').value,
-          borderOn:$('#borderOn').checked,
-          borderColor:$('#borderColor').value,
-          borderWidth:parseInt($('#borderWidth').value)||0,
-          shadow:$('#shadowOn').checked,
-          glow:$('#glowOn').checked,
-          glowColor:$('#glowColor').value,
-          fx3d:$('#fx3d').checked,
-          opacity:parseFloat($('#opacity').value)||1
+        language: $('#language').value,
+        font: $('#font').value,
+        fontSize: parseInt($('#fontSize').value||'24',10),
+        textColor: $('#textColor').value,
+        speed: parseInt($('#speed').value||'5',10),
+        style: {
+          shape: $('#shape').value,
+          bgColor: $('#bgColor').value,
+          bgImage: $('#bgImage').value.trim(),
+          borderOn: $('#borderOn').checked,
+          borderColor: $('#borderColor').value,
+          borderWidth: parseInt($('#borderWidth').value||'0',10),
+          shadow: $('#shadowOn').checked,
+          glow: $('#glowOn').checked,
+          glowColor: $('#glowColor').value,
+          fx3d: $('#fx3d').checked,
+          opacity: parseFloat($('#opacity').value||'1')
         },
-        cursor:$('#cursorUrl').value,
-        randomLevels:$('#randomLevels').checked,
         levels
       };
     }
 
-    $('#addLevel').onclick=()=>addLevel();
-    $('#saveBtn').onclick=()=>{
-      const cfg=collectConfig();
-      $('#iframeOut').value=`<iframe src="https://nikashum93.github.io/falling/main.html?id=test" width="900" height="640" style="border:0;"></iframe>`;
-      alert('Опубликовано! Подождите 30–60 секунд.');
-    };
-    $('#copyBtn').onclick=()=>{$('#iframeOut').select();document.execCommand('copy')};
+    async function publish(){
+      const cfg = collectConfig();
+      const payload = { type: "falling", data: cfg };
+      try{
+        const res = await fetch("https://reading-trainer-server.onrender.com/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if(data && data.id){
+          const iframe = `<iframe src="https://nikashum93.github.io/falling/main.html?id=${data.id}" width="900" height="640" style="border:0;"></iframe>`;
+          $('#iframeOut').value = iframe;
+          alert('Опубликовано! Подождите 30–60 секунд (кеш GitHub Pages).');
+        } else { alert("Ошибка: " + (data && data.error || "неизвестно")); }
+      }catch(e){ alert("Сеть/сервер: " + e.message); }
+    }
+
+    $('#language').addEventListener('change', e=>{ fillFontsForLanguage(e.target.value); updatePreview(); });
+    $('#font').addEventListener('change', e=> { applyGoogleFont(e.target.value); updatePreview(); });
+    $('#fontSize').addEventListener('input', ()=> { applyGoogleFont($('#font').value); updatePreview(); });
+    ;['textColor','opacity','shape','bgColor','bgImage','borderColor','borderWidth','borderOn','shadowOn','glowOn','glowColor','fx3d','previewValue','speed']
+      .forEach(id => { $('#'+id).addEventListener('input', updatePreview); $('#'+id).addEventListener('change', updatePreview); });
+    $('#btnText').onclick = e=>{ e.preventDefault(); $('#previewItem').dataset.mode='text'; updatePreview(); }
+    $('#btnImage').onclick= e=>{ e.preventDefault(); $('#previewItem').dataset.mode='image'; updatePreview(); }
+    $('#addLevel').addEventListener('click', e=>{ e.preventDefault(); addLevel(); });
+    $('#saveBtn').addEventListener('click', publish);
+    $('#testBtn').addEventListener('click', ()=> { alert('JSON валиден.'); console.log(collectConfig()); });
+    $('#copyBtn').addEventListener('click', ()=> { $('#iframeOut').select(); document.execCommand('copy'); });
+
+    fillLanguageSelect();
+    fillFontsForLanguage($('#language').value);
     addLevel();
+    applyGoogleFont($('#font').value);
+    updatePreview();
   </script>
 </body>
 </html>
