@@ -2,189 +2,208 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<title>Falling Items — Main</title>
+<title>Falling Items — Game</title>
 <style>
   body {
     margin:0;
-    background:#000;
+    background:#0d0d0d;
     overflow:hidden;
-    height:100vh;
-    width:100vw;
-    font-family:sans-serif;
+    font-family: sans-serif;
+  }
+  #game {
     position:relative;
+    width:100%;
+    height:100vh;
+    overflow:hidden;
   }
   .item {
     position:absolute;
     top:-100px;
-    left:50%;
-    transform:translateX(-50%);
-    display:inline-flex;
+    display:flex;
     align-items:center;
     justify-content:center;
-    padding:20px 30px;
     min-width:80px;
-    min-height:50px;
-    color:#fff;
+    min-height:60px;
+    padding:10px 18px;
     font-weight:bold;
-    user-select:none;
     cursor:pointer;
     transition:transform .2s;
   }
   .item img {
-    max-width:160px;
+    max-width:120px;
     max-height:120px;
-    object-fit:contain;
     display:block;
-    pointer-events:none;
   }
+  .caught {
+    animation: pop .5s ease forwards;
+  }
+  @keyframes pop {
+    0% {transform:scale(1); opacity:1;}
+    50%{transform:scale(1.3); opacity:1;}
+    100%{transform:scale(0); opacity:0;}
+  }
+
+  /* блёстки */
   .sparkle {
     position:absolute;
-    width:6px;
-    height:6px;
+    width:6px; height:6px;
+    background:#fff;
     border-radius:50%;
-    background:rgba(255,255,255,0.8);
     pointer-events:none;
-    animation: explode 0.8s forwards;
+    animation: sparkleAnim 1s forwards;
   }
-  @keyframes explode {
-    to { transform:translate(var(--dx), var(--dy)) scale(0.2); opacity:0; }
+  @keyframes sparkleAnim {
+    from {opacity:1; transform:translate(0,0) scale(1);}
+    to   {opacity:0; transform:translate(var(--dx),var(--dy)) scale(0.2);}
   }
 </style>
 </head>
 <body>
+<div id="game"></div>
 
 <audio id="popSound" src="pop.mp3" preload="auto"></audio>
 
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <script>
 (async function(){
+  // читаем id из url
+  const urlParams = new URLSearchParams(location.search);
+  const id = urlParams.get("id") || "demo";
+  const res = await fetch(`https://nikashum93.github.io/texts/data/${id}.json`);
+  const cfg = await res.json();
 
-  // ====== Загружаем JSON конфиг ======
-  const params = new URLSearchParams(location.search);
-  const id = params.get("id") || "demo";
-  const url = `https://nikashum93.github.io/texts/data/${id}.json`;
+  const game = document.getElementById('game');
+  const popSound = document.getElementById('popSound');
 
-  let cfg;
-  try {
-    const res = await fetch(url);
-    cfg = await res.json();
-  } catch(e){
-    alert("Ошибка загрузки JSON: " + e.message);
-    return;
+  const SPEED = cfg.speed || 1;
+  const LEVELS = cfg.randomLevels ? shuffle(cfg.levels) : cfg.levels;
+
+  let currentLevel = 0;
+  let active = true;
+
+  startLevel();
+
+  function startLevel(){
+    if(currentLevel >= LEVELS.length){ alert("Все уровни пройдены!"); return; }
+    const lv = LEVELS[currentLevel];
+    runLevel(lv);
   }
 
-  const stageW = window.innerWidth;
-  const stageH = window.innerHeight;
-
-  // Параметры из редактора
-  const styleCfg = cfg.style || {};
-  const fallSpeed = cfg.fallSpeed || 5; // 1–10
-  const speedFactor = 0.5 + (fallSpeed/10)*2; 
-
-  const items = (cfg.levels?.[0]?.correct || []).concat(cfg.levels?.[0]?.wrong || []);
-
-  // === Создание элемента ===
-  function createItem(content){
-    const div = document.createElement("div");
-    div.className = "item";
-
-    // Shape
-    div.classList.add("shape-"+(styleCfg.shape||"rect"));
-
-    // Base styles
-    div.style.fontSize = (cfg.fontSize||24)+"px";
-    div.style.color = cfg.textColor||"#fff";
-    div.style.opacity = styleCfg.opacity ?? 1;
-    div.style.fontFamily = cfg.font+", sans-serif";
-
-    // Background
-    if(styleCfg.bgImage){
-      div.style.background = `url(${styleCfg.bgImage}) center/contain no-repeat`;
-      div.style.padding = "40px 50px"; // extra padding
-    } else {
-      div.style.background = styleCfg.bgColor || "#222";
-    }
-
-    // Border
-    if(styleCfg.borderOn){
-      div.style.border = `${styleCfg.borderWidth||1}px solid ${styleCfg.borderColor||"#fff"}`;
-    }
-
-    // Shadow & effects
-    if(styleCfg.shadow){ div.style.boxShadow = "0 8px 18px rgba(0,0,0,0.5)"; }
-    if(styleCfg.glow){ div.style.boxShadow = `0 0 18px ${styleCfg.glowColor||"#0ff"}`; }
-    if(styleCfg.fx3d){ div.style.boxShadow = "7px 7px 20px rgba(0,0,0,.5), inset -5px -5px 12px rgba(255,255,255,.22)"; }
-
-    // Content
-    if(/^https?:\/\//.test(content)){
-      const img = document.createElement("img");
-      img.src = content;
-      div.appendChild(img);
-    } else {
-      div.textContent = content || "???";
-    }
-
-    // Position
-    div.style.left = Math.random() * (stageW-200) + "px";
-    div.style.top = "-120px";
-
-    // Click (catch)
-    div.addEventListener("click", ()=>{
-      playPop(div);
-      div.remove();
-    });
-
-    document.body.appendChild(div);
-
-    animateFall(div);
-  }
-
-  // === Анимация падения ===
-  function animateFall(el){
-    let y = -100;
-    const fall = ()=>{
-      y += speedFactor;
-      el.style.top = y + "px";
-      if(y < stageH-80){
-        requestAnimationFrame(fall);
-      } else {
-        el.remove();
+  function runLevel(lv){
+    const timer = lv.timer || 30;
+    let timeLeft = timer;
+    const interval = setInterval(()=> {
+      if(!active){ clearInterval(interval); return; }
+      timeLeft--;
+      if(timeLeft <= 0){
+        clearInterval(interval);
+        currentLevel++;
+        startLevel();
       }
-    };
-    fall();
+    },1000);
+
+    spawnItems(lv);
   }
 
-  // === Эффект при клике ===
+  function spawnItems(lv){
+    const objects = [...lv.correct.map(v=>({val:v,good:true})), ...lv.wrong.map(v=>({val:v,good:false}))];
+    setInterval(()=>{
+      if(!active) return;
+      const obj = objects[Math.floor(Math.random()*objects.length)];
+      dropItem(obj, lv);
+    }, 2000 / SPEED);
+  }
+
+  function dropItem(obj, lv){
+    const el = document.createElement('div');
+    el.className = 'item shape-' + (cfg.style.shape || 'rounded');
+    el.style.color = cfg.textColor || '#fff';
+    el.style.fontSize = (cfg.fontSize||24)+'px';
+    el.style.fontFamily = cfg.font || 'Rubik, sans-serif';
+    el.style.opacity = cfg.style.opacity || 1;
+
+    // фон
+    if(cfg.style.bgImage){
+      el.style.background = `url(${cfg.style.bgImage}) center/contain no-repeat`;
+    } else {
+      el.style.background = cfg.style.bgColor || '#222';
+    }
+
+    // рамка
+    if(cfg.style.borderOn && cfg.style.borderWidth>0){
+      el.style.border = cfg.style.borderWidth+'px solid '+cfg.style.borderColor;
+    }
+
+    // эффекты
+    if(cfg.style.shadow) el.style.boxShadow = "0 6px 18px rgba(0,0,0,0.5)";
+    if(cfg.style.glow) el.style.boxShadow = `0 0 18px ${cfg.style.glowColor||'#0ff'}`;
+    if(cfg.style.fx3d) el.style.boxShadow += ", 7px 7px 20px rgba(0,0,0,.5), inset -5px -5px 12px rgba(255,255,255,.22)";
+
+    // контент
+    if(/^https?:\/\//i.test(obj.val)){
+      const img = document.createElement('img');
+      img.src = obj.val;
+      el.appendChild(img);
+    } else if(cfg.language === "math"){
+      el.innerHTML = `\\(${obj.val}\\)`;
+      MathJax.typesetPromise([el]);
+    } else {
+      el.textContent = obj.val;
+    }
+
+    const gw = game.clientWidth;
+    const x = Math.random()*(gw-120);
+    el.style.left = x+'px';
+    game.appendChild(el);
+
+    let y = -80;
+    const fall = setInterval(()=>{
+      if(!active){ clearInterval(fall); return; }
+      y += 2*SPEED;
+      el.style.top = y+"px";
+      if(y>game.clientHeight){
+        el.remove(); clearInterval(fall);
+      }
+    },16);
+
+    el.onclick = ()=>{
+      if(obj.good){
+        playPop(el);
+        el.remove();
+      } else {
+        el.style.background = 'red';
+        setTimeout(()=>el.remove(),400);
+      }
+    }
+  }
+
   function playPop(el){
-    // звук
-    const snd = document.getElementById("popSound");
-    snd.currentTime=0; snd.play();
+    el.classList.add("caught");
+    if(popSound) { popSound.currentTime=0; popSound.play().catch(()=>{}); }
+    spawnSparkles(el);
+  }
 
-    // блёстки
-    const rect = el.getBoundingClientRect();
-    for(let i=0;i<12;i++){
-      const sp = document.createElement("div");
-      sp.className="sparkle";
-      sp.style.left = (rect.left+rect.width/2)+"px";
-      sp.style.top = (rect.top+rect.height/2)+"px";
-      const angle = Math.random()*2*Math.PI;
-      const dist = 50+Math.random()*50;
-      sp.style.setProperty("--dx", Math.cos(angle)*dist+"px");
-      sp.style.setProperty("--dy", Math.sin(angle)*dist+"px");
-      document.body.appendChild(sp);
-      sp.addEventListener("animationend", ()=> sp.remove());
+  function spawnSparkles(el){
+    for(let i=0;i<10;i++){
+      const s = document.createElement('div');
+      s.className = 'sparkle';
+      s.style.left = (el.offsetLeft+el.clientWidth/2)+'px';
+      s.style.top  = (el.offsetTop+el.clientHeight/2)+'px';
+      s.style.setProperty('--dx',(Math.random()*60-30)+'px');
+      s.style.setProperty('--dy',(Math.random()*60-30)+'px');
+      s.style.animationDuration = (1/SPEED)+'s';
+      game.appendChild(s);
+      setTimeout(()=>s.remove(),1000/SPEED);
     }
   }
 
-  // === Старт игры ===
-  let idx=0;
-  function spawn(){
-    if(idx<items.length){
-      createItem(items[idx++]);
-      setTimeout(spawn, 1000);
+  function shuffle(a){
+    for(let i=a.length-1;i>0;i--){
+      const j=Math.floor(Math.random()*(i+1));
+      [a[i],a[j]]=[a[j],a[i]];
     }
+    return a;
   }
-  spawn();
-
 })();
 </script>
 </body>
