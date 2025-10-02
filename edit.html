@@ -5,64 +5,34 @@
   <title>Редактор Falling Game</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body {
-      background:#111;
-      color:#fff;
-      font-family: Arial, sans-serif;
-      margin:0;
-      padding:20px;
-    }
+    body { background:#111; color:#fff; font-family: Arial, sans-serif; margin:0; padding:20px; }
     h1 { color:#0ff; text-align:center; }
-    h2 {
-      margin-top:25px;
-      color:#ff4081;
-      border-bottom:1px solid #333;
-      padding-bottom:4px;
-    }
-    label { display:block; margin:8px 0 4px; font-weight:bold; }
-    input, select {
-      padding:6px 10px;
-      font-size:15px;
-      border-radius:6px;
+    label { display:block; margin:6px 0 3px; font-weight:bold; }
+    input, select, textarea {
+      padding:5px 8px;
+      font-size:14px;
+      border-radius:4px;
       border:none;
-      margin-bottom:10px;
+      margin-bottom:8px;
       width:100%;
     }
-    input[type="color"] {
-      padding:0;
-      height:40px;
-    }
-    input[type="checkbox"] {
-      display:inline-block;
-      width:auto;
-      margin-right:6px;
-    }
+    input[type="color"] { padding:0; height:32px; }
+    input[type="checkbox"] { width:auto; margin-right:6px; }
     .section {
-      background:#1b1b1b;
-      padding:15px;
-      margin-bottom:20px;
-      border-radius:10px;
-      box-shadow:0 0 10px rgba(0,255,255,0.2);
-    }
-    .effect-group {
-      display:flex;
-      align-items:center;
-      gap:12px;
-      flex-wrap:wrap;
+      background:#1c1c1c;
+      padding:12px;
+      margin-bottom:15px;
+      border-radius:8px;
     }
     .preview {
-      margin-top:15px;
-      padding:20px;
+      margin-top:10px;
+      padding:15px;
       background:#222;
       text-align:center;
-      border-radius:12px;
-      min-height:100px;
+      border-radius:8px;
+      min-height:80px;
     }
-    #iframeCode {
-      width:100%;
-      height:120px;
-      margin-top:20px;
-    }
+    #iframeCode { width:100%; height:100px; margin-top:10px; }
   </style>
 </head>
 <body>
@@ -97,7 +67,7 @@
   </div>
 
   <div class="section">
-    <h2>🎨 Оформление элементов (для всех уровней)</h2>
+    <h2>🎨 Оформление элементов</h2>
 
     <label>Фигура:</label>
     <select id="shape">
@@ -108,32 +78,29 @@
       <option value="star">Звезда</option>
     </select>
 
-    <label>Фон — цвет:</label>
+    <label>Фон (цвет):</label>
     <input type="color" id="bgColor" value="#222222">
 
-    <label>Фон — картинка (URL, необязательно):</label>
+    <label>Фон (URL картинки, необязательно):</label>
     <input type="text" id="bgImage" placeholder="https://.../cloud.png">
 
-    <h3>⬛ Рамка</h3>
-    <label><input type="checkbox" id="borderOn"> Включить рамку</label>
-    <label>Рамка (цвет):</label>
+    <label><input type="checkbox" id="borderOn"> Рамка</label>
+    <label>Цвет рамки:</label>
     <input type="color" id="borderColor" value="#ffffff">
-    <label>Рамка (толщина, px):</label>
+    <label>Толщина рамки (px):</label>
     <input type="number" id="borderWidth" value="1">
 
-    <h3>✨ Эффекты</h3>
-    <div class="effect-group">
-      <label><input type="checkbox" id="shadow"> Тень</label>
-      <label><input type="checkbox" id="glow"> Подсветка</label>
-      <input type="color" id="glowColor" value="#00ffff">
-      <label><input type="checkbox" id="fx3d"> 3D эффект</label>
-    </div>
+    <label><input type="checkbox" id="shadow"> Тень</label>
+    <label><input type="checkbox" id="glow"> Подсветка</label>
+    <label>Цвет подсветки:</label>
+    <input type="color" id="glowColor" value="#00ffff">
+    <label><input type="checkbox" id="fx3d"> 3D эффект</label>
 
     <label>Прозрачность элемента (0–1):</label>
     <input type="range" id="opacity" min="0" max="1" step="0.1" value="1">
     <input type="number" id="opacityNumber" min="0" max="1" step="0.1" value="1">
 
-    <label>⏬ Скорость падения (1–10):</label>
+    <label>Скорость падения (1–10):</label>
     <input type="range" id="fallSpeed" min="1" max="10" step="1" value="3">
     <input type="number" id="fallSpeedNumber" min="1" max="10" step="1" value="3">
 
@@ -147,7 +114,7 @@
   </div>
 
   <div class="section">
-    <h2>📤 Код для вставки в Genially</h2>
+    <h2>📤 Код для вставки</h2>
     <textarea id="iframeCode" readonly></textarea>
   </div>
 
@@ -175,13 +142,13 @@
   document.getElementById("language").addEventListener("change",updateFonts);
   updateFonts();
 
-  // связь range <-> number для прозрачности
+  // прозрачность
   const opacity=document.getElementById("opacity");
   const opacityNum=document.getElementById("opacityNumber");
   opacity.addEventListener("input",()=>opacityNum.value=opacity.value);
   opacityNum.addEventListener("input",()=>opacity.value=opacityNum.value);
 
-  // связь для скорости
+  // скорость
   const fallSpeed=document.getElementById("fallSpeed");
   const fallSpeedNum=document.getElementById("fallSpeedNumber");
   fallSpeed.addEventListener("input",()=>fallSpeedNum.value=fallSpeed.value);
@@ -215,10 +182,7 @@
     prev.style.opacity=document.getElementById("opacity").value;
     prev.textContent="Пример текста";
   }
-
-  document.querySelectorAll("input,select").forEach(el=>{
-    el.addEventListener("input",updatePreview);
-  });
+  document.querySelectorAll("input,select").forEach(el=>el.addEventListener("input",updatePreview));
   updatePreview();
 
   // уровни
@@ -277,13 +241,10 @@
     });
     const iframe=`<iframe src="main.html?id=${id}" width="800" height="600"></iframe>`;
     document.getElementById("iframeCode").value=iframe;
-    console.log("Config",config); // здесь будет пуш на сервер
+    console.log("Config",config); // TODO: пушить на сервер
   }
 
-  // генерим iframe автоматически при изменении
-  document.querySelectorAll("input,select,textarea").forEach(el=>{
-    el.addEventListener("input",generateIframe);
-  });
+  document.querySelectorAll("input,select,textarea").forEach(el=>el.addEventListener("input",generateIframe));
 </script>
 </body>
 </html>
