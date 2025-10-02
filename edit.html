@@ -1,528 +1,289 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Редактор — Falling Items (КГБ)</title>
-
+  <meta charset="utf-8">
+  <title>Редактор Falling Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    :root{
-      --ui-acc:#ffd700;
-      --card:#151515;
-      --ink:#eee;
-      --muted:#b7b7b7;
-      --stroke:#2a2a2a;
-      --gap:16px;
+    body {
+      background:#111;
+      color:#fff;
+      font-family: Arial, sans-serif;
+      margin:0;
+      padding:20px;
     }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0; background:#0d0d0d; color:var(--ink);
-      font-family:Rubik,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      display:flex; flex-direction:column;
+    h1 { color:#0ff; text-align:center; }
+    h2 {
+      margin-top:25px;
+      color:#ff4081;
+      border-bottom:1px solid #333;
+      padding-bottom:4px;
     }
-    header{
-      display:flex; align-items:center; gap:12px; padding:16px 20px; border-bottom:1px solid var(--stroke);
-      position:sticky; top:0; background:#0d0d0d; z-index:2;
+    label { display:block; margin:8px 0 4px; font-weight:bold; }
+    input, select {
+      padding:6px 10px;
+      font-size:15px;
+      border-radius:6px;
+      border:none;
+      margin-bottom:10px;
+      width:100%;
     }
-    header img{height:42px}
-    header h1{font-size:20px; margin:0; color:var(--ui-acc); font-weight:800}
-    main{display:grid; grid-template-columns: 430px 1fr; gap:22px; padding:20px; max-width:1500px; width:100%; margin:0 auto}
-    .card{
-      background:var(--card); border:1px solid var(--stroke); border-radius:14px; padding:18px;
-      box-shadow:0 0 28px rgba(255,215,0,.06);
+    input[type="color"] {
+      padding:0;
+      height:40px;
     }
-    .card h2{margin:0 0 14px; font-size:18px; color:var(--ui-acc)}
-    label{display:block; margin:12px 0 8px; font-size:15px; color:#fff; font-weight:600}
-    input[type="text"], input[type="number"], input[type="url"], textarea, select{
-      width:100%; background:#101010; color:#fff; border:1px solid #3a3a3a; border-radius:10px; padding:12px 14px; font-size:16px;
-      outline:none; transition:border-color .15s ease, box-shadow .15s ease;
+    input[type="checkbox"] {
+      display:inline-block;
+      width:auto;
+      margin-right:6px;
     }
-    textarea{min-height:110px; resize:vertical}
-    input:focus, textarea:focus, select:focus{border-color:#4b4b4b; box-shadow:0 0 0 3px rgba(255,215,0,.16)}
-    .row{display:grid; grid-template-columns:1fr 1fr; gap:var(--gap)}
-    .row-3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:var(--gap)}
-    .inline{display:flex; gap:12px; align-items:center}
-    .hint{color:var(--muted); font-size:13px; margin-top:8px}
-    .pill{display:inline-block; padding:8px 12px; border:1px dashed #444; border-radius:999px; color:#bbb; font-size:13px}
-
-    button{
-      background:linear-gradient(90deg,#ffbf00,#ffd700); color:#000; border:none; border-radius:12px; font-weight:800;
-      padding:14px 18px; cursor:pointer; transition:transform .15s ease, box-shadow .15s ease; font-size:16px;
+    .section {
+      background:#1b1b1b;
+      padding:15px;
+      margin-bottom:20px;
+      border-radius:10px;
+      box-shadow:0 0 10px rgba(0,255,255,0.2);
     }
-    button:hover{transform:translateY(-1px); box-shadow:0 8px 26px rgba(255,215,0,.28)}
-    .btn-ghost{background:transparent; color:#fff; border:1px solid #444}
-    .btn-danger{background:#a80000; color:#fff}
-    .stack{display:flex; flex-direction:column; gap:var(--gap)}
-    .levels .level{background:#111; border:1px solid #2a2a2a; border-radius:12px; padding:16px}
-    .level h3{margin:0 0 10px; font-size:16px; color:#fff; display:flex; align-items:center; justify-content:space-between}
-    .toolbar{display:flex; gap:12px; flex-wrap:wrap}
-    .right{display:flex; gap:10px; align-items:center; justify-content:flex-end}
-
-    footer{padding:14px 20px; color:#888; border-top:1px solid var(--stroke); display:flex; align-items:center; justify-content:center; gap:8px}
-    footer a{color:var(--ui-acc); text-decoration:none}
-
-    /* ПРЕДПРОСМОТР */
-    .preview-wrap{display:grid; grid-template-rows:auto 1fr; gap:12px; height:100%}
-    .preview-stage{background:#0a0a0a; border:1px dashed #333; border-radius:12px; display:flex; align-items:center; justify-content:center; padding:24px; min-height:320px}
-    .preview-controls{display:grid; grid-template-columns:1fr auto; gap:12px}
-    .preview-item{position:relative; display:inline-flex; align-items:center; justify-content:center; padding:18px 22px; min-width:160px; min-height:70px; transition:all .2s ease}
-    .preview-item img{max-width:200px; max-height:140px; display:block}
-
-    /* ФИГУРЫ */
-    .shape-rect{border-radius:10px}
-    .shape-rounded{border-radius:20px}
-    .shape-circle{border-radius:999px; padding:22px 26px}
-    .shape-diamond{transform:rotate(45deg); padding:32px}
-    .shape-diamond > *{transform:rotate(-45deg)}
-    .shape-star{clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)}
-
-    /* ЭФФЕКТЫ */
-    .fx-shadow{box-shadow:0 10px 30px rgba(0,0,0,.5)}
-    .fx-glow{box-shadow:0 0 18px var(--glow, #00f0ff)}
-    .fx-3d{box-shadow:7px 7px 20px rgba(0,0,0,.5), inset -5px -5px 12px rgba(255,255,255,.22)}
-    .fx-border{border-style:solid}
-
-    /* РЕЗУЛЬТАТ */
-    .result{display:grid; grid-template-columns:1fr auto; gap:12px; align-items:start}
-    .result textarea{height:120px; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+    .effect-group {
+      display:flex;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .preview {
+      margin-top:15px;
+      padding:20px;
+      background:#222;
+      text-align:center;
+      border-radius:12px;
+      min-height:100px;
+    }
+    #iframeCode {
+      width:100%;
+      height:120px;
+      margin-top:20px;
+    }
   </style>
-
-  <!-- Google Fonts (динамически будем подгружать нужный) -->
-  <link id="gf" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700&display=swap">
 </head>
 <body>
-  <header>
-    <a href="https://kgbgamecorp.ru" target="_blank" rel="noopener">
-      <img src="https://con.xl.ru/fnfLZuvpAUiDaqDs8d1-2g/images/kcJYv7OsYUSGt5AfGq5jIw.png" alt="КГБ">
-    </a>
-    <h1>Редактор игры «Падающие элементы» — КГБ</h1>
-  </header>
+  <h1>🎮 Редактор Falling Game</h1>
 
-  <main>
-    <!-- ЛЕВАЯ КОЛОНКА: Глобальные настройки + предпросмотр -->
-    <section class="card stack">
-      <h2>⚙️ Общие настройки</h2>
+  <div class="section">
+    <h2>🌍 Общие настройки</h2>
+    <label>Язык:</label>
+    <select id="language">
+      <option value="ru">Русский</option>
+      <option value="en">English</option>
+      <option value="de">Deutsch</option>
+      <option value="fr">Français</option>
+      <option value="es">Español</option>
+      <option value="zh">中文</option>
+      <option value="ja">日本語</option>
+    </select>
 
-      <div class="row">
-        <div>
-          <label>Язык / режим</label>
-          <select id="language"></select>
-        </div>
-        <div>
-          <label>Шрифт</label>
-          <select id="font"></select>
-        </div>
-      </div>
+    <label>Шрифт:</label>
+    <select id="fontFamily"></select>
 
-      <div class="row">
-        <div>
-          <label>Размер шрифта (px)</label>
-          <input type="number" id="fontSize" value="24" min="10" max="100">
-        </div>
-        <div>
-          <label>Цвет шрифта</label>
-          <input type="color" id="textColor" value="#ffffff">
-        </div>
-      </div>
+    <label>Размер шрифта (px):</label>
+    <input type="number" id="fontSize" value="28">
 
-      <div class="card">
-        <h2>🎨 Оформление элементов (для всех уровней)</h2>
+    <label>Цвет текста:</label>
+    <input type="color" id="textColor" value="#ffffff">
 
-        <div class="row">
-          <div>
-            <label>Фигура</label>
-            <select id="shape">
-              <option value="rect">Прямоугольник</option>
-              <option value="rounded">Скруглённый</option>
-              <option value="circle">Круг</option>
-              <option value="diamond">Ромб</option>
-              <option value="star">Звезда</option>
-            </select>
-          </div>
-          <div>
-            <label>Фон — цвет</label>
-            <input type="color" id="bgColor" value="#1a1a1a">
-          </div>
-        </div>
+    <label>Курсор (URL):</label>
+    <input type="text" id="cursor" placeholder="https://.../cursor.png">
 
-        <label>Фон — картинка (URL, необязательно)</label>
-        <input type="url" id="bgImage" placeholder="https://.../bubble.png">
+    <label><input type="checkbox" id="randomLevels"> Рандомный порядок уровней</label>
+  </div>
 
-        <div class="row-3" style="margin-top:6px">
-          <div>
-            <label>Рамка (цвет)</label>
-            <input type="color" id="borderColor" value="#ffffff">
-          </div>
-          <div>
-            <label>Рамка (толщина, px)</label>
-            <input type="number" id="borderWidth" value="1" min="0">
-          </div>
-          <div class="inline" style="align-items:end;">
-            <label style="width:100%">Рамка включена?</label>
-            <input type="checkbox" id="borderOn" checked>
-          </div>
-        </div>
+  <div class="section">
+    <h2>🎨 Оформление элементов (для всех уровней)</h2>
 
-        <div class="row">
-          <div class="inline">
-            <input type="checkbox" id="shadowOn" checked><label for="shadowOn">Тень</label>
-          </div>
-          <div class="inline">
-            <input type="checkbox" id="glowOn"><label for="glowOn">Подсветка</label>
-            <input type="color" id="glowColor" value="#00f0ff" title="Цвет подсветки">
-          </div>
-        </div>
+    <label>Фигура:</label>
+    <select id="shape">
+      <option value="rect">Прямоугольник</option>
+      <option value="rounded">Скруглённый</option>
+      <option value="circle">Круг</option>
+      <option value="diamond">Ромб</option>
+      <option value="star">Звезда</option>
+    </select>
 
-        <div class="row">
-          <div class="inline">
-            <input type="checkbox" id="fx3d"><label for="fx3d">3D эффект</label>
-          </div>
-          <div>
-            <label>Прозрачность элемента (0 – прозрачный, 1 – видимый)</label>
-            <input type="text" id="opacity" value="1">
-            <div class="hint">Пример: 1, 0.8, 0.5</div>
-          </div>
-        </div>
-      </div>
+    <label>Фон — цвет:</label>
+    <input type="color" id="bgColor" value="#222222">
 
-      <div class="row">
-        <div>
-          <label>Курсор (URL картинки, необязательно)</label>
-          <input type="url" id="cursorUrl" placeholder="https://.../cursor.png">
-        </div>
-        <div class="inline" style="align-items:end; padding-top:28px;">
-          <input type="checkbox" id="randomLevels"><label for="randomLevels">Рандом уровней</label>
-        </div>
-      </div>
+    <label>Фон — картинка (URL, необязательно):</label>
+    <input type="text" id="bgImage" placeholder="https://.../cloud.png">
 
-      <div class="card" style="border-style:dashed">
-        <h2>🧪 Предпросмотр</h2>
-        <div class="preview-controls">
-          <input type="text" id="previewValue" placeholder="Текст предпросмотра или URL картинки..." value="Preview">
-          <div class="right">
-            <button class="btn-ghost" id="btnText">Текст</button>
-            <button class="btn-ghost" id="btnImage">Картинка</button>
-          </div>
-        </div>
-        <div class="preview-stage">
-          <div id="previewItem" class="preview-item shape-rounded fx-shadow" style="--glow:#00f0ff;">
-            <span id="previewText" style="font-weight:800; font-size:24px">Preview</span>
-          </div>
-        </div>
-        <div class="hint">Предпросмотр обновляется сразу при изменении любой настройки.</div>
-      </div>
-    </section>
+    <h3>⬛ Рамка</h3>
+    <label><input type="checkbox" id="borderOn"> Включить рамку</label>
+    <label>Рамка (цвет):</label>
+    <input type="color" id="borderColor" value="#ffffff">
+    <label>Рамка (толщина, px):</label>
+    <input type="number" id="borderWidth" value="1">
 
-    <!-- ПРАВАЯ КОЛОНКА: Уровни + публикация -->
-    <section class="card stack">
-      <h2>🎯 Уровни</h2>
-      <div class="levels" id="levels"></div>
-      <div class="toolbar">
-        <button id="addLevel">➕ Добавить уровень</button>
-        <span class="pill">Неограниченно уровней</span>
-      </div>
+    <h3>✨ Эффекты</h3>
+    <div class="effect-group">
+      <label><input type="checkbox" id="shadow"> Тень</label>
+      <label><input type="checkbox" id="glow"> Подсветка</label>
+      <input type="color" id="glowColor" value="#00ffff">
+      <label><input type="checkbox" id="fx3d"> 3D эффект</label>
+    </div>
 
-      <h2 style="margin-top:8px">🚀 Публикация</h2>
-      <div class="row">
-        <button id="saveBtn">💾 Сохранить и получить iframe</button>
-        <button id="testBtn" class="btn-ghost">🔍 Валидация JSON</button>
-      </div>
+    <label>Прозрачность элемента (0–1):</label>
+    <input type="range" id="opacity" min="0" max="1" step="0.1" value="1">
+    <input type="number" id="opacityNumber" min="0" max="1" step="0.1" value="1">
 
-      <div class="result" style="margin-top:10px">
-        <textarea id="iframeOut" readonly placeholder="Здесь появится iframe для Genially"></textarea>
-        <button id="copyBtn" class="btn-ghost">📋 Копировать</button>
-      </div>
-      <div class="hint">Данные публикуются в репозитории <b>texts/data/&lt;id&gt;.json</b> через твой сервер. GitHub Pages может кешировать до 30–60 сек.</div>
-    </section>
-  </main>
+    <label>⏬ Скорость падения (1–10):</label>
+    <input type="range" id="fallSpeed" min="1" max="10" step="1" value="3">
+    <input type="number" id="fallSpeedNumber" min="1" max="10" step="1" value="3">
 
-  <footer>© 2025 <a href="https://kgbgamecorp.ru" target="_blank" rel="noopener">Корпорация Геймификации Будущего</a></footer>
+    <div class="preview" id="preview">Предпросмотр элемента</div>
+  </div>
 
-  <script>
-    // ——— helpers ———
-    const $ = sel => document.querySelector(sel);
-    const $$ = sel => document.querySelectorAll(sel);
+  <div class="section">
+    <h2>🎯 Уровни</h2>
+    <div id="levels"></div>
+    <button onclick="addLevel()">➕ Добавить уровень</button>
+  </div>
 
-    // === Языки и шрифты ===
-    const FONT_MAP = {
-      ru: ["PT Sans","Rubik","Lobster","Marck Script","Cormorant","Montserrat","Open Sans","Noto Sans"],
-      en: ["Roboto","Open Sans","Montserrat","Inter","Poppins","Playfair Display","Indie Flower","Special Elite","Anton","Rubik"],
-      fr: ["Noto Sans","Playfair Display","Parisienne","Montserrat","Cormorant","Rubik","Inter"],
-      es: ["Montserrat","Alegreya","Caveat","Roboto","Open Sans","Rubik"],
-      de: ["PT Sans","Rubik","Inter","Montserrat","Open Sans","Playfair Display"],
-      zh: ["Noto Sans SC","ZCOOL XiaoWei","Ma Shan Zheng","Noto Sans"],
-      ja: ["Noto Sans JP","Noto Serif JP","Kosugi Maru","Noto Sans"],
-      math: ["Latin Modern Math","Rubik"] // для Math рендер будет в main через MathJax; шрифт — для текста рядом
+  <div class="section">
+    <h2>📤 Код для вставки в Genially</h2>
+    <textarea id="iframeCode" readonly></textarea>
+  </div>
+
+<script>
+  const fonts = {
+    ru:["Arial","Roboto","PT Sans","Rubik","Marck Script"],
+    en:["Arial","Verdana","Times New Roman","Georgia","Comic Sans MS"],
+    de:["Arial","Tahoma","Fira Sans","Noto Sans","Roboto"],
+    fr:["Arial","Courgette","Lobster","Merriweather","Open Sans"],
+    es:["Arial","Montserrat","Raleway","Roboto Slab","Ubuntu"],
+    zh:["Noto Sans SC","SimHei","KaiTi","FangSong","Microsoft YaHei"],
+    ja:["Noto Sans JP","Hiragino Kaku Gothic Pro","Yu Gothic","Meiryo","MS PGothic"]
+  };
+
+  function updateFonts(){
+    const lang=document.getElementById("language").value;
+    const ff=document.getElementById("fontFamily");
+    ff.innerHTML="";
+    fonts[lang].forEach(f=>{
+      const opt=document.createElement("option");
+      opt.value=f; opt.textContent=f;
+      ff.appendChild(opt);
+    });
+  }
+  document.getElementById("language").addEventListener("change",updateFonts);
+  updateFonts();
+
+  // связь range <-> number для прозрачности
+  const opacity=document.getElementById("opacity");
+  const opacityNum=document.getElementById("opacityNumber");
+  opacity.addEventListener("input",()=>opacityNum.value=opacity.value);
+  opacityNum.addEventListener("input",()=>opacity.value=opacityNum.value);
+
+  // связь для скорости
+  const fallSpeed=document.getElementById("fallSpeed");
+  const fallSpeedNum=document.getElementById("fallSpeedNumber");
+  fallSpeed.addEventListener("input",()=>fallSpeedNum.value=fallSpeed.value);
+  fallSpeedNum.addEventListener("input",()=>fallSpeed.value=fallSpeedNum.value);
+
+  function updatePreview(){
+    const prev=document.getElementById("preview");
+    prev.style.fontFamily=document.getElementById("fontFamily").value;
+    prev.style.fontSize=document.getElementById("fontSize").value+"px";
+    prev.style.color=document.getElementById("textColor").value;
+    prev.style.border="none";
+    prev.style.background=document.getElementById("bgColor").value;
+
+    if(document.getElementById("bgImage").value){
+      prev.style.background=`url(${document.getElementById("bgImage").value}) center/contain no-repeat`;
+    }
+
+    if(document.getElementById("borderOn").checked){
+      prev.style.border=document.getElementById("borderWidth").value+"px solid "+document.getElementById("borderColor").value;
+    }
+    prev.style.boxShadow="none";
+    if(document.getElementById("shadow").checked){
+      prev.style.boxShadow="0 4px 10px rgba(0,0,0,0.5)";
+    }
+    if(document.getElementById("glow").checked){
+      prev.style.boxShadow=`0 0 15px ${document.getElementById("glowColor").value}`;
+    }
+    if(document.getElementById("fx3d").checked){
+      prev.style.boxShadow="7px 7px 20px rgba(0,0,0,0.5), inset -5px -5px 12px rgba(255,255,255,.22)";
+    }
+    prev.style.opacity=document.getElementById("opacity").value;
+    prev.textContent="Пример текста";
+  }
+
+  document.querySelectorAll("input,select").forEach(el=>{
+    el.addEventListener("input",updatePreview);
+  });
+  updatePreview();
+
+  // уровни
+  let levelCount=0;
+  function addLevel(){
+    levelCount++;
+    const div=document.createElement("div");
+    div.className="level";
+    div.innerHTML=`
+      <h3>Уровень ${levelCount}</h3>
+      <label>Название (таргет):</label>
+      <input type="text" class="target">
+      <label>Правильные элементы:</label>
+      <textarea class="correct" rows="3" style="width:100%"></textarea>
+      <label>Отвлекающие элементы:</label>
+      <textarea class="wrong" rows="3" style="width:100%"></textarea>
+      <label>Таймер (сек):</label>
+      <input type="number" class="timer" value="30">
+      <hr>
+    `;
+    document.getElementById("levels").appendChild(div);
+  }
+
+  function generateIframe(){
+    const id="falling-"+Date.now();
+    const config={
+      language:document.getElementById("language").value,
+      font:document.getElementById("fontFamily").value,
+      fontSize:+document.getElementById("fontSize").value,
+      textColor:document.getElementById("textColor").value,
+      cursor:document.getElementById("cursor").value,
+      randomLevels:document.getElementById("randomLevels").checked,
+      fallSpeed:+document.getElementById("fallSpeed").value,
+      style:{
+        shape:document.getElementById("shape").value,
+        bgColor:document.getElementById("bgColor").value,
+        bgImage:document.getElementById("bgImage").value,
+        borderOn:document.getElementById("borderOn").checked,
+        borderColor:document.getElementById("borderColor").value,
+        borderWidth:+document.getElementById("borderWidth").value,
+        shadow:document.getElementById("shadow").checked,
+        glow:document.getElementById("glow").checked,
+        glowColor:document.getElementById("glowColor").value,
+        fx3d:document.getElementById("fx3d").checked,
+        opacity:+document.getElementById("opacity").value
+      },
+      levels:[]
     };
-    const LANG_LABELS = {
-      ru:"Русский", en:"English (Latin)", fr:"Français", es:"Español",
-      de:"Deutsch", zh:"中文 (Chinese)", ja:"日本語 (Japanese)", math:"Математика (LaTeX)"
-    };
-
-    function fillLanguageSelect(){
-      const sel = $('#language');
-      sel.innerHTML = '';
-      Object.keys(FONT_MAP).forEach(k=>{
-        const opt = document.createElement('option');
-        opt.value = k; opt.textContent = LANG_LABELS[k];
-        sel.appendChild(opt);
+    document.querySelectorAll(".level").forEach(l=>{
+      config.levels.push({
+        target:l.querySelector(".target").value,
+        correct:l.querySelector(".correct").value.split("\n").filter(x=>x.trim()!=""),
+        wrong:l.querySelector(".wrong").value.split("\n").filter(x=>x.trim()!=""),
+        timer:+l.querySelector(".timer").value
       });
-      sel.value = 'ru';
-    }
-    function fillFontsForLanguage(lang){
-      const sel = $('#font');
-      sel.innerHTML = '';
-      (FONT_MAP[lang] || FONT_MAP.en).forEach(f=>{
-        const opt = document.createElement('option');
-        opt.textContent = f;
-        sel.appendChild(opt);
-      });
-      sel.value = FONT_MAP[lang][0];
-      applyGoogleFont(sel.value);
-    }
-
-    // Google Fonts динамическая подгрузка
-    function applyGoogleFont(fontName){
-      const gf = document.getElementById('gf');
-      const family = fontName.replace(/ /g, '+');
-      gf.href = `https://fonts.googleapis.com/css2?family=${family}:wght@400;700&display=swap`;
-      document.body.style.fontFamily = fontName + ", system-ui, sans-serif";
-      const text = $('#previewText');
-      text.style.fontFamily = fontName + ", system-ui, sans-serif";
-      text.style.fontSize = (parseInt($('#fontSize').value,10)||24) + 'px';
-    }
-
-    // Предпросмотр — применение стилей
-    function updatePreview(){
-      const item = $('#previewItem');
-      const text = $('#previewText');
-      const val  = $('#previewValue').value.trim();
-      const asImage = item.dataset.mode === 'image' || /^https?:\/\//i.test(val);
-
-      // Фигура
-      const shape = $('#shape').value;
-      item.classList.remove('shape-rect','shape-rounded','shape-circle','shape-diamond','shape-star');
-      item.classList.add('shape-' + shape);
-
-      // Эффекты
-      item.classList.toggle('fx-shadow', $('#shadowOn').checked);
-      item.classList.toggle('fx-3d', $('#fx3d').checked);
-      item.classList.toggle('fx-glow', $('#glowOn').checked);
-      item.style.setProperty('--glow', $('#glowColor').value);
-
-      // Рамка
-      if($('#borderOn').checked && Number($('#borderWidth').value) > 0){
-        item.classList.add('fx-border');
-        item.style.borderWidth = Number($('#borderWidth').value) + 'px';
-        item.style.borderColor = $('#borderColor').value;
-      } else {
-        item.classList.remove('fx-border');
-        item.style.borderWidth = '0px';
-      }
-
-      // Фон
-      const bgImg = $('#bgImage').value.trim();
-      const bgCol = $('#bgColor').value;
-      item.style.background = bgImg ? `url(${bgImg}) center / contain no-repeat` : bgCol;
-
-      // Прозрачность
-      const op = Math.max(0, Math.min(1, parseFloat($('#opacity').value || '1')));
-      item.style.opacity = op;
-
-      // Текстовые параметры
-      text.style.color = $('#textColor').value;
-      text.style.fontSize = (parseInt($('#fontSize').value,10)||24) + 'px';
-      text.style.fontFamily = $('#font').value + ", system-ui, sans-serif";
-
-      // Контент
-      if(asImage){
-        item.dataset.mode = 'image';
-        text.style.display = 'none';
-        if(!item.querySelector('img')){
-          const img = document.createElement('img');
-          item.appendChild(img);
-        }
-        const img = item.querySelector('img');
-        img.src = val || 'https://via.placeholder.com/200x140?text=Image';
-      } else {
-        item.dataset.mode = 'text';
-        const img = item.querySelector('img');
-        if(img) img.remove();
-        text.style.display = 'block';
-        text.textContent = val || 'Preview';
-      }
-
-      // Курсор
-      const cursor = $('#cursorUrl').value.trim();
-      document.body.style.cursor = cursor ? `url(${cursor}), auto` : 'auto';
-    }
-
-    // Уровни
-    function levelTemplate(idx){
-      const wrap = document.createElement('div');
-      wrap.className = 'level';
-      wrap.innerHTML = `
-        <h3>Уровень <span class="num">${idx+1}</span>
-          <span class="right">
-            <button type="button" class="btn-ghost up">▲</button>
-            <button type="button" class="btn-ghost down">▼</button>
-            <button type="button" class="btn-danger del">Удалить</button>
-          </span>
-        </h3>
-        <label>Название уровня / Target</label>
-        <input type="text" class="target" placeholder="Например: буква S или Animals">
-        <div class="row">
-          <div>
-            <label>Правильные объекты (по одному на строке)</label>
-            <textarea class="correct" placeholder="sun\nstar\nsnake\nhttps://.../cat.png\n\\frac{3}{4}"></textarea>
-          </div>
-          <div>
-            <label>Отвлекающие объекты</label>
-            <textarea class="wrong" placeholder="dog\napple\ncar\nhttps://.../car.png\n\\log_{2}{8}"></textarea>
-          </div>
-        </div>
-        <div class="row">
-          <div>
-            <label>Таймер уровня (сек.)</label>
-            <input type="number" class="timer" value="30" min="5">
-          </div>
-          <div class="hint" style="align-self:end">Поддерживаются: слова, URL картинок, LaTeX-формулы (math режим).</div>
-        </div>
-      `;
-
-      // обработчики кнопок уровня
-      wrap.querySelector('.del').onclick = () => { wrap.remove(); renumber(); };
-      wrap.querySelector('.up').onclick  = () => { const p=wrap.previousElementSibling; if(p){ wrap.parentNode.insertBefore(wrap,p); renumber(); } };
-      wrap.querySelector('.down').onclick= () => { const n=wrap.nextElementSibling; if(n){ wrap.parentNode.insertBefore(n,wrap); renumber(); } };
-
-      return wrap;
-    }
-    function renumber(){
-      $$('#levels .level .num').forEach((el,i)=> el.textContent = i+1);
-    }
-    function addLevel(){
-      const levels = $('#levels');
-      const idx = levels.querySelectorAll('.level').length;
-      levels.appendChild(levelTemplate(idx));
-      renumber();
-    }
-
-    // сбор формы → JSON
-    function collectConfig(){
-      const levels = [];
-      $$('#levels .level').forEach(div=>{
-        levels.push({
-          target: div.querySelector('.target').value.trim(),
-          correct: div.querySelector('.correct').value.split('\n').map(s=>s.trim()).filter(Boolean),
-          wrong:   div.querySelector('.wrong').value.split('\n').map(s=>s.trim()).filter(Boolean),
-          timer:   Math.max(5, parseInt(div.querySelector('.timer').value||'30',10))
-        });
-      });
-
-      const cfg = {
-        language: $('#language').value,
-        font: $('#font').value,
-        fontSize: Math.max(10, parseInt($('#fontSize').value||'24',10)),
-        textColor: $('#textColor').value,
-        style: {
-          shape: $('#shape').value,
-          bgColor: $('#bgColor').value,
-          bgImage: $('#bgImage').value.trim(),
-          borderOn: $('#borderOn').checked,
-          borderColor: $('#borderColor').value,
-          borderWidth: Math.max(0, parseInt($('#borderWidth').value||'0', 10)),
-          shadow: $('#shadowOn').checked,
-          glow: $('#glowOn').checked,
-          glowColor: $('#glowColor').value,
-          fx3d: $('#fx3d').checked,
-          opacity: Math.max(0, Math.min(1, parseFloat($('#opacity').value||'1')))
-        },
-        cursor: $('#cursorUrl').value.trim(),
-        randomLevels: $('#randomLevels').checked,
-        levels
-      };
-      return cfg;
-    }
-
-    // валидация
-    function validate(cfg){
-      if(!cfg.levels.length) return 'Добавьте хотя бы один уровень.';
-      for(const [i,lv] of cfg.levels.entries()){
-        if(!lv.target) return `Уровень ${i+1}: укажите target.`;
-        if(lv.correct.length===0 && lv.wrong.length===0) return `Уровень ${i+1}: добавьте хотя бы один объект.`;
-      }
-      return null;
-    }
-
-    // публикация → сервер Render (как в readingtrainer)
-    async function publish(){
-      const cfg = collectConfig();
-      const err = validate(cfg);
-      if(err){ alert(err); return; }
-
-      // применим шрифт к предпросмотру прямо перед публикацией
-      applyGoogleFont(cfg.font);
-
-      const payload = { type: "falling", data: cfg };
-      try{
-        const res = await fetch("https://reading-trainer-server.onrender.com/save", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-        if(data && data.id){
-          const iframe = `<iframe src="https://nikashum93.github.io/falling/main.html?id=${data.id}" width="900" height="640" style="border:0;"></iframe>`;
-          $('#iframeOut').value = iframe;
-          alert('Опубликовано! Если JSON ещё не доступен — подождите 30–60 секунд (кеш GitHub Pages).');
-        } else {
-          alert("Ошибка: " + (data && data.error || "неизвестно"));
-        }
-      }catch(e){
-        alert("Сеть/сервер: " + e.message);
-      }
-    }
-
-    // ——— UI события ———
-    // язык → обновить список шрифтов
-    $('#language').addEventListener('change', e=>{
-      fillFontsForLanguage(e.target.value);
-      updatePreview();
     });
+    const iframe=`<iframe src="main.html?id=${id}" width="800" height="600"></iframe>`;
+    document.getElementById("iframeCode").value=iframe;
+    console.log("Config",config); // здесь будет пуш на сервер
+  }
 
-    // смена шрифта / размера
-    $('#font').addEventListener('change', e=> { applyGoogleFont(e.target.value); updatePreview(); });
-    $('#fontSize').addEventListener('input', ()=> { applyGoogleFont($('#font').value); updatePreview(); });
-
-    // предпросмотр реагирует на все
-    ;['textColor','opacity','shape','bgColor','bgImage','borderColor','borderWidth','borderOn','shadowOn','glowOn','glowColor','fx3d','cursorUrl','randomLevels','previewValue']
-      .forEach(id => { $('#'+id).addEventListener('input', updatePreview); $('#'+id).addEventListener('change', updatePreview); });
-
-    // переключатели предпросмотра
-    $('#btnText').onclick = (e)=>{ e.preventDefault(); const it=$('#previewItem'); it.dataset.mode='text'; updatePreview(); }
-    $('#btnImage').onclick= (e)=>{ e.preventDefault(); const it=$('#previewItem'); it.dataset.mode='image'; updatePreview(); }
-
-    // уровни
-    $('#addLevel').addEventListener('click', (e)=>{ e.preventDefault(); addLevel(); });
-    $('#saveBtn').addEventListener('click', publish);
-    $('#testBtn').addEventListener('click', ()=> {
-      const cfg = collectConfig();
-      const err = validate(cfg);
-      if(err){ alert(err); return; }
-      alert('JSON валиден. Уровней: '+cfg.levels.length);
-      console.log(cfg);
-    });
-    $('#copyBtn').addEventListener('click', ()=> {
-      $('#iframeOut').select(); document.execCommand('copy');
-    });
-
-    // init
-    fillLanguageSelect();
-    fillFontsForLanguage($('#language').value);
-    addLevel();
-    applyGoogleFont($('#font').value);
-    updatePreview();
-  </script>
+  // генерим iframe автоматически при изменении
+  document.querySelectorAll("input,select,textarea").forEach(el=>{
+    el.addEventListener("input",generateIframe);
+  });
+</script>
 </body>
 </html>
