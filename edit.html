@@ -25,20 +25,37 @@
       color: #ffd700;
       margin: 0;
     }
-    label { display: block; margin-top: 15px; font-weight: 500; }
+    .level {
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 15px;
+      margin-top: 15px;
+      background: #1a1a1a;
+      box-shadow: 0 0 10px rgba(255,215,0,0.2);
+    }
+    label { display: block; margin-top: 10px; }
     input, textarea {
       width: 100%;
-      padding: 10px;
-      margin-top: 6px;
-      background: #1a1a1a;
+      padding: 8px;
+      margin-top: 4px;
+      background: #111;
       color: #fff;
       border: 1px solid #444;
-      border-radius: 6px;
+      border-radius: 4px;
       font-size: 1rem;
-      box-shadow: 0 0 5px rgba(255,215,0,0.4);
     }
-    textarea { min-height: 100px; }
-    button {
+    textarea { min-height: 80px; }
+    .level button.remove {
+      margin-top: 10px;
+      padding: 6px 12px;
+      background: #900;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .level button.remove:hover { background: #c00; }
+    button#addLevel, button#saveBtn {
       margin-top: 20px;
       padding: 12px 18px;
       background: linear-gradient(90deg, #ffbf00, #ffd700);
@@ -77,32 +94,15 @@
 <body>
   <header>
     <a href="https://kgbgamecorp.ru" target="_blank">
-      <img src="https://kgbgamecorp.ru/logo.png" alt="КГБ Лого">
+      <img src="https://con.xl.ru/fnfLZuvpAUiDaqDs8d1-2g/images/kcJYv7OsYUSGt5AfGq5jIw.png" alt="КГБ Лого">
     </a>
     <h1>Редактор игры «Падающие слова»</h1>
   </header>
 
-  <label>Название уровня:
-    <input id="levelName" placeholder="Например: Level 1 - буква S">
-  </label>
+  <div id="levels"></div>
 
-  <label>Целевая буква/категория (target):
-    <input id="target" placeholder="Например: S">
-  </label>
-
-  <label>Слова или картинки (по одному на строку):
-    <textarea id="items" placeholder="sun\nstar\nsnake\nship"></textarea>
-  </label>
-
-  <label>Время на уровень (секунды):
-    <input type="number" id="timer" value="30">
-  </label>
-
-  <label>Курсор (URL картинки):
-    <input id="cursor" placeholder="https://...png">
-  </label>
-
-  <button id="saveBtn">Сохранить и получить iframe</button>
+  <button id="addLevel">➕ Добавить уровень</button>
+  <button id="saveBtn">💾 Сохранить и получить iframe</button>
 
   <textarea id="result" readonly placeholder="Здесь появится iframe для вставки в Genially"></textarea>
 
@@ -111,17 +111,40 @@
   </footer>
 
 <script>
+function createLevelForm(index){
+  const div=document.createElement("div");
+  div.className="level";
+  div.innerHTML=`
+    <label>Название уровня / Target:
+      <input class="target" placeholder="Например: буква S или Animals">
+    </label>
+    <label>Слова (правильные и отвлекающие, по одному на строку):
+      <textarea class="items" placeholder="sun\nstar\nsnake\ndog\ncat"></textarea>
+    </label>
+    <label>Время на уровень (секунды):
+      <input type="number" class="timer" value="30">
+    </label>
+    <button class="remove">Удалить уровень</button>
+  `;
+  div.querySelector(".remove").onclick=()=>div.remove();
+  return div;
+}
+
+document.getElementById("addLevel").addEventListener("click",()=>{
+  document.getElementById("levels").appendChild(createLevelForm());
+});
+
+// Добавляем первый уровень сразу
+document.getElementById("levels").appendChild(createLevelForm());
+
 async function saveFalling(cfg) {
   const payload = { type: "falling", data: cfg };
-
   const res = await fetch("https://<твой-сервер>.onrender.com/save", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload)
   });
-
   const data = await res.json();
-
   if (data.id) {
     const iframeCode = `<iframe src="https://nikashum93.github.io/falling/main.html?id=${data.id}" width="800" height="600" style="border:0;"></iframe>`;
     document.getElementById("result").value = iframeCode;
@@ -130,18 +153,20 @@ async function saveFalling(cfg) {
   }
 }
 
-function collectConfigFromForm() {
-  return {
-    levelName: document.getElementById("levelName").value,
-    target: document.getElementById("target").value,
-    items: document.getElementById("items").value.split("\n").map(s => s.trim()).filter(Boolean),
-    timer: parseInt(document.getElementById("timer").value, 10) || 30,
-    cursor: document.getElementById("cursor").value
-  };
+function collectConfigFromForm(){
+  const levels=[];
+  document.querySelectorAll(".level").forEach(div=>{
+    levels.push({
+      target: div.querySelector(".target").value,
+      items: div.querySelector(".items").value.split("\n").map(s=>s.trim()).filter(Boolean),
+      timer: parseInt(div.querySelector(".timer").value,10) || 30
+    });
+  });
+  return {levels};
 }
 
-document.getElementById("saveBtn").addEventListener("click", () => {
-  const cfg = collectConfigFromForm();
+document.getElementById("saveBtn").addEventListener("click",()=>{
+  const cfg=collectConfigFromForm();
   saveFalling(cfg);
 });
 </script>
