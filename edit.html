@@ -1,209 +1,477 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8">
-  <title>Редактор Falling Words — КГБ</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Редактор — Falling Items (КГБ)</title>
+
+  <!-- Базовые стили -->
   <style>
-    body {
-      font-family: 'Rubik', sans-serif;
-      background: #0d0d0d;
-      color: #f5f5f5;
-      padding: 20px;
-      margin: 0;
+    :root{
+      --ui-acc:#ffd700;
+      --card:#151515;
+      --ink:#eee;
+      --muted:#aaa;
+      --stroke:#2a2a2a;
+      --gap:16px;
     }
-    header {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      margin-bottom: 20px;
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:#0d0d0d; color:var(--ink); font-family:Rubik,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      display:flex; flex-direction:column;
     }
-    header img { height: 50px; }
-    header h1 { font-size: 1.6rem; color: #ffd700; margin: 0; }
+    header{
+      display:flex; align-items:center; gap:12px; padding:14px 18px; border-bottom:1px solid var(--stroke);
+      position:sticky; top:0; background:#0d0d0d; z-index:2;
+    }
+    header img{height:40px}
+    header h1{font-size:18px; margin:0; color:var(--ui-acc); font-weight:700}
+    main{display:grid; grid-template-columns: 380px 1fr; gap:20px; padding:18px; max-width:1400px; width:100%; margin:0 auto}
+    .card{
+      background:var(--card); border:1px solid var(--stroke); border-radius:12px; padding:16px; box-shadow:0 0 24px rgba(255,215,0,.05);
+    }
+    .card h2{margin:0 0 10px; font-size:16px; color:var(--ui-acc)}
+    label{display:block; margin:10px 0 6px; font-size:13px; color:#ddd}
+    input[type="text"], input[type="number"], input[type="url"], textarea, select{
+      width:100%; background:#101010; color:#fff; border:1px solid #333; border-radius:8px; padding:10px 12px; font-size:14px;
+      outline:none; transition:border-color .15s ease, box-shadow .15s ease;
+    }
+    textarea{min-height:90px; resize:vertical}
+    input:focus, textarea:focus, select:focus{border-color:#444; box-shadow:0 0 0 3px rgba(255,215,0,.15)}
+    .row{display:grid; grid-template-columns:1fr 1fr; gap:var(--gap)}
+    .row-3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:var(--gap)}
+    .inline{display:flex; gap:10px; align-items:center}
+    .hint{color:var(--muted); font-size:12px; margin-top:6px}
+    .pill{display:inline-block; padding:6px 10px; border:1px dashed #444; border-radius:999px; color:#bbb; font-size:12px}
 
-    .level {
-      border: 1px solid #333;
-      border-radius: 8px;
-      padding: 15px;
-      margin-top: 15px;
-      background: #1a1a1a;
-      box-shadow: 0 0 10px rgba(255,215,0,0.2);
+    button{
+      background:linear-gradient(90deg,#ffbf00,#ffd700); color:#000; border:none; border-radius:10px; font-weight:700;
+      padding:12px 16px; cursor:pointer; transition:transform .15s ease, box-shadow .15s ease;
     }
-    label { display: block; margin-top: 10px; }
-    input, textarea, select {
-      width: 100%;
-      padding: 8px;
-      margin-top: 4px;
-      background: #111;
-      color: #fff;
-      border: 1px solid #444;
-      border-radius: 4px;
-      font-size: 1rem;
-    }
-    textarea { min-height: 70px; }
-    .level button.remove {
-      margin-top: 10px;
-      padding: 6px 12px;
-      background: #900;
-      color: #fff;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .level button.remove:hover { background: #c00; }
+    button:hover{transform:translateY(-1px); box-shadow:0 6px 20px rgba(255,215,0,.25)}
+    .btn-ghost{background:transparent; color:#fff; border:1px solid #444}
+    .btn-danger{background:#a80000; color:#fff}
+    .stack{display:flex; flex-direction:column; gap:var(--gap)}
+    .levels .level{background:#111; border:1px solid #282828; border-radius:12px; padding:14px}
+    .level h3{margin:0 0 8px; font-size:14px; color:#fff; display:flex; align-items:center; justify-content:space-between}
+    .toolbar{display:flex; gap:10px; flex-wrap:wrap}
+    .right{display:flex; gap:10px; align-items:center; justify-content:flex-end}
 
-    button#addLevel, button#saveBtn {
-      margin-top: 20px;
-      padding: 12px 18px;
-      background: linear-gradient(90deg, #ffbf00, #ffd700);
-      border: none;
-      border-radius: 6px;
-      font-weight: bold;
-      font-size: 1rem;
-      color: #000;
-      cursor: pointer;
-      transition: transform .2s ease, box-shadow .2s ease;
-    }
-    button:hover { transform: scale(1.05); box-shadow: 0 0 12px #ffd700; }
+    footer{padding:12px 18px; color:#888; border-top:1px solid var(--stroke); display:flex; align-items:center; justify-content:center; gap:8px}
+    footer a{color:var(--ui-acc); text-decoration:none}
 
-    #result {
-      margin-top: 20px;
-      height: 120px;
-      background: #111;
-      border: 1px solid #333;
-      border-radius: 6px;
-      color: #0f0;
-      font-family: monospace;
-      padding: 10px;
-    }
+    /* ПРЕДПРОСМОТР */
+    .preview-wrap{display:grid; grid-template-rows:auto 1fr; gap:10px; height:100%}
+    .preview-stage{background:#0a0a0a; border:1px dashed #333; border-radius:12px; display:flex; align-items:center; justify-content:center; padding:20px; min-height:280px}
+    .preview-controls{display:grid; grid-template-columns:1fr auto; gap:10px}
+    .preview-item{position:relative; display:inline-flex; align-items:center; justify-content:center; padding:14px 18px; min-width:140px; min-height:60px; transition:all .2s ease}
+    .preview-item img{max-width:160px; max-height:120px; display:block}
 
-    .options { margin-top:20px; padding:15px; border:1px solid #333; border-radius:8px; background:#1a1a1a; }
+    /* ФИГУРЫ */
+    .shape-rect{border-radius:8px}
+    .shape-rounded{border-radius:18px}
+    .shape-circle{border-radius:999px; padding:18px 22px}
+    .shape-diamond{transform:rotate(45deg); padding:28px}
+    .shape-diamond > *{transform:rotate(-45deg)}
+    .shape-star{clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)}
 
-    footer { margin-top: 30px; text-align: center; font-size: 0.9rem; color: #aaa; }
-    footer a { color: #ffd700; text-decoration: none; }
-    footer a:hover { text-decoration: underline; }
+    /* ЭФФЕКТЫ */
+    .fx-shadow{box-shadow:0 8px 26px rgba(0,0,0,.45)}
+    .fx-glow{box-shadow:0 0 16px var(--glow, #00f0ff)}
+    .fx-3d{box-shadow:6px 6px 18px rgba(0,0,0,.45), inset -4px -4px 10px rgba(255,255,255,.25)}
+    .fx-border{border-style:solid}
+
+    /* ИФРЕЙМ РЕЗУЛЬТАТ */
+    .result{display:grid; grid-template-columns:1fr auto; gap:10px; align-items:start}
+    .result textarea{height:110px; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
   </style>
+
+  <!-- Google Fonts предварительно (динамически добавим выбранный) -->
+  <link id="gf" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700&display=swap">
 </head>
 <body>
   <header>
-    <a href="https://kgbgamecorp.ru" target="_blank">
-      <img src="https://con.xl.ru/fnfLZuvpAUiDaqDs8d1-2g/images/kcJYv7OsYUSGt5AfGq5jIw.png" alt="КГБ Лого">
+    <a href="https://kgbgamecorp.ru" target="_blank" rel="noopener">
+      <img src="https://con.xl.ru/fnfLZuvpAUiDaqDs8d1-2g/images/kcJYv7OsYUSGt5AfGq5jIw.png" alt="КГБ">
     </a>
-    <h1>Редактор игры «Падающие слова»</h1>
+    <h1>Редактор игры «Падающие элементы» — КГБ</h1>
   </header>
 
-  <div id="levels"></div>
+  <main>
+    <!-- ЛЕВАЯ КОЛОНКА: Глобальные настройки + предпросмотр -->
+    <section class="card stack">
+      <h2>⚙️ Общие настройки</h2>
 
-  <button id="addLevel">➕ Добавить уровень</button>
+      <div class="row">
+        <div>
+          <label>Язык / режим</label>
+          <select id="language">
+            <option value="ru">Русский</option>
+            <option value="en">English (Latin)</option>
+            <option value="fr">Français</option>
+            <option value="es">Español</option>
+            <option value="de">Deutsch</option>
+            <option value="zh">中文 (Chinese)</option>
+            <option value="ja">日本語 (Japanese)</option>
+            <option value="math">Математика (LaTeX)</option>
+          </select>
+        </div>
+        <div>
+          <label>Шрифт</label>
+          <select id="font">
+            <option>Rubik</option>
+            <option>Roboto</option>
+            <option>Open Sans</option>
+            <option>Montserrat</option>
+            <option>PT Sans</option>
+            <option>Lobster</option>
+            <option>Noto Sans</option>
+            <option>Noto Sans SC (中文)</option>
+            <option>Noto Sans JP (日本語)</option>
+            <option>Noto Sans KR (한국어)</option>
+            <option>Indie Flower</option>
+            <option>Fredericka the Great</option>
+            <option>Special Elite</option>
+          </select>
+        </div>
+      </div>
 
-  <div class="options">
-    <label><input type="checkbox" id="randomLevels"> Играть уровни в случайном порядке</label>
-    <label>Курсор (URL): <input id="cursor" placeholder="https://...png"></label>
-  </div>
+      <div class="row">
+        <div>
+          <label>Цвет текста</label>
+          <input type="color" id="textColor" value="#ffffff">
+        </div>
+        <div>
+          <label>Прозрачность (0–1)</label>
+          <input type="text" id="opacity" value="1">
+          <div class="hint">Напр.: 1, 0.8, 0.5</div>
+        </div>
+      </div>
 
-  <button id="saveBtn">💾 Сохранить и получить iframe</button>
+      <div class="row">
+        <div>
+          <label>Фигура</label>
+          <select id="shape">
+            <option value="rect">Прямоугольник</option>
+            <option value="rounded">Скруглённый</option>
+            <option value="circle">Круг</option>
+            <option value="diamond">Ромб</option>
+            <option value="star">Звезда</option>
+          </select>
+        </div>
+        <div>
+          <label>Фон — цвет</label>
+          <input type="color" id="bgColor" value="#1a1a1a">
+        </div>
+      </div>
 
-  <textarea id="result" readonly placeholder="Здесь появится iframe для вставки в Genially"></textarea>
+      <label>Фон — картинка (URL, необязательно)</label>
+      <input type="url" id="bgImage" placeholder="https://.../bubble.png">
 
-  <footer>
-    © 2025 <a href="https://kgbgamecorp.ru" target="_blank">Корпорация Геймификации Будущего</a>
-  </footer>
+      <div class="row-3">
+        <div>
+          <label>Рамка (цвет)</label>
+          <input type="color" id="borderColor" value="#ffffff">
+        </div>
+        <div>
+          <label>Рамка (толщина, px)</label>
+          <input type="number" id="borderWidth" value="1" min="0">
+        </div>
+        <div class="inline" style="align-items:end;">
+          <label style="width:100%">Рамка включена?</label>
+          <input type="checkbox" id="borderOn" checked>
+        </div>
+      </div>
 
-<script>
-function createLevelForm(){
-  const div=document.createElement("div");
-  div.className="level";
-  div.innerHTML=`
-    <label>Название уровня / Target:
-      <input class="target" placeholder="Например: буква S или Animals">
-    </label>
-    <label>Правильные объекты (по одному на строку):
-      <textarea class="correct" placeholder="sun\nstar\nsnake"></textarea>
-    </label>
-    <label>Отвлекающие объекты:
-      <textarea class="wrong" placeholder="dog\napple\ncar"></textarea>
-    </label>
-    <label>Время на уровень (секунды):
-      <input type="number" class="timer" value="30">
-    </label>
-    <label>Язык:
-      <select class="language">
-        <option value="en">English (Latin)</option>
-        <option value="ru">Русский</option>
-        <option value="fr">Français</option>
-        <option value="es">Español</option>
-        <option value="de">Deutsch</option>
-        <option value="zh">中文 (Chinese)</option>
-        <option value="ja">日本語 (Japanese)</option>
-        <option value="math">Математика (LaTeX)</option>
-      </select>
-    </label>
-    <label>Шрифт:
-      <select class="font">
-        <option>Rubik</option>
-        <option>Roboto</option>
-        <option>Open Sans</option>
-        <option>Montserrat</option>
-        <option>PT Sans</option>
-        <option>Lobster</option>
-        <option>Noto Sans</option>
-        <option>Noto Sans SC (中文)</option>
-        <option>Noto Sans JP (日本語)</option>
-        <option>Noto Sans KR (한국어)</option>
-        <option>Indie Flower</option>
-        <option>Fredericka the Great</option>
-        <option>Special Elite</option>
-      </select>
-    </label>
-    <button class="remove">Удалить уровень</button>
-  `;
-  div.querySelector(".remove").onclick=()=>div.remove();
-  return div;
-}
+      <div class="row">
+        <div class="inline">
+          <input type="checkbox" id="shadowOn" checked><label for="shadowOn">Тень</label>
+        </div>
+        <div class="inline">
+          <input type="checkbox" id="glowOn"><label for="glowOn">Подсветка</label>
+          <input type="color" id="glowColor" value="#00f0ff" title="Цвет подсветки">
+        </div>
+      </div>
 
-document.getElementById("addLevel").addEventListener("click",()=>{
-  document.getElementById("levels").appendChild(createLevelForm());
-});
-document.getElementById("levels").appendChild(createLevelForm());
+      <div class="row">
+        <div class="inline">
+          <input type="checkbox" id="fx3d"><label for="fx3d">3D эффект</label>
+        </div>
+        <div class="inline">
+          <input type="checkbox" id="randomLevels"><label for="randomLevels">Рандом уровней</label>
+        </div>
+      </div>
 
-async function saveFalling(cfg) {
-  const payload = { type: "falling", data: cfg };
-  const res = await fetch("https://reading-trainer-server.onrender.com/save", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload)
-  });
-  const data = await res.json();
-  if (data.id) {
-    const iframeCode = `<iframe src="https://nikashum93.github.io/falling/main.html?id=${data.id}" width="800" height="600" style="border:0;"></iframe>`;
-    document.getElementById("result").value = iframeCode;
-  } else {
-    alert("Ошибка: " + (data.error || "Неизвестно"));
-  }
-}
+      <label>Курсор (URL картинки, необязательно)</label>
+      <input type="url" id="cursorUrl" placeholder="https://.../cursor.png">
 
-function collectConfigFromForm(){
-  const levels=[];
-  document.querySelectorAll(".level").forEach(div=>{
-    levels.push({
-      target: div.querySelector(".target").value,
-      correct: div.querySelector(".correct").value.split("\n").map(s=>s.trim()).filter(Boolean),
-      wrong: div.querySelector(".wrong").value.split("\n").map(s=>s.trim()).filter(Boolean),
-      timer: parseInt(div.querySelector(".timer").value,10) || 30,
-      language: div.querySelector(".language").value,
-      font: div.querySelector(".font").value
-    });
-  });
-  return {
-    levels,
-    randomLevels: document.getElementById("randomLevels").checked,
-    cursor: document.getElementById("cursor").value
-  };
-}
+      <div class="card" style="border-style:dashed">
+        <h2>🧪 Предпросмотр</h2>
+        <div class="preview-controls">
+          <input type="text" id="previewValue" placeholder="Текст предпросмотра или URL картинки..." value="Preview">
+          <div class="right">
+            <button class="btn-ghost" id="btnText">Текст</button>
+            <button class="btn-ghost" id="btnImage">Картинка</button>
+          </div>
+        </div>
+        <div class="preview-stage">
+          <div id="previewItem" class="preview-item shape-rounded fx-shadow" style="--glow:#00f0ff;">
+            <span id="previewText" style="font-weight:700">Preview</span>
+          </div>
+        </div>
+        <div class="hint">Предпросмотр обновляется мгновенно при изменении настроек.</div>
+      </div>
+    </section>
 
-document.getElementById("saveBtn").addEventListener("click",()=>{
-  const cfg=collectConfigFromForm();
-  saveFalling(cfg);
-});
-</script>
+    <!-- ПРАВАЯ КОЛОНКА: Уровни + публикация -->
+    <section class="card stack">
+      <h2>🎯 Уровни</h2>
+      <div class="levels" id="levels"></div>
+      <div class="toolbar">
+        <button id="addLevel">➕ Добавить уровень</button>
+        <span class="pill">Неограниченно уровней</span>
+      </div>
+
+      <h2 style="margin-top:8px">🚀 Публикация</h2>
+      <div class="row">
+        <button id="saveBtn">💾 Сохранить и получить iframe</button>
+        <button id="testBtn" class="btn-ghost">🔍 Валидация JSON</button>
+      </div>
+
+      <div class="result" style="margin-top:10px">
+        <textarea id="iframeOut" readonly placeholder="Здесь появится iframe для Genially"></textarea>
+        <button id="copyBtn" class="btn-ghost">📋 Копировать</button>
+      </div>
+      <div class="hint">Данные публикуются в репозитории <b>texts/data/&lt;id&gt;.json</b> через твой сервер. GitHub Pages может кешировать до 30–60 сек.</div>
+    </section>
+  </main>
+
+  <footer>© 2025 <a href="https://kgbgamecorp.ru" target="_blank" rel="noopener">Корпорация Геймификации Будущего</a></footer>
+
+  <!-- ЛОГИКА -->
+  <script>
+    // ——— helpers ———
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => document.querySelectorAll(sel);
+
+    // Google Fonts подключение
+    function applyGoogleFont(fontName){
+      const link = document.getElementById('gf');
+      const family = fontName.replace(/ /g, '+');
+      link.href = `https://fonts.googleapis.com/css2?family=${family}:wght@400;700&display=swap`;
+      document.body.style.fontFamily = fontName + ", system-ui, sans-serif";
+      // в предпросмотр тоже
+      $('#previewText').style.fontFamily = fontName + ", system-ui, sans-serif";
+    }
+
+    // Предпросмотр — применение стилей
+    function updatePreview(){
+      const item = $('#previewItem');
+      const text = $('#previewText');
+      const val  = $('#previewValue').value.trim();
+      const asImage = item.dataset.mode === 'image' || /^https?:\\/\\//i.test(val);
+
+      // Фигура
+      const shape = $('#shape').value;
+      item.classList.remove('shape-rect','shape-rounded','shape-circle','shape-diamond','shape-star');
+      item.classList.add('shape-' + shape);
+
+      // Эффекты
+      item.classList.toggle('fx-shadow', $('#shadowOn').checked);
+      item.classList.toggle('fx-3d', $('#fx3d').checked);
+      item.classList.toggle('fx-glow', $('#glowOn').checked);
+      item.style.setProperty('--glow', $('#glowColor').value);
+
+      // Рамка
+      if($('#borderOn').checked && Number($('#borderWidth').value) > 0){
+        item.classList.add('fx-border');
+        item.style.borderWidth = Number($('#borderWidth').value) + 'px';
+        item.style.borderColor = $('#borderColor').value;
+      } else {
+        item.classList.remove('fx-border');
+        item.style.borderWidth = '0px';
+      }
+
+      // Фон
+      const bgImg = $('#bgImage').value.trim();
+      const bgCol = $('#bgColor').value;
+      item.style.background = bgImg ? `url(${bgImg}) center / contain no-repeat` : bgCol;
+
+      // Прозрачность + цвет текста
+      const op = Math.max(0, Math.min(1, parseFloat($('#opacity').value || '1')));
+      item.style.opacity = op;
+      text.style.color = $('#textColor').value;
+
+      // Контент
+      if(asImage){
+        item.dataset.mode = 'image';
+        text.style.display = 'none';
+        if(!item.querySelector('img')){
+          const img = document.createElement('img');
+          item.appendChild(img);
+        }
+        const img = item.querySelector('img');
+        img.src = val || 'https://via.placeholder.com/160x120?text=Image';
+      } else {
+        item.dataset.mode = 'text';
+        const img = item.querySelector('img');
+        if(img) img.remove();
+        text.style.display = 'block';
+        text.textContent = val || 'Preview';
+        text.style.color = $('#textColor').value;
+      }
+
+      // Курсор
+      const cursor = $('#cursorUrl').value.trim();
+      document.body.style.cursor = cursor ? `url(${cursor}), auto` : 'auto';
+    }
+
+    // добавление уровня
+    function levelTemplate(idx){
+      const wrap = document.createElement('div');
+      wrap.className = 'level';
+      wrap.innerHTML = `
+        <h3>Уровень <span class="num">${idx+1}</span>
+          <span class="right">
+            <button class="btn-ghost up">▲</button>
+            <button class="btn-ghost down">▼</button>
+            <button class="btn-danger del">Удалить</button>
+          </span>
+        </h3>
+        <label>Название уровня / Target</label>
+        <input type="text" class="target" placeholder="Например: буква S или Animals">
+        <div class="row">
+          <div>
+            <label>Правильные объекты (по одному на строке)</label>
+            <textarea class="correct" placeholder="sun\nstar\nsnake\nhttps://.../cat.png\n\\frac{3}{4}"></textarea>
+          </div>
+          <div>
+            <label>Отвлекающие объекты</label>
+            <textarea class="wrong" placeholder="dog\napple\ncar\nhttps://.../car.png\n\\log_{2}{8}"></textarea>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Таймер уровня (сек.)</label>
+            <input type="number" class="timer" value="30" min="5">
+          </div>
+          <div class="hint">Поддерживаются: слова, URL картинок, LaTeX-формулы (math режим).</div>
+        </div>
+      `;
+      // события
+      wrap.querySelector('.del').onclick = () => { wrap.remove(); renumber(); };
+      wrap.querySelector('.up').onclick  = () => { const p=wrap.previousElementSibling; if(p){ wrap.parentNode.insertBefore(wrap,p); renumber(); } };
+      wrap.querySelector('.down').onclick= () => { const n=wrap.nextElementSibling; if(n){ wrap.parentNode.insertBefore(n,wrap); renumber(); } };
+      return wrap;
+    }
+    function renumber(){
+      $$('#levels .level .num').forEach((el,i)=> el.textContent = i+1);
+    }
+    function addLevel(){ $('#levels').appendChild(levelTemplate($$('#levels .level').length)); }
+
+    // сбор формы → JSON
+    function collectConfig(){
+      const levels = [];
+      $$('#levels .level').forEach(div=>{
+        levels.push({
+          target: div.querySelector('.target').value.trim(),
+          correct: div.querySelector('.correct').value.split('\n').map(s=>s.trim()).filter(Boolean),
+          wrong:   div.querySelector('.wrong').value.split('\n').map(s=>s.trim()).filter(Boolean),
+          timer:   Math.max(5, parseInt(div.querySelector('.timer').value||'30',10))
+        });
+      });
+
+      const cfg = {
+        // Глобальные
+        language: $('#language').value,
+        font: $('#font').value,
+        textColor: $('#textColor').value,
+        style: {
+          shape: $('#shape').value,
+          bgColor: $('#bgColor').value,
+          bgImage: $('#bgImage').value.trim(),
+          borderOn: $('#borderOn').checked,
+          borderColor: $('#borderColor').value,
+          borderWidth: Math.max(0, parseInt($('#borderWidth').value||'0', 10)),
+          shadow: $('#shadowOn').checked,
+          glow: $('#glowOn').checked,
+          glowColor: $('#glowColor').value,
+          fx3d: $('#fx3d').checked,
+          opacity: Math.max(0, Math.min(1, parseFloat($('#opacity').value||'1')))
+        },
+        cursor: $('#cursorUrl').value.trim(),
+        randomLevels: $('#randomLevels').checked,
+        // Уровни
+        levels
+      };
+      return cfg;
+    }
+
+    // валидация
+    function validate(cfg){
+      if(!cfg.levels.length) return 'Добавьте хотя бы один уровень.';
+      for(const [i,lv] of cfg.levels.entries()){
+        if(!lv.target) return `Уровень ${i+1}: укажите target.`;
+        if(lv.correct.length===0 && lv.wrong.length===0) return `Уровень ${i+1}: добавьте хотя бы один объект.`;
+      }
+      return null;
+    }
+
+    // публикация → сервер Render (как в readingtrainer)
+    async function publish(){
+      const cfg = collectConfig();
+      const err = validate(cfg);
+      if(err){ alert(err); return; }
+
+      // применим шрифт к предпросмотру прямо перед публикацией
+      applyGoogleFont(cfg.font);
+
+      const payload = { type: "falling", data: cfg };
+      try{
+        const res = await fetch("https://reading-trainer-server.onrender.com/save", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if(data && data.id){
+          const iframe = `<iframe src="https://nikashum93.github.io/falling/main.html?id=${data.id}" width="900" height="640" style="border:0;"></iframe>`;
+          $('#iframeOut').value = iframe;
+          alert('Опубликовано! Если JSON ещё не доступен — подождите 30–60 секунд (кеш GitHub Pages).');
+        } else {
+          alert("Ошибка: " + (data && data.error || "неизвестно"));
+        }
+      }catch(e){
+        alert("Сеть/сервер: " + e.message);
+      }
+    }
+
+    // UI события
+    $('#font').addEventListener('change', e=> applyGoogleFont(e.target.value));
+    ;['language','textColor','opacity','shape','bgColor','bgImage','borderColor','borderWidth','borderOn','shadowOn','glowOn','glowColor','fx3d','cursorUrl','randomLevels','previewValue']
+      .forEach(id => { $('#'+id).addEventListener('input', updatePreview); $('#'+id).addEventListener('change', updatePreview); });
+
+    $('#btnText').onclick = (e)=>{ e.preventDefault(); const it=$('#previewItem'); it.dataset.mode='text'; updatePreview(); }
+    $('#btnImage').onclick= (e)=>{ e.preventDefault(); const it=$('#previewItem'); it.dataset.mode='image'; updatePreview(); }
+
+    $('#addLevel').onclick = addLevel;
+    $('#saveBtn').onclick = publish;
+    $('#testBtn').onclick = ()=> {
+      const cfg = collectConfig();
+      const err = validate(cfg);
+      if(err){ alert(err); return; }
+      alert('JSON валиден. Уровней: '+cfg.levels.length);
+      console.log(cfg);
+    };
+    $('#copyBtn').onclick = ()=> {
+      $('#iframeOut').select(); document.execCommand('copy');
+    };
+
+    // init
+    addLevel();
+    applyGoogleFont($('#font').value);
+    updatePreview();
+  </script>
 </body>
 </html>
