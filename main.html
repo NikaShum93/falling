@@ -1,236 +1,191 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Falling Items Game</title>
-  <style>
-    body {
-      margin:0; background:#111; overflow:hidden; font-family:sans-serif; color:#fff;
-    }
-    #game { position:relative; width:100vw; height:100vh; overflow:hidden; }
-    .item {
-      position:absolute; top:-80px; left:0;
-      display:inline-flex; align-items:center; justify-content:center;
-      padding:12px 16px; font-weight:700; cursor:pointer;
-      opacity:0; transform:scale(0.5);
-      animation: popIn 0.4s ease forwards;
-      transition: transform .2s;
-    }
-    .item img{ max-width:100px; max-height:100px; pointer-events:none; }
-
-    #hud {
-      position:absolute; top:10px; left:10px; z-index:10; font-size:20px;
-      background:rgba(0,0,0,.5); padding:10px 14px; border-radius:8px;
-    }
-    #end {
-      position:absolute; inset:0; display:flex; flex-direction:column;
-      align-items:center; justify-content:center; background:rgba(0,0,0,.8); color:#ffd700;
-      font-size:36px; font-weight:800; z-index:20;
-    }
-
-    @keyframes popIn {
-      to { opacity:1; transform:scale(1); }
-    }
-    @keyframes explodeOut {
-      50% {
-        box-shadow: 0 0 30px #0ff, 0 0 60px #0ff;
-        transform: scale(1.3);
-      }
-      100% {
-        opacity: 0;
-        transform: scale(0);
-      }
-    }
-    .item.caught.explode { animation: explodeOut 0.5s forwards; }
-
-    .sparkle {
-      position: absolute;
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: gold;
-      pointer-events: none;
-      animation: sparkleFly 0.6s forwards;
-    }
-    @keyframes sparkleFly {
-      to {
-        transform: translate(var(--dx), var(--dy)) scale(0);
-        opacity: 0;
-      }
-    }
-  </style>
-  <!-- MathJax для формул -->
-  <script>
-    window.MathJax = { tex: { inlineMath: [['$','$'], ['\\(','\\)']] } };
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+<meta charset="utf-8">
+<title>Falling Items — Main</title>
+<style>
+  body {
+    margin:0;
+    background:#000;
+    overflow:hidden;
+    height:100vh;
+    width:100vw;
+    font-family:sans-serif;
+    position:relative;
+  }
+  .item {
+    position:absolute;
+    top:-100px;
+    left:50%;
+    transform:translateX(-50%);
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px 30px;
+    min-width:80px;
+    min-height:50px;
+    color:#fff;
+    font-weight:bold;
+    user-select:none;
+    cursor:pointer;
+    transition:transform .2s;
+  }
+  .item img {
+    max-width:160px;
+    max-height:120px;
+    object-fit:contain;
+    display:block;
+    pointer-events:none;
+  }
+  .sparkle {
+    position:absolute;
+    width:6px;
+    height:6px;
+    border-radius:50%;
+    background:rgba(255,255,255,0.8);
+    pointer-events:none;
+    animation: explode 0.8s forwards;
+  }
+  @keyframes explode {
+    to { transform:translate(var(--dx), var(--dy)) scale(0.2); opacity:0; }
+  }
+</style>
 </head>
 <body>
-  <div id="game">
-    <div id="hud">Очки: <span id="score">0</span></div>
-    <div id="end" style="display:none">Игра окончена!<br><span id="finalScore"></span></div>
-  </div>
 
-  <script>
-    const urlParams = new URLSearchParams(location.search);
-    const gameId = urlParams.get("id");
+<audio id="popSound" src="pop.mp3" preload="auto"></audio>
 
-    const popSound = new Audio("pop.mp3"); // твой звук
+<script>
+(async function(){
 
-    let config=null, score=0, timer=null;
+  // ====== Загружаем JSON конфиг ======
+  const params = new URLSearchParams(location.search);
+  const id = params.get("id") || "demo";
+  const url = `https://nikashum93.github.io/texts/data/${id}.json`;
 
-    async function loadConfig(){
-      const res = await fetch(`https://nikashum93.github.io/texts/data/${gameId}.json`);
-      config = await res.json();
-      applyGlobalStyles();
-      startGame();
+  let cfg;
+  try {
+    const res = await fetch(url);
+    cfg = await res.json();
+  } catch(e){
+    alert("Ошибка загрузки JSON: " + e.message);
+    return;
+  }
+
+  const stageW = window.innerWidth;
+  const stageH = window.innerHeight;
+
+  // Параметры из редактора
+  const styleCfg = cfg.style || {};
+  const fallSpeed = cfg.fallSpeed || 5; // 1–10
+  const speedFactor = 0.5 + (fallSpeed/10)*2; 
+
+  const items = (cfg.levels?.[0]?.correct || []).concat(cfg.levels?.[0]?.wrong || []);
+
+  // === Создание элемента ===
+  function createItem(content){
+    const div = document.createElement("div");
+    div.className = "item";
+
+    // Shape
+    div.classList.add("shape-"+(styleCfg.shape||"rect"));
+
+    // Base styles
+    div.style.fontSize = (cfg.fontSize||24)+"px";
+    div.style.color = cfg.textColor||"#fff";
+    div.style.opacity = styleCfg.opacity ?? 1;
+    div.style.fontFamily = cfg.font+", sans-serif";
+
+    // Background
+    if(styleCfg.bgImage){
+      div.style.background = `url(${styleCfg.bgImage}) center/contain no-repeat`;
+      div.style.padding = "40px 50px"; // extra padding
+    } else {
+      div.style.background = styleCfg.bgColor || "#222";
     }
 
-    function applyGlobalStyles(){
-      document.body.style.cursor = config.cursor ? `url(${config.cursor}), auto` : 'auto';
+    // Border
+    if(styleCfg.borderOn){
+      div.style.border = `${styleCfg.borderWidth||1}px solid ${styleCfg.borderColor||"#fff"}`;
     }
 
-    function styleItem(el){
-      const st = config.style;
-      el.style.fontFamily = `${config.font}, sans-serif`;
-      el.style.fontSize = config.fontSize+'px';
-      el.style.color = config.textColor;
-      el.style.opacity = st.opacity;
+    // Shadow & effects
+    if(styleCfg.shadow){ div.style.boxShadow = "0 8px 18px rgba(0,0,0,0.5)"; }
+    if(styleCfg.glow){ div.style.boxShadow = `0 0 18px ${styleCfg.glowColor||"#0ff"}`; }
+    if(styleCfg.fx3d){ div.style.boxShadow = "7px 7px 20px rgba(0,0,0,.5), inset -5px -5px 12px rgba(255,255,255,.22)"; }
 
-      if(st.shape==='rounded') el.style.borderRadius="20px";
-      else if(st.shape==='circle') el.style.borderRadius="999px";
-      else if(st.shape==='diamond'){ el.style.transform="rotate(45deg)"; }
-      else if(st.shape==='star'){ el.style.clipPath="polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)"; }
-      else el.style.borderRadius="8px";
-
-      if(st.bgImage) el.style.background=`url(${st.bgImage}) center/contain no-repeat`;
-      else el.style.background=st.bgColor;
-
-      if(st.borderOn && st.borderWidth>0){
-        el.style.border=`${st.borderWidth}px solid ${st.borderColor}`;
-      } else { el.style.border="none"; }
-
-      if(st.shadow) el.style.boxShadow="0 8px 20px rgba(0,0,0,.5)";
-      if(st.glow) el.style.boxShadow=`0 0 16px ${st.glowColor}`;
-      if(st.fx3d) el.style.boxShadow="7px 7px 20px rgba(0,0,0,.5), inset -5px -5px 12px rgba(255,255,255,.22)";
+    // Content
+    if(/^https?:\/\//.test(content)){
+      const img = document.createElement("img");
+      img.src = content;
+      div.appendChild(img);
+    } else {
+      div.textContent = content || "???";
     }
 
-    function fitBackground(el) {
-      requestAnimationFrame(()=>{
-        const w = el.scrollWidth + 40;
-        const h = el.scrollHeight + 40;
-        el.style.width = w + "px";
-        el.style.height = h + "px";
-        if(config.style.bgImage){
-          el.style.backgroundSize = "100% 100%";
-        }
-      });
-    }
+    // Position
+    div.style.left = Math.random() * (stageW-200) + "px";
+    div.style.top = "-120px";
 
-    function startGame(){
-      let levels = [...config.levels];
-      if(config.randomLevels) levels = shuffle(levels);
-      runLevel(levels,0);
-    }
+    // Click (catch)
+    div.addEventListener("click", ()=>{
+      playPop(div);
+      div.remove();
+    });
 
-    function runLevel(levels, idx){
-      if(idx>=levels.length){ endGame(); return; }
-      const lv = levels[idx];
-      let objects = [...lv.correct.map(v=>({val:v,type:"correct"})), ...lv.wrong.map(v=>({val:v,type:"wrong"}))];
-      objects = shuffle(objects);
+    document.body.appendChild(div);
 
-      const duration = lv.timer || 30;
-      let timeLeft = duration;
-      document.getElementById("hud").textContent=`Уровень ${idx+1} (${lv.target}) — Время: ${timeLeft}с — Очки: ${score}`;
+    animateFall(div);
+  }
 
-      timer=setInterval(()=>{
-        timeLeft--;
-        document.getElementById("hud").textContent=`Уровень ${idx+1} (${lv.target}) — Время: ${timeLeft}с — Очки: ${score}`;
-        if(timeLeft<=0){ clearInterval(timer); clearItems(); runLevel(levels, idx+1); }
-      },1000);
-
-      spawnLoop(objects);
-    }
-
-    function spawnLoop(objects){
-      const interval=setInterval(()=>{
-        if(objects.length===0){ clearInterval(interval); return; }
-        const obj = objects.pop();
-        spawnItem(obj);
-      },1500);
-    }
-
-    function spawnItem(obj){
-      const game = document.getElementById("game");
-      const el = document.createElement("div");
-      el.className="item";
-      styleItem(el);
-
-      if(/^https?:\/\//.test(obj.val)){
-        const img=document.createElement("img");
-        img.src=obj.val; el.appendChild(img);
-      } else if(obj.val.startsWith("\\")||obj.val.includes("{")){
-        el.textContent=obj.val;
-        MathJax.typesetPromise([el]);
-      } else { el.textContent=obj.val; }
-
-      el.style.left=Math.random()*(window.innerWidth-150)+"px";
-      game.appendChild(el);
-
-      if(config.style.bgImage && !/^https?:\/\//.test(obj.val)){
-        fitBackground(el);
+  // === Анимация падения ===
+  function animateFall(el){
+    let y = -100;
+    const fall = ()=>{
+      y += speedFactor;
+      el.style.top = y + "px";
+      if(y < stageH-80){
+        requestAnimationFrame(fall);
+      } else {
+        el.remove();
       }
+    };
+    fall();
+  }
 
-      let top=-80;
-      const fall=setInterval(()=>{
-        top += config.fallSpeed || 3;
-        el.style.top=top+"px";
-        if(top>window.innerHeight){
-          clearInterval(fall);
-          el.remove();
-        }
-      },30);
+  // === Эффект при клике ===
+  function playPop(el){
+    // звук
+    const snd = document.getElementById("popSound");
+    snd.currentTime=0; snd.play();
 
-      el.addEventListener("click", (e)=>{
-        if(obj.type==="correct"){ 
-          score++; 
-          popSound.currentTime=0;
-          popSound.play();
-          spawnSparkles(e.clientX, e.clientY);
-        } else { score--; }
-        document.getElementById("score").textContent=score;
-        clearInterval(fall);
-        el.classList.add("caught","explode");
-        el.addEventListener("animationend", ()=>el.remove());
-      });
+    // блёстки
+    const rect = el.getBoundingClientRect();
+    for(let i=0;i<12;i++){
+      const sp = document.createElement("div");
+      sp.className="sparkle";
+      sp.style.left = (rect.left+rect.width/2)+"px";
+      sp.style.top = (rect.top+rect.height/2)+"px";
+      const angle = Math.random()*2*Math.PI;
+      const dist = 50+Math.random()*50;
+      sp.style.setProperty("--dx", Math.cos(angle)*dist+"px");
+      sp.style.setProperty("--dy", Math.sin(angle)*dist+"px");
+      document.body.appendChild(sp);
+      sp.addEventListener("animationend", ()=> sp.remove());
     }
+  }
 
-    function spawnSparkles(x,y){
-      const game=document.getElementById("game");
-      for(let i=0;i<12;i++){
-        const s=document.createElement("div");
-        s.className="sparkle";
-        s.style.left=x+"px";
-        s.style.top=y+"px";
-        const dx=(Math.random()-0.5)*120+"px";
-        const dy=(Math.random()-0.5)*120+"px";
-        s.style.setProperty("--dx",dx);
-        s.style.setProperty("--dy",dy);
-        game.appendChild(s);
-        s.addEventListener("animationend",()=>s.remove());
-      }
+  // === Старт игры ===
+  let idx=0;
+  function spawn(){
+    if(idx<items.length){
+      createItem(items[idx++]);
+      setTimeout(spawn, 1000);
     }
+  }
+  spawn();
 
-    function clearItems(){ document.querySelectorAll(".item").forEach(el=>el.remove()); }
-    function endGame(){
-      clearItems();
-      document.getElementById("end").style.display="flex";
-      document.getElementById("finalScore").textContent="Очки: "+score;
-    }
-    function shuffle(a){ return a.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]); }
-
-    loadConfig();
-  </script>
+})();
+</script>
 </body>
 </html>
