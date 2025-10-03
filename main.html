@@ -15,7 +15,6 @@
         color:#fff;
         overflow:hidden;
         font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-        /* Установит курсор, если он задан в JS */
     }
     #game{
         position:relative;
@@ -41,7 +40,7 @@
     .timer{min-width:110px; text-align:center}
     .score{min-width:110px; text-align:center}
     
-    /* Сообщение о штрафе */
+    /* Сообщение о штрафе/бонусе */
     .penalty {
         position: absolute;
         color: #ff3333;
@@ -51,10 +50,11 @@
         z-index: 15;
         pointer-events: none;
         animation: fadeOut 0.8s ease-out forwards;
+        transform: translate(-50%, -50%); /* Центрирование */
     }
     @keyframes fadeOut {
-        0% { opacity: 1; transform: translateY(0); }
-        100% { opacity: 0; transform: translateY(-40px); }
+        0% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+        100% { opacity: 0; transform: translate(-50%, -40px) scale(0.7); }
     }
 
     /* падающий элемент = контейнер */
@@ -77,7 +77,7 @@
     .item .bg{
         position:absolute; inset:0;
         background:#222;
-        opacity:1;
+        opacity:1; /* Это будет itemOpacity */
         border:0 solid #fff;
         box-shadow:none;
         transition:filter .15s ease, box-shadow .15s ease;
@@ -185,13 +185,30 @@
     const rnd = (a,b)=> a + Math.random()*(b-a);
     const clamp = (v,min,max)=> Math.max(min, Math.min(max,v));
     
-    // Вспомогательная функция для отображения штрафа
+    // --- Утилиты для RGBA ---
+    function hexToRgb(hex) {
+        const bigint = parseInt(hex.slice(1), 16);
+        const r = (bigint >> 16) & 255;
+        const g = (bigint >> 8) & 255;
+        const b = bigint & 255;
+        return `${r}, ${g}, ${b}`;
+    }
+    function getBgColorRGBA(hexColor, opacity) {
+        // Убедимся, что opacity находится в диапазоне 0-1
+        const safeOpacity = Math.max(0, Math.min(1, opacity));
+        return `rgba(${hexToRgb(hexColor)}, ${safeOpacity})`;
+    }
+    // -------------------------
+
+    // Вспомогательная функция для отображения штрафа/бонуса
     function showPenalty(x, y, amount) {
         const p = document.createElement('div');
         p.className = 'penalty';
         p.textContent = amount > 0 ? `+${amount}` : amount;
         p.style.left = `${x}px`;
         p.style.top = `${y}px`;
+        // Красный для штрафа, зелёный/жёлтый для бонуса
+        p.style.color = amount < 0 ? '#ff3333' : '#ffd700'; 
         document.body.appendChild(p);
         setTimeout(() => p.remove(), 800);
     }
@@ -214,15 +231,14 @@
     // глобальные из редактора
     const SPEED = clamp(Number(cfg.speed ?? 5), 1, 10);
     const FONT = cfg.font || 'Rubik';
-    const FONT_SIZE = Number(cfg.fontSize || 24);
-    const TEXT_COLOR = cfg.textColor || '#ffffff';
+    const FONT_SIZE = Number(cfg.fontSize || 26);
+    const TEXT_COLOR = cfg.textColor || '#FADF63';
     const STYLE = cfg.style || {};
     const CURSOR = cfg.cursor || '';
 
     // подгружаем шрифт
     const gf = document.createElement('link');
     gf.rel = 'stylesheet';
-    // Чистка имени шрифта для URL
     gf.href = `https://fonts.googleapis.com/css2?family=${FONT.replace(/ /g, '+')}:wght@400;700&display=swap`;
     document.head.appendChild(gf);
 
@@ -231,12 +247,6 @@
 
     // уровни
     const levels = Array.isArray(cfg.levels) ? [...cfg.levels] : [];
-    if(cfg.randomLevels){
-        for(let i=levels.length-1; i>0; i--){
-            const j = Math.floor(Math.random()*(i+1));
-            [levels[i], levels[j]] = [levels[j], levels[i]];
-        }
-    }
 
     const game = $('#game');
     const popSound = $('#popSound');
@@ -250,9 +260,8 @@
     let spawnerHandle = null;
     let running = true;
 
-    // Начало игры
     if(levels.length > 0) {
-         // Запускаем игру по первому клику, чтобы обойти блокировку аудио
+        // Добавлен стартовый экран для инициации аудио
         showStartOverlay(); 
     } else {
         alert('Ошибка: Нет настроенных уровней.');
@@ -291,7 +300,6 @@
             if(timeLeft <= 0){
                 clearInterval(levelTimerHandle);
                 clearInterval(spawnerHandle);
-                // Удаляем все падающие элементы перед переходом
                 document.querySelectorAll('.item').forEach(n=>n.remove()); 
                 current++;
                 startLevel();
@@ -304,7 +312,6 @@
             ...(lv.correct||[]).map(v=>({val:v, good:true})),
             ...(lv.wrong||[]).map(v=>({val:v, good:false}))
         ];
-        // Если пул пуст, не спавним
         if (pool.length === 0) return; 
 
         const baseDelay = 1200;
@@ -329,10 +336,23 @@
         content.className = 'content';
         el.appendChild(bg); el.appendChild(content);
 
+        // --- ЛОГИКА ФОНОВОГО ЦВЕТА И ПРОЗРАЧНОСТИ ---
         const bgImg = (STYLE.bgImage||'').trim();
-        const bgCol = STYLE.bgColor || 'transparent';
-        bg.style.background = bgImg ? `url(${bgImg}) center/contain no-repeat, ${bgCol}` : bgCol;
-        bg.style.opacity = clamp(Number(STYLE.opacity ?? 1), 0, 1);
+        const rawBgCol = STYLE.bgColor || '#000000';
+        const colorOpacity = Number(STYLE.bgColorOpacity ?? 1); // Прозрачность ТОЛЬКО цвета
+        const itemOpacity = clamp(Number(STYLE.itemOpacity ?? 1), 0, 1); // Общая прозрачность элемента
+        
+        const bgColRGBA = getBgColorRGBA(rawBgCol, colorOpacity);
+        
+        // Применяем BG: Картинка ИЛИ RGBA-цвет
+        bg.style.background = bgImg 
+            ? `url(${bgImg}) center/contain no-repeat, ${bgColRGBA}` 
+            : bgColRGBA;
+            
+        // Применяем общую прозрачность элемента
+        bg.style.opacity = itemOpacity; 
+        // ----------------------------------------------
+
         if(STYLE.borderOn && STYLE.borderWidth>0){
             bg.style.borderColor = STYLE.borderColor || '#fff';
             bg.style.borderWidth = `${parseInt(STYLE.borderWidth,10)}px`;
@@ -366,7 +386,6 @@
         fitGeometryBox(el);
         autoFitText(el, FONT_SIZE, 12);
 
-        // MathJax: Промис и подгонка геометрии
         if((cfg.language||'') === 'math') {
             MathJax.typesetPromise([el]).then(()=> { fitGeometryBox(el); });
         }
@@ -388,13 +407,12 @@
             if(y > game.clientHeight + 200){
                 alive = false; 
                 
-                // ИСПРАВЛЕНО: Штраф за пропущенный правильный элемент
+                // Штраф за пропущенный правильный элемент
                 if(el.dataset.good === '1'){
-                    score = Math.max(0, score - 5);
+                    const penalty = -5;
+                    score = Math.max(0, score + penalty);
                     hudScore.textContent = score;
-                    // Визуальный штраф
-                    const r = el.getBoundingClientRect();
-                    showPenalty(r.left + r.width/2, r.top + r.height/2, -5);
+                    showPenalty(parseFloat(el.style.left), game.clientHeight - 30, penalty);
                 }
                 
                 el.remove();
@@ -407,19 +425,24 @@
         el.addEventListener('click', ()=>{
             if(!alive) return;
             const r = el.getBoundingClientRect();
+            const centerX = r.left + r.width/2;
+            const centerY = r.top + r.height/2;
 
             if(el.dataset.good === '1'){
-                score++; hudScore.textContent = score;
+                const reward = 1;
+                score += reward; hudScore.textContent = score;
                 playPop(el);
+                showPenalty(centerX, centerY, reward);
                 alive = false;
                 el.classList.add('caught');
                 setTimeout(()=> el.remove(), 400);
             } else {
-                // ИСПРАВЛЕНО: Штраф за клик по неправильному элементу
-                score = Math.max(0, score - 2); 
+                // Штраф за клик по неправильному элементу
+                const penalty = -2;
+                score = Math.max(0, score + penalty); 
                 hudScore.textContent = score;
                 
-                // Улучшенная обратная связь: красное свечение
+                // Обратная связь: красное свечение
                 bg.style.filter = 'brightness(1.5) saturate(1.8) hue-rotate(-30deg)';
                 bg.style.boxShadow = '0 0 18px #ff3333';
                 setTimeout(()=> { 
@@ -427,8 +450,7 @@
                     bg.style.boxShadow = STYLE.glow?'0 0 18px var(--glow, #00f0ff)':'none';
                 }, 220);
                 
-                // Визуальный штраф
-                showPenalty(r.left + r.width/2, r.top + r.height/2, -2);
+                showPenalty(centerX, centerY, penalty);
             }
         });
     }
@@ -439,13 +461,11 @@
         const content = el.querySelector('.content');
         const rect = content.getBoundingClientRect();
 
-        // Устанавливаем базовые размеры
         el.style.width = (rect.width) + 'px';
         el.style.height = (rect.height) + 'px';
 
-        // Дополнительная подгонка для круглых и сложных форм
         if(shape === 'circle' || shape === 'diamond' || shape === 'star'){
-            const size = Math.max(rect.width, rect.height) + 40; // Увеличен padding
+            const size = Math.max(rect.width, rect.height) + 40; 
             el.style.width = size + 'px';
             el.style.height = size + 'px';
         }
@@ -456,7 +476,6 @@
         const span = el.querySelector('.content span');
         if(!span) return;
         let fs = startPx;
-        // Учитываем padding (20px с каждой стороны = 40px)
         const maxW = el.clientWidth - 40; 
         const maxH = el.clientHeight - 40; 
         const measure = ()=> span.getBoundingClientRect().width <= maxW && span.getBoundingClientRect().height <= maxH;
@@ -469,7 +488,6 @@
 
     // ===== эффекты при клике =====
     function playPop(el){
-        // Улучшенная обработка аудио
         popSound.muted = false;
         try{ popSound.currentTime = 0; popSound.play(); }catch(_){}
         
@@ -511,7 +529,6 @@
             autoFitText(el, FONT_SIZE, 12);
         });
     });
-
 
 })();
 </script>
