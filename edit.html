@@ -1,248 +1,442 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Grimoire of Reading — редактор</title>
-<link id="gfLink" rel="stylesheet" href="">
-<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --bg:#0e1a15; --card:#11251e; --card-hover:#142b23;
-    --ink:#e9f2e9; --ink-d:#cfe2d2; --line:#1e3e30; --accent:#34d399;
-  }
-  *{box-sizing:border-box}
-  html,body{margin:0;height:100%}
-  body{background:var(--bg);color:var(--ink);font-family:Inter,system-ui,Segoe UI,Roboto,Arial}
-  header{padding:24px 16px 8px;text-align:center}
-  h1{margin:0;font-size:clamp(22px,3.4vw,38px);font-family:"Cinzel Decorative",serif;color:#bfffe3;text-shadow:0 0 18px #1c6e52}
-  .wrap{max-width:1160px;margin:0 auto;padding:0 16px 28px;display:grid;gap:16px}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  @media (max-width:980px){ .grid2{grid-template-columns:1fr} }
-  .card{background:var(--card);border-radius:12px;padding:16px 14px;transition:background .2s ease}
-  .card:hover{background:var(--card-hover)}
-  .card h2{margin:0 0 10px;font-size:18px;color:#b2f2da}
-  .row{display:grid;grid-template-columns:220px 1fr;gap:10px;align-items:center;margin:10px 0}
-  @media (max-width:720px){ .row{grid-template-columns:1fr} }
-  label.lbl{color:#b2f2da;font-weight:800}
-  input,textarea,select{width:100%;background:#0a1c15;color:var(--ink);border:1.5px solid #164632;border-radius:10px;padding:10px 12px}
-  textarea{min-height:110px;resize:vertical}
-  .sw{display:flex;align-items:center;gap:10px}
-  .swatch{width:34px;height:34px;border-radius:8px;border:2px solid #2a6b4f;cursor:pointer;box-shadow:0 2px 8px #052019aa}
-  input[type=color].picker{position:absolute;opacity:0;width:0;height:0;border:0;padding:0}
-  .value{min-width:46px;text-align:right;color:var(--ink-d);font-variant-numeric:tabular-nums}
-  .toggle{display:inline-flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #1f4b37;background:#0b1f17;border-radius:10px}
-  .stack{display:flex;gap:10px;flex-wrap:wrap}
-  .btn{background:linear-gradient(90deg,#20c997 0,#10b981 100%);color:#083a2b;border:none;border-radius:10px;padding:10px 14px;font-weight:900;cursor:pointer}
-  .status{padding:10px;border-radius:10px;background:#0c2018;border:1px solid #214d39;display:none}
-  .ok{color:#b8ffd6}.bad{color:#ffbbbb}.warn{color:#ffe3a6}
-  .code{border-radius:10px;background:#0a1e17}
-  #out{width:100%;min-height:90px;border:none;background:transparent;color:var(--ink);padding:12px;font-family:ui-monospace,Consolas,monospace;white-space:pre}
-  iframe{width:100%;height:440px;border:none;border-radius:12px}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Редактор — Falling Items (КГБ)</title>
+
+  <style>
+    :root{
+      --ui-acc:#ffd700;
+      --card:#151515;
+      --ink:#eee;
+      --muted:#b7b7b7;
+      --stroke:#2a2a2a;
+      --gap:16px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:#0d0d0d; color:var(--ink);
+      font-family:Rubik,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      display:flex; flex-direction:column;
+    }
+    header{
+      display:flex; align-items:center; gap:12px; padding:16px 20px; border-bottom:1px solid var(--stroke);
+      position:sticky; top:0; background:#0d0d0d; z-index:2;
+    }
+    header img{height:42px}
+    header h1{font-size:20px; margin:0; color:var(--ui-acc); font-weight:800}
+    main{display:grid; grid-template-columns: 430px 1fr; gap:22px; padding:20px; max-width:1500px; width:100%; margin:0 auto}
+    .card{
+      background:var(--card); border:1px solid var(--stroke); border-radius:14px; padding:18px;
+      box-shadow:0 0 28px rgba(255,215,0,.06);
+    }
+    .card h2{margin:0 0 14px; font-size:18px; color:var(--ui-acc)}
+    label{display:block; margin:12px 0 8px; font-size:15px; color:#fff; font-weight:600}
+    input[type="text"], input[type="number"], input[type="url"], textarea, select{
+      width:100%; background:#101010; color:#fff; border:1px solid #3a3a3a; border-radius:10px; padding:12px 14px; font-size:16px;
+      outline:none; transition:border-color .15s ease, box-shadow .15s ease;
+    }
+    textarea{min-height:110px; resize:vertical}
+    input:focus, textarea:focus, select:focus{border-color:#4b4b4b; box-shadow:0 0 0 3px rgba(255,215,0,.16)}
+    .row{display:grid; grid-template-columns:1fr 1fr; gap:var(--gap)}
+    .row-3{display:grid; grid-template-columns:1fr 1fr 1fr; gap:var(--gap)}
+    .inline{display:flex; gap:12px; align-items:center}
+    .hint{color:var(--muted); font-size:13px; margin-top:8px}
+    .pill{display:inline-block; padding:8px 12px; border:1px dashed #444; border-radius:999px; color:#bbb; font-size:13px}
+
+    button{
+      background:linear-gradient(90deg,#ffbf00,#ffd700); color:#000; border:none; border-radius:12px; font-weight:800;
+      padding:14px 18px; cursor:pointer; transition:transform .15s ease, box-shadow .15s ease; font-size:16px;
+    }
+    button:hover{transform:translateY(-1px); box-shadow:0 8px 26px rgba(255,215,0,.28)}
+    .btn-ghost{background:transparent; color:#fff; border:1px solid #444}
+    .btn-danger{background:#a80000; color:#fff}
+    .stack{display:flex; flex-direction:column; gap:var(--gap)}
+    .levels .level{background:#111; border:1px solid #2a2a2a; border-radius:12px; padding:16px}
+    .level h3{margin:0 0 10px; font-size:16px; color:#fff; display:flex; align-items:center; justify-content:space-between}
+    .toolbar{display:flex; gap:12px; flex-wrap:wrap}
+    .right{display:flex; gap:10px; align-items:center; justify-content:flex-end}
+
+    footer{padding:14px 20px; color:#888; border-top:1px solid var(--stroke); display:flex; align-items:center; justify-content:center; gap:8px}
+    footer a{color:var(--ui-acc); text-decoration:none}
+
+    /* ПРЕДПРОСМОТР */
+    .preview-wrap{display:grid; grid-template-rows:auto 1fr; gap:12px; height:100%}
+    .preview-stage{background:#0a0a0a; border:1px dashed #333; border-radius:12px; display:flex; align-items:center; justify-content:center; padding:24px; min-height:320px}
+    .preview-controls{display:grid; grid-template-columns:1fr auto; gap:12px}
+    .preview-item{position:relative; display:inline-flex; align-items:center; justify-content:center; padding:18px 22px; min-width:160px; min-height:70px; transition:all .2s ease; background-size:cover !important; background-position:center !important}
+    .preview-item img{max-width:200px; max-height:140px; display:block}
+
+    /* ФИГУРЫ */
+    .shape-rect{border-radius:10px}
+    .shape-rounded{border-radius:20px}
+    .shape-circle{border-radius:999px; padding:22px 26px}
+    .shape-diamond{clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);}
+    .shape-star{clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)}
+
+    /* ЭФФЕКТЫ */
+    .fx-shadow{box-shadow:0 10px 30px rgba(0,0,0,.5)}
+    .fx-glow{box-shadow:0 0 18px var(--glow, #00f0ff)}
+    .fx-3d{box-shadow:7px 7px 20px rgba(0,0,0,.5), inset -5px -5px 12px rgba(255,255,255,.22)}
+    .fx-border{border-style:solid}
+
+    /* РЕЗУЛЬТАТ */
+    .result{display:grid; grid-template-columns:1fr auto; gap:12px; align-items:start}
+    .result textarea{height:120px; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+  </style>
+
+  <link id="gf" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700&display=swap">
 </head>
 <body>
-<header><h1>Grimoire of Reading — редактор</h1></header>
+  <header>
+    <a href="https://kgbgamecorp.ru" target="_blank" rel="noopener">
+      <img src="https://con.xl.ru/fnfLZuvpAUiDaqDs8d1-2g/images/kcJYv7OsYUSGt5AfGq5jIw.png" alt="КГБ">
+    </a>
+    <h1>Редактор игры «Падающие элементы» — КГБ</h1>
+  </header>
 
-<div class="wrap">
+  <main>
+    <!-- ЛЕВАЯ КОЛОНКА -->
+    <section class="card stack">
+      <h2>⚙️ Общие настройки</h2>
 
-  <!-- Текст -->
-  <section class="card">
-    <h2>Текст</h2>
-    <div class="row">
-      <label class="lbl" for="title">Заголовок</label>
-      <input id="title" placeholder="Например: Autumn Days" value="Autumn Days">
-    </div>
-    <div class="row">
-      <label class="lbl" for="text">Основной текст</label>
-      <textarea id="text" placeholder="Абзацы разделяй пустой строкой">The days grow colder and the nights grow longer. Leaves change their colour — from green to gold, orange, and red.
-
-The wind blows softly through the trees, making the branches sway. Children play outside, kicking leaves high into the air.
-
-Sometimes a cloud hides the pale sun, and rain begins to fall. In the evening, families stay inside, drinking hot cocoa and telling stories by the fire.
-
-Autumn is a time of change — a bright and cosy season before the snow.</textarea>
-    </div>
-  </section>
-
-  <div class="grid2">
-
-    <!-- Шрифт/цвет -->
-    <section class="card">
-      <h2>Шрифт и цвет</h2>
       <div class="row">
-        <label class="lbl" for="fontPreset">Гарнитура</label>
-        <select id="fontPreset"></select>
-      </div>
-      <div class="row">
-        <label class="lbl" for="fontSize">Размер (px)</label>
-        <input type="number" id="fontSize" min="16" max="72" value="28">
-      </div>
-      <div class="row">
-        <label class="lbl">Цвет текста</label>
-        <div class="sw">
-          <div id="textColorBox" class="swatch"></div>
-          <input id="textColor" class="picker" type="color" value="#fff8e1">
+        <div>
+          <label>Язык / режим</label>
+          <select id="language"></select>
         </div>
+        <div>
+          <label>Шрифт</label>
+          <select id="font"></select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>Размер шрифта (px)</label>
+          <input type="number" id="fontSize" value="24" min="10" max="100">
+        </div>
+        <div>
+          <label>Цвет шрифта</label>
+          <input type="color" id="textColor" value="#ffffff">
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>Скорость падения (1–10)</label>
+          <input type="number" id="speed" value="5" min="1" max="10">
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>🎨 Оформление элементов (для всех уровней)</h2>
+        <div class="row">
+          <div>
+            <label>Фигура</label>
+            <select id="shape">
+              <option value="rect">Прямоугольник</option>
+              <option value="rounded">Скруглённый</option>
+              <option value="circle">Круг</option>
+              <option value="diamond">Ромб</option>
+              <option value="star">Звезда</option>
+            </select>
+          </div>
+          <div>
+            <label>Фон — цвет</label>
+            <input type="color" id="bgColor" value="#1a1a1a">
+          </div>
+        </div>
+        <label>Фон — картинка (URL, необязательно)</label>
+        <input type="url" id="bgImage" placeholder="https://.../bubble.png">
+
+        <div class="row-3" style="margin-top:6px">
+          <div>
+            <label>Рамка (цвет)</label>
+            <input type="color" id="borderColor" value="#ffffff">
+          </div>
+          <div>
+            <label>Рамка (толщина, px)</label>
+            <input type="number" id="borderWidth" value="1" min="0">
+          </div>
+          <div class="inline" style="align-items:end;">
+            <label style="width:100%">Рамка включена?</label>
+            <input type="checkbox" id="borderOn" checked>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="inline">
+            <input type="checkbox" id="shadowOn" checked><label for="shadowOn">Тень</label>
+          </div>
+          <div class="inline">
+            <input type="checkbox" id="glowOn"><label for="glowOn">Подсветка</label>
+            <input type="color" id="glowColor" value="#00f0ff" title="Цвет подсветки">
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="inline">
+            <input type="checkbox" id="fx3d"><label for="fx3d">3D эффект</label>
+          </div>
+          <div>
+            <label>Прозрачность фона (0–1)</label>
+            <input type="text" id="opacity" value="1">
+          </div>
+        </div>
+      </div>
+
+      <div class="card" style="border-style:dashed">
+        <h2>🧪 Предпросмотр</h2>
+        <div class="preview-controls">
+          <input type="text" id="previewValue" placeholder="Текст предпросмотра или URL картинки..." value="Preview">
+          <div class="right">
+            <button class="btn-ghost" id="btnText">Текст</button>
+            <button class="btn-ghost" id="btnImage">Картинка</button>
+          </div>
+        </div>
+        <div class="preview-stage">
+          <div id="previewItem" class="preview-item shape-rounded fx-shadow" style="--glow:#00f0ff;">
+            <span id="previewText" style="font-weight:800; font-size:24px">Preview</span>
+          </div>
+        </div>
+        <div class="hint">Предпросмотр обновляется сразу при изменении любой настройки.</div>
       </div>
     </section>
 
-    <!-- Подсветка -->
-    <section class="card">
-      <h2>Подсветка</h2>
-      <div class="row">
-        <label class="lbl">Цвет подсветки</label>
-        <div class="sw">
-          <div id="highlightColorBox" class="swatch"></div>
-          <input id="highlightColor" class="picker" type="color" value="#ffd700">
-        </div>
+    <!-- ПРАВАЯ КОЛОНКА -->
+    <section class="card stack">
+      <h2>🎯 Уровни</h2>
+      <div class="levels" id="levels"></div>
+      <div class="toolbar">
+        <button id="addLevel">➕ Добавить уровень</button>
+        <span class="pill">Неограниченно уровней</span>
       </div>
+
+      <h2 style="margin-top:8px">🚀 Публикация</h2>
       <div class="row">
-        <label class="lbl" for="highlightOpacity">Прозрачность подсветки</label>
-        <div style="display:flex;align-items:center;gap:10px">
-          <input id="highlightOpacity" type="range" min="0" max="1" step="0.05" value="0.30" style="flex:1">
-          <span id="hoVal" class="value">0.30</span>
-        </div>
+        <button id="saveBtn">💾 Сохранить и получить iframe</button>
+        <button id="testBtn" class="btn-ghost">🔍 Валидация JSON</button>
       </div>
-      <div class="row">
-        <label class="lbl" for="highlightStyle">Тип подсветки</label>
-        <select id="highlightStyle">
-          <option value="background" selected>Подложка (по умолчанию)</option>
-          <option value="text">Цвет букв</option>
-        </select>
+
+      <div class="result" style="margin-top:10px">
+        <textarea id="iframeOut" readonly placeholder="Здесь появится iframe для Genially"></textarea>
+        <button id="copyBtn" class="btn-ghost">📋 Копировать</button>
       </div>
+      <div class="hint">После публикации может потребоваться подождать 30–60 секунд (кеш GitHub Pages).</div>
     </section>
+  </main>
 
-  </div>
+  <footer>© 2025 <a href="https://kgbgamecorp.ru" target="_blank" rel="noopener">Корпорация Геймификации Будущего</a></footer>
 
-  <div class="grid2">
-    <!-- Фон и рамка -->
-    <section class="card">
-      <h2>Фон и рамка</h2>
-      <div class="row">
-        <label class="lbl">Фон — цвет</label>
-        <div class="sw">
-          <div id="bgColorBox" class="swatch"></div>
-          <input id="bgColor" class="picker" type="color" value="#0b271f">
-        </div>
-      </div>
-      <div class="row">
-        <label class="lbl" for="bgOpacity">Фон — прозрачность</label>
-        <div style="display:flex;align-items:center;gap:10px">
-          <input id="bgOpacity" type="range" min="0" max="1" step="0.05" value="0.75" style="flex:1">
-          <span id="boVal" class="value">0.75</span>
-        </div>
-      </div>
-      <div class="row">
-        <label class="lbl">Цвет рамки</label>
-        <div class="sw">
-          <div id="borderColorBox" class="swatch"></div>
-          <input id="borderColor" class="picker" type="color" value="#34d399">
-        </div>
-      </div>
-      <div class="row">
-        <label class="lbl" for="borderRadius">Скругление (0–1000)</label>
-        <input type="number" id="borderRadius" min="0" max="1000" value="18">
-      </div>
-      <div class="row">
-        <label class="lbl">Опции</label>
-        <label class="toggle"><input type="checkbox" id="noBorder"> без рамки</label>
-      </div>
-    </section>
+  <script>
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => document.querySelectorAll(sel);
 
-    <!-- Встраивание -->
-    <section class="card">
-      <h2>Встраивание</h2>
-      <div class="row">
-        <label class="lbl" for="fw">Ширина iframe</label>
-        <input type="number" id="fw" value="900" min="300" max="3000">
-      </div>
-      <div class="row">
-        <label class="lbl" for="fh">Высота iframe</label>
-        <input type="number" id="fh" value="520" min="200" max="3000">
-      </div>
-      <div class="row">
-        <label class="lbl">Разрешения</label>
-        <div class="stack">
-          <label class="toggle"><input type="checkbox" id="allowMic" checked> microphone</label>
-          <label class="toggle"><input type="checkbox" id="allowAutoplay" checked> autoplay</label>
-          <label class="toggle"><input type="checkbox" id="allowFs" checked> allowfullscreen</label>
-        </div>
-      </div>
+    const FONT_MAP = {
+      ru: ["PT Sans","Rubik","Lobster","Marck Script","Cormorant","Montserrat","Open Sans","Noto Sans"],
+      en: ["Roboto","Open Sans","Montserrat","Inter","Poppins","Playfair Display","Indie Flower","Special Elite","Anton","Rubik"],
+      fr: ["Noto Sans","Playfair Display","Parisienne","Montserrat","Cormorant","Rubik","Inter"],
+      es: ["Montserrat","Alegreya","Caveat","Roboto","Open Sans","Rubik"],
+      de: ["PT Sans","Rubik","Inter","Montserrat","Open Sans","Playfair Display"],
+      zh: ["Noto Sans SC","ZCOOL XiaoWei","Ma Shan Zheng","Noto Sans"],
+      ja: ["Noto Sans JP","Noto Serif JP","Kosugi Maru","Noto Sans"],
+      math: ["Latin Modern Math","Rubik"]
+    };
+    const LANG_LABELS = {
+      ru:"Русский", en:"English (Latin)", fr:"Français", es:"Español",
+      de:"Deutsch", zh:"中文 (Chinese)", ja:"日本語 (Japanese)", math:"Математика (LaTeX)"
+    };
 
-      <div class="stack" style="margin-top:8px">
-        <button class="btn" id="publishBtn" type="button">🧪 Опубликовать JSON</button>
-        <button class="btn" id="copyBtn" type="button">📋 Сгенерировать IFRAME</button>
-      </div>
-      <div class="status" id="status"></div>
-    </section>
-  </div>
-
-  <!-- Код и предпросмотр -->
-  <section class="card">
-    <h2>Код и предпросмотр</h2>
-    <div class="code"><textarea id="out" readonly></textarea></div>
-    <iframe id="preview" allow="microphone; autoplay"></iframe>
-  </section>
-</div>
-
-<script>
-/* ===== Конфиг публикации (универсальный) ===== */
-const ENDPOINT_BASE = "https://server-kjnn.onrender.com";
-const PUBLISH_ROUTES = ["/publish", "/save"];
-const PUBLISH_KEY   = "nika_read_pub_2025";
-const BASE_MAIN     = "https://nikashum93.github.io/readingtrainer/main.html";
-const JSON_BASE     = "https://nikashum93.github.io/texts/data/";
-
-let LAST_ID = localStorage.getItem('rt_last_id') || "";
-
-/* Утилиты */
-const $ = id => document.getElementById(id);
-const statusBox = $("status");
-function setStatus(html, cls=''){ statusBox.style.display='block'; statusBox.className='status '+cls; statusBox.innerHTML=html; }
-function slug(s){return (s||'untitled').toString().toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40)||'note'}
-function stamp(){const d=new Date(),p=n=>String(n).padStart(2,'0');return`${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`}
-
-/* … твой код выбора шрифтов, цветов и пр. остаётся без изменений … */
-
-/* ===== Публикация ===== */
-async function publish(){
-  const jsonData = { title: $("title").value.trim(), text: $("text").value };
-  const id = `${slug(jsonData.title)}-${stamp()}`;
-
-  const tryRoutes = async () => {
-    for (const path of PUBLISH_ROUTES) {
-      try {
-        const url = ENDPOINT_BASE + path;
-        const body = path === "/publish"
-          ? { id, folder:"data", mode:"json", content: JSON.stringify(jsonData, null, 2) }
-          : { id, type:"falling", data: jsonData };
-
-        const res = await fetch(url, {
-          method:"POST",
-          headers:{ "Content-Type":"application/json", "X-Publish-Key": PUBLISH_KEY },
-          body: JSON.stringify(body)
-        });
-        if(!res.ok) throw new Error(await res.text().catch(()=>res.statusText));
-        const data = await res.json().catch(()=> ({}));
-        return data.id || id;
-      } catch(e){ console.warn("fail on", path, e); }
+    function fillLanguageSelect(){
+      const sel = $('#language');
+      sel.innerHTML = '';
+      Object.keys(FONT_MAP).forEach(k=>{
+        const opt = document.createElement('option');
+        opt.value = k; opt.textContent = LANG_LABELS[k];
+        sel.appendChild(opt);
+      });
+      sel.value = 'ru';
     }
-    throw new Error("Сервер не принял публикацию");
-  };
+    function fillFontsForLanguage(lang){
+      const sel = $('#font');
+      sel.innerHTML = '';
+      (FONT_MAP[lang] || FONT_MAP.en).forEach(f=>{
+        const opt = document.createElement('option');
+        opt.textContent = f;
+        sel.appendChild(opt);
+      });
+      sel.value = FONT_MAP[lang][0];
+      applyGoogleFont(sel.value);
+    }
 
-  try {
-    setStatus("🔮 Публикую…","warn");
-    LAST_ID = await tryRoutes();
-    localStorage.setItem('rt_last_id', LAST_ID);
-    setStatus(`✅ Готово! ID: <b>${LAST_ID}</b><br>Подождите 30–60 сек пока GitHub Pages обновит JSON`, "ok");
-    window.open(`${JSON_BASE}${encodeURIComponent(LAST_ID)}.json`, "_blank");
-    updateIframeAndPreview();
-  } catch(e){ setStatus("☠ Ошибка публикации: "+e.message,"bad"); }
-}
+    function applyGoogleFont(fontName){
+      const gf = document.getElementById('gf');
+      const family = fontName.replace(/ /g, '+');
+      gf.href = `https://fonts.googleapis.com/css2?family=${family}:wght@400;700&display=swap`;
+      const text = $('#previewText');
+      text.style.fontFamily = fontName + ", system-ui, sans-serif";
+      text.style.fontSize = (parseInt($('#fontSize').value,10)||24) + 'px';
+    }
 
-/* Привязки */
-$("publishBtn").addEventListener("click", publish);
-</script>
+    function updatePreview(){
+      const item = $('#previewItem');
+      const text = $('#previewText');
+      const val  = $('#previewValue').value.trim();
+      const asImage = item.dataset.mode === 'image' || /^https?:\/\//i.test(val);
+
+      // reset
+      item.className = 'preview-item';
+      item.style = '--glow:#00f0ff;';
+
+      item.classList.add('shape-' + $('#shape').value);
+      if($('#shadowOn').checked) item.classList.add('fx-shadow');
+      if($('#fx3d').checked) item.classList.add('fx-3d');
+      if($('#glowOn').checked) item.classList.add('fx-glow');
+      item.style.setProperty('--glow', $('#glowColor').value);
+
+      if($('#borderOn').checked && Number($('#borderWidth').value) > 0){
+        item.classList.add('fx-border');
+        item.style.borderWidth = Number($('#borderWidth').value) + 'px';
+        item.style.borderColor = $('#borderColor').value;
+      }
+
+      const bgImg = $('#bgImage').value.trim();
+      const bgCol = $('#bgColor').value;
+      item.style.background = bgImg ? `url(${bgImg}) center/contain no-repeat` : bgCol;
+      item.style.opacity = Math.max(0, Math.min(1, parseFloat($('#opacity').value||'1')));
+
+      text.style.color = $('#textColor').value;
+      text.style.fontSize = (parseInt($('#fontSize').value,10)||24) + 'px';
+      text.style.fontFamily = $('#font').value + ", system-ui, sans-serif";
+
+      if(asImage){
+        item.dataset.mode = 'image';
+        text.style.display = 'none';
+        if(!item.querySelector('img')){
+          const img = document.createElement('img');
+          item.appendChild(img);
+        }
+        const img = item.querySelector('img');
+        img.src = val || 'https://via.placeholder.com/200x140?text=Image';
+      } else {
+        item.dataset.mode = 'text';
+        const img = item.querySelector('img');
+        if(img) img.remove();
+        text.style.display = 'block';
+        text.textContent = val || 'Preview';
+      }
+    }
+
+    function levelTemplate(idx){
+      const wrap = document.createElement('div');
+      wrap.className = 'level';
+      wrap.innerHTML = `
+        <h3>Уровень <span class="num">${idx+1}</span>
+          <span class="right">
+            <button type="button" class="btn-ghost up">▲</button>
+            <button type="button" class="btn-ghost down">▼</button>
+            <button type="button" class="btn-danger del">Удалить</button>
+          </span>
+        </h3>
+        <label>Название уровня / Target</label>
+        <input type="text" class="target" placeholder="Например: буква S или Animals">
+        <div class="row">
+          <div>
+            <label>Правильные объекты (по одному на строке)</label>
+            <textarea class="correct" placeholder="sun\nstar\nsnake\nhttps://.../cat.png\n\\frac{3}{4}"></textarea>
+          </div>
+          <div>
+            <label>Отвлекающие объекты</label>
+            <textarea class="wrong" placeholder="dog\napple\ncar\nhttps://.../car.png\n\\log_{2}{8}"></textarea>
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>Таймер уровня (сек.)</label>
+            <input type="number" class="timer" value="30" min="5">
+          </div>
+          <div class="hint" style="align-self:end">Поддерживаются: слова, URL картинок, LaTeX-формулы.</div>
+        </div>
+      `;
+      wrap.querySelector('.del').onclick = () => { wrap.remove(); renumber(); };
+      wrap.querySelector('.up').onclick  = () => { const p=wrap.previousElementSibling; if(p){ wrap.parentNode.insertBefore(wrap,p); renumber(); } };
+      wrap.querySelector('.down').onclick= () => { const n=wrap.nextElementSibling; if(n){ wrap.parentNode.insertBefore(n,wrap); renumber(); } };
+      return wrap;
+    }
+    function renumber(){ $$('#levels .level .num').forEach((el,i)=> el.textContent = i+1); }
+    function addLevel(){ const levels=$('#levels'); const idx=levels.querySelectorAll('.level').length; levels.appendChild(levelTemplate(idx)); renumber(); }
+
+    function collectConfig(){
+      const levels = [];
+      $$('#levels .level').forEach(div=>{
+        levels.push({
+          target: div.querySelector('.target').value.trim(),
+          correct: div.querySelector('.correct').value.split('\n').map(s=>s.trim()).filter(Boolean),
+          wrong: div.querySelector('.wrong').value.split('\n').map(s=>s.trim()).filter(Boolean),
+          timer: Math.max(5, parseInt(div.querySelector('.timer').value||'30',10))
+        });
+      });
+      return {
+        language: $('#language').value,
+        font: $('#font').value,
+        fontSize: parseInt($('#fontSize').value||'24',10),
+        textColor: $('#textColor').value,
+        speed: parseInt($('#speed').value||'5',10),
+        style: {
+          shape: $('#shape').value,
+          bgColor: $('#bgColor').value,
+          bgImage: $('#bgImage').value.trim(),
+          borderOn: $('#borderOn').checked,
+          borderColor: $('#borderColor').value,
+          borderWidth: parseInt($('#borderWidth').value||'0',10),
+          shadow: $('#shadowOn').checked,
+          glow: $('#glowOn').checked,
+          glowColor: $('#glowColor').value,
+          fx3d: $('#fx3d').checked,
+          opacity: parseFloat($('#opacity').value||'1')
+        },
+        levels
+      };
+    }
+
+    async function publish(){
+      const cfg = collectConfig();
+      const payload = { type: "falling", data: cfg };
+      try{
+        const res = await fetch("https://server-kjnn.onrender.com/publish", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if(data && data.id){
+          const iframe = `<iframe src="https://nikashum93.github.io/falling/main.html?id=${data.id}" width="900" height="640" style="border:0;"></iframe>`;
+          $('#iframeOut').value = iframe;
+          alert('Опубликовано! Подождите 30–60 секунд (кеш GitHub Pages).');
+        } else { alert("Ошибка: " + (data && data.error || "неизвестно")); }
+      }catch(e){ alert("Сеть/сервер: " + e.message); }
+    }
+
+    $('#language').addEventListener('change', e=>{ fillFontsForLanguage(e.target.value); updatePreview(); });
+    $('#font').addEventListener('change', e=> { applyGoogleFont(e.target.value); updatePreview(); });
+    $('#fontSize').addEventListener('input', ()=> { applyGoogleFont($('#font').value); updatePreview(); });
+    ;['textColor','opacity','shape','bgColor','bgImage','borderColor','borderWidth','borderOn','shadowOn','glowOn','glowColor','fx3d','previewValue','speed']
+      .forEach(id => { $('#'+id).addEventListener('input', updatePreview); $('#'+id).addEventListener('change', updatePreview); });
+    $('#btnText').onclick = e=>{ e.preventDefault(); $('#previewItem').dataset.mode='text'; updatePreview(); }
+    $('#btnImage').onclick= e=>{ e.preventDefault(); $('#previewItem').dataset.mode='image'; updatePreview(); }
+    $('#addLevel').addEventListener('click', e=>{ e.preventDefault(); addLevel(); });
+    $('#saveBtn').addEventListener('click', publish);
+    $('#testBtn').addEventListener('click', ()=> { alert('JSON валиден.'); console.log(collectConfig()); });
+    $('#copyBtn').addEventListener('click', ()=> { $('#iframeOut').select(); document.execCommand('copy'); });
+
+    fillLanguageSelect();
+    fillFontsForLanguage($('#language').value);
+    addLevel();
+    applyGoogleFont($('#font').value);
+    updatePreview();
+  </script>
 </body>
 </html>
