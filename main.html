@@ -1,4 +1,4 @@
-<!doctype html>
+<!doctype html> 
 <html lang="ru">
 <head>
 <meta charset="utf-8">
@@ -52,25 +52,25 @@
     justify-content:center;
     min-width:120px;
     min-height:80px;
-    padding:0; /* padding переносим в .content, чтобы фон не «ели» клипы */
+    padding:0;
     user-select:none;
     cursor:pointer;
   }
-  /* фон-слой (клипается, может иметь прозрачность) */
+  /* фон-слой */
   .item .bg{
     position:absolute; inset:0;
     background:#222;
     opacity:1;
-    border:0 solid #fff; /* настраиваем из JS */
-    box-shadow:none;     /* эффекты из JS */
+    border:0 solid #fff;
+    box-shadow:none;
     transition:filter .15s ease;
   }
-  /* слой контента поверх (не клипается) */
+  /* слой контента */
   .item .content{
     position:relative; z-index:1;
     display:flex; align-items:center; justify-content:center;
-    padding:20px 26px; /* внутренние отступы для текста поверх фоновой картинки */
-    max-width:320px;   /* защитный максимум для текста */
+    padding:20px 26px;
+    max-width:320px;
     max-height:220px;
     text-align:center;
     line-height:1.15;
@@ -88,14 +88,14 @@
     pointer-events:none;
   }
 
-  /* ФИГУРЫ — clip-path только к bg, контент остаётся ровным */
+  /* ФИГУРЫ */
   .shape-rect .bg{ border-radius:10px }
   .shape-rounded .bg{ border-radius:20px }
   .shape-circle .bg{ border-radius:50% }
   .shape-diamond .bg{ clip-path:polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%) }
   .shape-star .bg{ clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%) }
 
-  /* ЭФФЕКТЫ (применяем к bg) */
+  /* ЭФФЕКТЫ */
   .fx-shadow .bg{ box-shadow:0 10px 30px rgba(0,0,0,.5) }
   .fx-3d .bg{ box-shadow:
       7px 7px 20px rgba(0,0,0,.5),
@@ -158,7 +158,7 @@
 
 <audio id="popSound" src="pop.mp3" preload="auto"></audio>
 
-<!-- MathJax для мат. формул -->
+<!-- MathJax -->
 <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
 
 <script>
@@ -184,24 +184,24 @@
     return;
   }
 
-  // Глобальные из редактора
-  const SPEED = clamp(Number(cfg.speed ?? 5), 1, 10); // 1–10
+  // глобальные из редактора
+  const SPEED = clamp(Number(cfg.speed ?? 5), 1, 10);
   const FONT = cfg.font || 'Rubik';
   const FONT_SIZE = Number(cfg.fontSize || 24);
   const TEXT_COLOR = cfg.textColor || '#ffffff';
   const STYLE = cfg.style || {};
   const CURSOR = cfg.cursor || '';
 
-  // Подгрузим шрифт
+  // подгружаем шрифт
   const gf = document.createElement('link');
   gf.rel = 'stylesheet';
   gf.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(FONT).replace(/%20/g,'+')}%3Awght@400;700&display=swap`;
   document.head.appendChild(gf);
 
-  // Курсор
+  // курсор
   if(CURSOR) document.body.style.cursor = `url(${CURSOR}), auto`;
 
-  // Рандом уровней
+  // уровни
   const levels = Array.isArray(cfg.levels) ? [...cfg.levels] : [];
   if(cfg.randomLevels){
     for(let i=levels.length-1; i>0; i--){
@@ -241,7 +241,6 @@
       if(timeLeft <= 0){
         clearInterval(levelTimerHandle);
         clearInterval(spawnerHandle);
-        // Немного очистим сцену
         document.querySelectorAll('.item').forEach(n=>n.remove());
         current++;
         startLevel();
@@ -254,8 +253,8 @@
       ...(lv.correct||[]).map(v=>({val:v, good:true})),
       ...(lv.wrong||[]).map(v=>({val:v, good:false}))
     ];
-    const baseDelay = 1200; // базовый интервал спавна
-    const delay = clamp(baseDelay / (SPEED/5), 280, 3000); // быстрее при большем SPEED
+    const baseDelay = 1200;
+    const delay = clamp(baseDelay / (SPEED/5), 280, 3000);
     spawnerHandle = setInterval(()=>{
       if(!running) return;
       const obj = pool[Math.floor(Math.random()*pool.length)];
@@ -270,14 +269,12 @@
     el.dataset.good = obj.good ? '1' : '0';
     el.style.setProperty('--glow', STYLE.glowColor || '#00f0ff');
 
-    // структура
     const bg = document.createElement('div');
     bg.className = 'bg';
     const content = document.createElement('div');
     content.className = 'content';
     el.appendChild(bg); el.appendChild(content);
 
-    // фон-слой
     const bgImg = (STYLE.bgImage||'').trim();
     const bgCol = STYLE.bgColor || 'transparent';
     bg.style.background = bgImg ? `url(${bgImg}) center/contain no-repeat, ${bgCol}` : bgCol;
@@ -289,17 +286,14 @@
       bg.style.borderWidth = '0px';
     }
 
-    // контент
     if(/^https?:\/\//i.test(obj.val)){
       const img = document.createElement('img');
       img.src = obj.val;
       content.appendChild(img);
     } else if((cfg.language||'') === 'math'){
-      // MathJax
       const span = document.createElement('span');
       span.textContent = `\\(${obj.val}\\)`;
       content.appendChild(span);
-      // отрисуем после добавления в DOM
     } else {
       const span = document.createElement('span');
       span.textContent = String(obj.val);
@@ -309,30 +303,22 @@
       content.appendChild(span);
     }
 
-    // Позиция старта
     const gw = game.clientWidth;
     const startX = Math.max(16, Math.min(gw-180, rnd(0, gw-180)));
     el.style.left = startX + 'px';
     el.style.top = '-160px';
 
-    // Круг/ромб/звезда должны быть «геометрическими» — подравняем внешние размеры под контент
     game.appendChild(el);
     fitGeometryBox(el);
-
-    // Авто-фит текста (уменьшаем, если не влазит)
     autoFitText(el, FONT_SIZE, 12);
 
-    // MathJax typeset, если надо
     if((cfg.language||'') === 'math') {
-      MathJax.typesetPromise([el]).then(()=> {
-        fitGeometryBox(el);
-      });
+      MathJax.typesetPromise([el]).then(()=> { fitGeometryBox(el); });
     }
 
-    // падение
-    const vel = 1.2 + SPEED * 0.9;       // базовая скорость
-    const swayAmp = rnd(8, 22);          // небольшое качание
-    const swayFreq = rnd(0.003, 0.008);  // частота
+    const vel = 1.2 + SPEED * 0.9;
+    const swayAmp = rnd(8, 22);
+    const swayFreq = rnd(0.003, 0.008);
     let y = -140;
     let t = 0;
     let alive = true;
@@ -351,7 +337,6 @@
     }
     requestAnimationFrame(step);
 
-    // клик
     el.addEventListener('click', ()=>{
       if(!alive) return;
       if(el.dataset.good === '1'){
@@ -361,44 +346,36 @@
         el.classList.add('caught');
         setTimeout(()=> el.remove(), 400);
       } else {
-        // «штраф»: вспышка
         bg.style.filter = 'brightness(2) saturate(1.6)';
         setTimeout(()=> bg.style.filter = 'none', 220);
       }
     });
   }
 
-  // ===== геометрия фигур (квадрат для круга/ромба/звезды) =====
+  // ===== геометрия =====
   function fitGeometryBox(el){
     const shape = STYLE.shape || 'rounded';
     const content = el.querySelector('.content');
     const rect = content.getBoundingClientRect();
-    const padX = 0, padY = 0;
 
-    // по умолчанию блок под размеры контента
-    el.style.width = (rect.width + padX) + 'px';
-    el.style.height = (rect.height + padY) + 'px';
+    el.style.width = (rect.width) + 'px';
+    el.style.height = (rect.height) + 'px';
 
     if(shape === 'circle' || shape === 'diamond' || shape === 'star'){
-      const size = Math.max(rect.width, rect.height) + 30; // немного воздуха
+      const size = Math.max(rect.width, rect.height) + 30;
       el.style.width = size + 'px';
       el.style.height = size + 'px';
     }
   }
 
-  // ===== авто-уменьшение текста, чтобы поместился =====
+  // ===== автофит текста =====
   function autoFitText(el, startPx, minPx){
     const span = el.querySelector('.content span');
     if(!span) return;
     let fs = startPx;
     const maxW = el.clientWidth - 24;
     const maxH = el.clientHeight - 24;
-
-    const measure = ()=>{
-      const r = span.getBoundingClientRect();
-      return (r.width <= maxW && r.height <= maxH);
-    };
-    // если слишком большой — уменьшаем
+    const measure = ()=> span.getBoundingClientRect().width <= maxW && span.getBoundingClientRect().height <= maxH;
     while(fs > minPx){
       span.style.fontSize = fs + 'px';
       if(measure()) break;
