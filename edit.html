@@ -66,11 +66,7 @@
     .preview-wrap{display:grid; grid-template-rows:auto 1fr; gap:12px; height:100%}
     .preview-stage{background:#0a0a0a; border:1px dashed #333; border-radius:12px; display:flex; align-items:center; justify-content:center; padding:24px; min-height:320px}
     .preview-controls{display:grid; grid-template-columns:1fr auto; gap:12px}
-    .preview-item{
-      position:relative; display:inline-flex; align-items:center; justify-content:center;
-      padding:18px 22px; min-width:160px; min-height:70px; transition:all .2s ease;
-      background-position:center !important; background-repeat:no-repeat !important; background-size:contain !important;
-    }
+    .preview-item{position:relative; display:inline-flex; align-items:center; justify-content:center; padding:18px 22px; min-width:160px; min-height:70px; transition:all .2s ease; background-size:cover !important; background-position:center !important}
     .preview-item img{max-width:200px; max-height:140px; display:block}
 
     /* ФИГУРЫ */
@@ -133,14 +129,11 @@
           <label>Скорость падения (1–10)</label>
           <input type="number" id="speed" value="5" min="1" max="10">
         </div>
-        <div>
-          <label>Курсор (URL картинки, необязательно)</label>
-          <input type="url" id="cursorUrl" placeholder="https://.../cursor.png">
-        </div>
       </div>
 
-      <div class="inline" style="gap:10px">
-        <input type="checkbox" id="randomLevels"><label for="randomLevels">Рандом уровней</label>
+      <div>
+        <label>Кастомный курсор (URL, необязательно)</label>
+        <input type="url" id="cursorUrl" placeholder="https://.../my-cursor.png">
       </div>
 
       <div class="card">
@@ -161,7 +154,6 @@
             <input type="color" id="bgColor" value="#1a1a1a">
           </div>
         </div>
-
         <label>Фон — картинка (URL, необязательно)</label>
         <input type="url" id="bgImage" placeholder="https://.../bubble.png">
 
@@ -197,7 +189,6 @@
           <div>
             <label>Прозрачность фона (0–1)</label>
             <input type="text" id="opacity" value="1">
-            <div class="hint">Если указана картинка фона — цвет не используется, элемент становится прозрачным поверх картинки.</div>
           </div>
         </div>
       </div>
@@ -239,22 +230,16 @@
         <textarea id="iframeOut" readonly placeholder="Здесь появится iframe для Genially"></textarea>
         <button id="copyBtn" class="btn-ghost">📋 Копировать</button>
       </div>
-      <div class="hint">После публикации подождите 30–60 секунд: GitHub Pages может кешировать изменения.</div>
+      <div class="hint">После публикации может потребоваться подождать 30–60 секунд (кеш GitHub Pages).</div>
     </section>
   </main>
 
   <footer>© 2025 <a href="https://kgbgamecorp.ru" target="_blank" rel="noopener">Корпорация Геймификации Будущего</a></footer>
 
   <script>
-    // ====== Константы публикации (твой сервер) ======
-    const ENDPOINT    = "https://server-kjnn.onrender.com/publish";
-    const PUBLISH_KEY = ""; // если сервер требует ключ — впиши сюда; иначе оставь пусто
-
-    // ===== DOM helpers =====
     const $ = sel => document.querySelector(sel);
     const $$ = sel => document.querySelectorAll(sel);
 
-    // ===== Языки и шрифты =====
     const FONT_MAP = {
       ru: ["PT Sans","Rubik","Lobster","Marck Script","Cormorant","Montserrat","Open Sans","Noto Sans"],
       en: ["Roboto","Open Sans","Montserrat","Inter","Poppins","Playfair Display","Indie Flower","Special Elite","Anton","Rubik"],
@@ -263,7 +248,7 @@
       de: ["PT Sans","Rubik","Inter","Montserrat","Open Sans","Playfair Display"],
       zh: ["Noto Sans SC","ZCOOL XiaoWei","Ma Shan Zheng","Noto Sans"],
       ja: ["Noto Sans JP","Noto Serif JP","Kosugi Maru","Noto Sans"],
-      math: ["Latin Modern Math","Rubik"] // математический режим — формулы рендерит main (MathJax)
+      math: ["Latin Modern Math","Rubik"]
     };
     const LANG_LABELS = {
       ru:"Русский", en:"English (Latin)", fr:"Français", es:"Español",
@@ -292,68 +277,52 @@
       applyGoogleFont(sel.value);
     }
 
-    // Google Fonts
     function applyGoogleFont(fontName){
       const gf = document.getElementById('gf');
-      const family = encodeURIComponent(fontName).replace(/%20/g,'+');
+      const family = fontName.replace(/ /g, '+');
       gf.href = `https://fonts.googleapis.com/css2?family=${family}:wght@400;700&display=swap`;
       const text = $('#previewText');
-      text.style.fontFamily = `${fontName}, system-ui, sans-serif`;
+      text.style.fontFamily = fontName + ", system-ui, sans-serif";
       text.style.fontSize = (parseInt($('#fontSize').value,10)||24) + 'px';
     }
 
-    // ===== Предпросмотр =====
     function updatePreview(){
       const item = $('#previewItem');
       const text = $('#previewText');
       const val  = $('#previewValue').value.trim();
       const asImage = item.dataset.mode === 'image' || /^https?:\/\//i.test(val);
 
-      // Сброс классов/стилей
+      // reset
       item.className = 'preview-item';
-      item.style.removeProperty('background');
-      item.style.backgroundImage = 'none';
-      item.style.backgroundColor = 'transparent';
-      item.style.borderWidth = '0';
-      item.style.borderColor = '';
-      item.style.opacity = '1';
-      item.style.setProperty('--glow', $('#glowColor').value);
+      item.style = '--glow:#00f0ff;';
 
-      // Фигура и эффекты
       item.classList.add('shape-' + $('#shape').value);
       if($('#shadowOn').checked) item.classList.add('fx-shadow');
       if($('#fx3d').checked) item.classList.add('fx-3d');
       if($('#glowOn').checked) item.classList.add('fx-glow');
+      item.style.setProperty('--glow', $('#glowColor').value);
 
-      // Рамка
       if($('#borderOn').checked && Number($('#borderWidth').value) > 0){
         item.classList.add('fx-border');
         item.style.borderWidth = Number($('#borderWidth').value) + 'px';
         item.style.borderColor = $('#borderColor').value;
       }
 
-      // Фон (строго взаимоисключающий):
       const bgImg = $('#bgImage').value.trim();
       const bgCol = $('#bgColor').value;
-      const opacity = Math.max(0, Math.min(1, parseFloat($('#opacity').value||'1')));
+      // Если задана картинка, убираем цвет (только картинка)
       if(bgImg){
-        // если есть картинка — показываем только её, без цветовой подложки
-        item.style.backgroundImage = `url(${bgImg})`;
-        item.style.backgroundColor = 'transparent';
-        item.style.opacity = opacity;
+        item.style.background = `url(${bgImg}) center/contain no-repeat`;
       } else {
-        // если нет картинки — используем цвет
-        item.style.backgroundImage = 'none';
-        item.style.backgroundColor = bgCol;
-        item.style.opacity = opacity;
+        item.style.background = bgCol;
       }
 
-      // Текстовые параметры
+      item.style.opacity = Math.max(0, Math.min(1, parseFloat($('#opacity').value||'1')));
+
       text.style.color = $('#textColor').value;
       text.style.fontSize = (parseInt($('#fontSize').value,10)||24) + 'px';
       text.style.fontFamily = $('#font').value + ", system-ui, sans-serif";
 
-      // Контент предпросмотра
       if(asImage){
         item.dataset.mode = 'image';
         text.style.display = 'none';
@@ -370,13 +339,8 @@
         text.style.display = 'block';
         text.textContent = val || 'Preview';
       }
-
-      // Курсор
-      const cursor = $('#cursorUrl').value.trim();
-      document.body.style.cursor = cursor ? `url(${cursor}), auto` : 'auto';
     }
 
-    // ===== Уровни =====
     function levelTemplate(idx){
       const wrap = document.createElement('div');
       wrap.className = 'level';
@@ -405,29 +369,25 @@
             <label>Таймер уровня (сек.)</label>
             <input type="number" class="timer" value="30" min="5">
           </div>
-          <div class="hint" style="align-self:end">Поддерживаются: слова, URL картинок, LaTeX-формулы (мат. режим).</div>
+          <div class="hint" style="align-self:end">Поддерживаются: слова, URL картинок, LaTeX-формулы.</div>
         </div>
       `;
-
-      // кнопки уровня
       wrap.querySelector('.del').onclick = () => { wrap.remove(); renumber(); };
       wrap.querySelector('.up').onclick  = () => { const p=wrap.previousElementSibling; if(p){ wrap.parentNode.insertBefore(wrap,p); renumber(); } };
       wrap.querySelector('.down').onclick= () => { const n=wrap.nextElementSibling; if(n){ wrap.parentNode.insertBefore(n,wrap); renumber(); } };
-
       return wrap;
     }
     function renumber(){ $$('#levels .level .num').forEach((el,i)=> el.textContent = i+1); }
     function addLevel(){ const levels=$('#levels'); const idx=levels.querySelectorAll('.level').length; levels.appendChild(levelTemplate(idx)); renumber(); }
 
-    // ===== Сбор формы → JSON =====
     function collectConfig(){
       const levels = [];
       $$('#levels .level').forEach(div=>{
         levels.push({
           target: div.querySelector('.target').value.trim(),
           correct: div.querySelector('.correct').value.split('\n').map(s=>s.trim()).filter(Boolean),
-          wrong:   div.querySelector('.wrong').value.split('\n').map(s=>s.trim()).filter(Boolean),
-          timer:   Math.max(5, parseInt(div.querySelector('.timer').value||'30',10))
+          wrong: div.querySelector('.wrong').value.split('\n').map(s=>s.trim()).filter(Boolean),
+          timer: Math.max(5, parseInt(div.querySelector('.timer').value||'30',10))
         });
       });
       return {
@@ -437,7 +397,6 @@
         textColor: $('#textColor').value,
         speed: parseInt($('#speed').value||'5',10),
         cursor: $('#cursorUrl').value.trim(),
-        randomLevels: $('#randomLevels').checked,
         style: {
           shape: $('#shape').value,
           bgColor: $('#bgColor').value,
@@ -455,87 +414,41 @@
       };
     }
 
-    function validate(cfg){
-      if(!cfg.levels.length) return 'Добавьте хотя бы один уровень.';
-      for(const [i,lv] of cfg.levels.entries()){
-        if(!lv.target) return `Уровень ${i+1}: укажите target.`;
-        if(lv.correct.length===0 && lv.wrong.length===0) return `Уровень ${i+1}: добавьте хотя бы один объект.`;
-      }
-      return null;
-    }
-
-    // ===== Публикация → сервер → GitHub Pages (texts/data/<id>.json) =====
-    function slug(s){return (s||'untitled').toString().toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40)||'note'}
-    function stamp(){const d=new Date(),p=n=>String(n).padStart(2,'0');return`${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`}
-
     async function publish(){
       const cfg = collectConfig();
-      const err = validate(cfg);
-      if(err){ alert(err); return; }
-
-      const id = `${slug(cfg.levels?.[0]?.target || 'falling')}-${stamp()}`;
+      const payload = { type: "falling", data: cfg };
       try{
-        const res = await fetch(ENDPOINT, {
+        const res = await fetch("https://server-kjnn.onrender.com/publish", {
           method: "POST",
-          headers: {
+          headers: { 
             "Content-Type": "application/json",
-            ...(PUBLISH_KEY ? {"X-Publish-Key": PUBLISH_KEY} : {})
+            "x-publish-key": "YOUR_PUBLISH_KEY" // замени на ключ из Render
           },
-          body: JSON.stringify({
-            id,
-            mode: "json",
-            folder: "data",
-            content: JSON.stringify(cfg, null, 2)
-          })
+          body: JSON.stringify(payload)
         });
-        if(!res.ok){
-          const t = await res.text().catch(()=>res.statusText);
-          throw new Error(t || `HTTP ${res.status}`);
-        }
-        // готов iframe
-        const iframe = `<iframe src="https://nikashum93.github.io/falling/main.html?id=${id}" width="900" height="640" style="border:0;"></iframe>`;
-        $('#iframeOut').value = iframe;
-        alert('Опубликовано! Подождите 30–60 секунд (кеш GitHub Pages).');
-      }catch(e){
-        alert("Сеть/сервер: " + e.message);
-      }
+        const data = await res.json();
+        if(data && data.id){
+          const iframe = `<iframe src="https://nikashum93.github.io/texts/main.html?id=${data.id}" width="900" height="640" style="border:0;"></iframe>`;
+          $('#iframeOut').value = iframe;
+          alert('Опубликовано! Подождите 30–60 секунд (кеш GitHub Pages).');
+        } else { alert("Ошибка: " + (data && data.error || "неизвестно")); }
+      }catch(e){ alert("Сеть/сервер: " + e.message); }
     }
 
-    // ===== События UI =====
     $('#language').addEventListener('change', e=>{ fillFontsForLanguage(e.target.value); updatePreview(); });
     $('#font').addEventListener('change', e=> { applyGoogleFont(e.target.value); updatePreview(); });
     $('#fontSize').addEventListener('input', ()=> { applyGoogleFont($('#font').value); updatePreview(); });
-
-    ['textColor','opacity','shape','bgColor','bgImage','borderColor','borderWidth','borderOn','shadowOn','glowOn','glowColor','fx3d','previewValue','speed','cursorUrl','randomLevels']
+    ;['textColor','opacity','shape','bgColor','bgImage','borderColor','borderWidth','borderOn','shadowOn','glowOn','glowColor','fx3d','previewValue','speed','cursorUrl']
       .forEach(id => { $('#'+id).addEventListener('input', updatePreview); $('#'+id).addEventListener('change', updatePreview); });
-
     $('#btnText').onclick = e=>{ e.preventDefault(); $('#previewItem').dataset.mode='text'; updatePreview(); }
     $('#btnImage').onclick= e=>{ e.preventDefault(); $('#previewItem').dataset.mode='image'; updatePreview(); }
-
     $('#addLevel').addEventListener('click', e=>{ e.preventDefault(); addLevel(); });
     $('#saveBtn').addEventListener('click', publish);
-    $('#testBtn').addEventListener('click', ()=> {
-      const cfg = collectConfig();
-      const err = validate(cfg);
-      if(err){ alert(err); return; }
-      alert('JSON валиден. Уровней: '+cfg.levels.length);
-      console.log(cfg);
+    $('#testBtn').addEventListener('click', ()=> { alert('JSON валиден.'); console.log(collectConfig()); });
+    $('#copyBtn').addEventListener('click', ()=> { 
+      navigator.clipboard.writeText($('#iframeOut').value).then(()=>alert('Код скопирован.')).catch(err=>alert('Ошибка копирования: '+err));
     });
 
-    // Clipboard API
-    $('#copyBtn').addEventListener('click', async ()=>{
-      const txt = $('#iframeOut').value.trim();
-      if(!txt){ alert('Сначала опубликуйте и получите iframe.'); return; }
-      try{
-        await navigator.clipboard.writeText(txt);
-        alert('iframe скопирован.');
-      }catch(e){
-        console.error(e);
-        alert('Не удалось скопировать. Скопируйте вручную.');
-      }
-    });
-
-    // ===== Init =====
     fillLanguageSelect();
     fillFontsForLanguage($('#language').value);
     addLevel();
