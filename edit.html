@@ -258,7 +258,7 @@
     function fillLanguageSelect(){
       const sel = $('#language');
       sel.innerHTML = '';
-      Object.keys(FONT_MAP).forEach(k=>{
+      Object.s(FONT_MAP).forEach(k=>{
         const opt = document.createElement('option');
         opt.value = k; opt.textContent = LANG_LABELS[k];
         sel.appendChild(opt);
@@ -422,7 +422,7 @@
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
-            "x-publish-key": "YOUR_PUBLISH_KEY" // замени на ключ из Render
+            "x-publish-key": nika_read_pub_2025 // замени на ключ из Render
           },
           body: JSON.stringify(payload)
         });
