@@ -1,922 +1,543 @@
+<!-- =======================================================================
+=  main.html — ИГРА FALLING ITEMS (КГБ). ПОЛНЫЙ ФАЙЛ.                     =
+=  Загружает конфиг из: https://nikashum93.github.io/texts/data/<id>.json  =
+=  Прозрачный фон, старт-оверлей по центру, UI-цвет из настроек.           =
+======================================================================= -->
 <!doctype html>
 <html lang="ru">
 <head>
-<meta charset="utf-8" />
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Falling Items — Game (КГБ)</title>
-
-<!--
-  Основные цели этого файла:
-  1) Полностью прозрачный фон вокруг игровой сцены (для встраивания в Genially).
-  2) Визуальная тема HUD/оверлеев берётся из настроек «рамки» редактора.
-     - Если в редакторе выбран цвет рамки → он становится Primary для HUD.
-     - Цвет фона рамки → Secondary/подложки.
-     - Если вместо «рамки» в редакторе указана картинка, она используется как фоновая
-       текстура под элементами (но HUD всё равно красится из цветов рамки).
-  3) Стартовый экран + локализация (RU/EN/ES/FR/DE/JA/ZH/AR). Автовыбор по ?language=.
-  4) Поправлен хитбокс: клики по падающим элементам не блокируются (z-index, pointer-events).
-  5) Геометрия фигур: звезда/ромб/круг не приплющиваются, блок квадратится под контент.
-  6) Сверху — «мягкий» градиент задника сцены, но не перекрывает клики.
-  7) Полный код без вырезок, >500 строк.
--->
-
+<title>Falling Items — Game</title>
 <style>
-/* ===== CSS-ПЕРЕМЕННЫЕ ТЕМЫ (перекрашиваются из URL-параметров) ===== */
-:root{
-  /* Интерфейс (HUD/оверлеи) — перетаскиваем из «рамки» редактора */
-  --ui-primary: #ffd700;    /* основной акцент (берём из borderColor) */
-  --ui-on-primary: #000;    /* цвет текста на акценте */
-  --ui-bg: #151515;         /* фон панелей интерфейса (берём из bgColor) */
-  --ui-stroke: #2a2a2a;     /* тон границ */
-  --ui-ink: #e9e9e9;        /* основной текст HUD */
-  --ui-muted: #bdbdbd;      /* вторичный текст */
-  --ui-shadow: rgba(0,0,0,.38);
+  :root{
+    --ui:#ffd700;
+    --glow:#00f0ff;
+    --hudGlass: rgba(0,0,0,.45);
+    --hudBorder: rgba(255,255,255,.12);
+    --hudShadow: rgba(0,0,0,.35);
+  }
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:transparent;           /* ← сцена прозрачная */
+    color:#fff;
+    overflow:hidden;
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  }
+  #game{
+    position:relative;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+  }
 
-  /* Текст элементов (слова) */
-  --text-color: #ffffff;
-  --text-font: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  --text-size-px: 24px;
+  /* HUD */
+  .hud{
+    position:fixed; left:12px; top:12px; right:12px; display:flex; gap:12px; align-items:center; justify-content:space-between;
+    font-weight:700; z-index:10; pointer-events:none;
+  }
+  .badge{
+    pointer-events:none;
+    background:var(--hudGlass);
+    border:1px solid var(--hudBorder);
+    border-radius:12px;
+    padding:10px 14px;
+    box-shadow:0 8px 24px var(--hudShadow), 0 0 18px rgba(255,215,0,.08) inset;
+  }
+  .levelTitle{color:var(--ui)}
+  .timer{min-width:110px; text-align:center}
+  .score{min-width:110px; text-align:center}
 
-  /* Эффекты для падающих элементов */
-  --glow: #00f0ff;
+  /* падающий элемент = контейнер */
+  .item{
+    position:absolute;
+    top:-140px;
+    left:0;
+    transform:translateZ(0);
+    will-change:transform, top, left;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:80px;
+    min-height:60px;
+    padding:0; /* padding переносим в .content */
+    user-select:none;
+    cursor:pointer;
+  }
+  /* фон-слой (клипается, может иметь прозрачность; НЕТ чёрного прямоугольника) */
+  .item .bg{
+    position:absolute; inset:0;
+    background:transparent;            /* ← чисто; цвет/картинка задаём из JS */
+    opacity:1;
+    border:0 solid transparent;        /* настраиваем из JS */
+    box-shadow:none;                   /* эффекты из JS */
+    transition:filter .15s ease;
+  }
+  /* слой контента поверх (не клипается) */
+  .item .content{
+    position:relative; z-index:1;
+    display:flex; align-items:center; justify-content:center;
+    padding:20px 26px; /* будет заменено из настройки pad */
+    max-width:420px;   /* разумный максимум */
+    max-height:280px;
+    text-align:center;
+    line-height:1.15;
+  }
+  .item .content span{
+    display:inline-block;
+    font-weight:800;
+    white-space:nowrap;
+  }
+  .item .content img{
+    display:block;
+    max-width:220px;
+    max-height:170px;
+    object-fit:contain;
+    pointer-events:none;
+  }
 
-  /* Радиусы панелей */
-  --r-s: 10px;
-  --r-m: 12px;
-  --r-l: 16px;
-}
+  /* ФИГУРЫ — clip-path только к bg, контент остаётся ровным */
+  .shape-rect .bg{ border-radius:10px }
+  .shape-rounded .bg{ border-radius:20px }
+  .shape-circle .bg{ border-radius:50% }
+  .shape-diamond .bg{ clip-path:polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%) }
+  .shape-star .bg{ clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%) }
 
-/* ===== БАЗОВАЯ СЦЕНА (всё вокруг прозрачно) ===== */
-html, body{
-  height:100%;
-  margin:0;
-  background: transparent;   /* чтобы в iFrame вокруг было прозрачно */
-}
-body{
-  color: var(--ui-ink);
-  font-family: var(--text-font);
-  overflow: hidden;          /* игра внутри контейнера, фон прозрачен */
-}
+  /* ЭФФЕКТЫ (применяем к bg) */
+  .fx-shadow .bg{ box-shadow:0 10px 30px rgba(0,0,0,.5) }
+  .fx-3d .bg{ box-shadow:
+      7px 7px 20px rgba(0,0,0,.5),
+      inset -5px -5px 12px rgba(255,255,255,.22) }
+  .fx-glow .bg{ box-shadow:0 0 18px var(--glow, #00f0ff) }
+  .fx-border .bg{ border-style:solid }
 
-/* Контейнер сцены; фон сцены — прозрачный или мягкий градиент с нулями кликов */
-.scene{
-  position: relative;
-  width:100%;
-  height:100%;
-  overflow:hidden;
-  isolation:isolate;         /* корректная иерархия слоёв */
-}
+  /* клик-поп */
+  .caught{ animation:pop .45s ease forwards }
+  @keyframes pop{
+    0%{ transform:scale(1); opacity:1 }
+    50%{ transform:scale(1.15); opacity:1 }
+    100%{ transform:scale(0.85); opacity:0 }
+  }
 
-/* Мягкий градиент фона сцены. ВНИМАНИЕ: выключаем pointer-events, чтобы не красть клики. */
-.scene::before{
-  content:"";
-  position:absolute; inset:0;
-  background: radial-gradient(1200px 800px at 50% 0%,
-              rgba(255,255,255,.08), rgba(0,0,0,0) 60%),
-              linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.6));
-  filter: none;
-  pointer-events:none;     /* клики идут сквозь подложку */
-  z-index: 0;
-}
+  /* блёстки */
+  .sparkle{
+    position:absolute;
+    width:6px; height:6px; border-radius:50%;
+    background:rgba(255,255,255,.9);
+    pointer-events:none;
+    animation:spark 0.9s forwards;
+    filter:drop-shadow(0 0 6px #fff);
+    z-index:5;
+  }
+  @keyframes spark{
+    from{ opacity:1; transform:translate(0,0) scale(1) }
+    to{ opacity:0; transform:translate(var(--dx), var(--dy)) scale(.2) }
+  }
 
-/* ===== HUD ===== */
-.hud{
-  position:absolute; inset:12px 12px auto 12px; /* top-left-right */
-  display:flex; align-items:center; justify-content:space-between;
-  pointer-events:none;  /* HUD не блокирует клики по элементам */
-  z-index: 5;
-}
-
-/* Отдельные бейджи HUD */
-.badge{
-  pointer-events:none;
-  background: rgba(0,0,0,.45);
-  border: 1px solid rgba(255,255,255,.12);
-  border-radius: var(--r-l);
-  padding: 10px 14px;
-  font-weight: 800;
-  box-shadow:
-    0 14px 38px var(--ui-shadow),
-    0 0 18px rgba(255, 215, 0, .10) inset;
-  user-select:none;
-}
-.badge.level   { color: var(--ui-primary) }
-.badge.timer   { min-width:110px; text-align:center }
-.badge.score   { min-width:110px; text-align:center }
-
-/* ===== Справа внизу — мини-меню (настройки), по клику открываем панель ===== */
-.menuBtn{
-  position:absolute; right:12px; bottom:12px;
-  width:44px; height:44px; border-radius:10px;
-  background: rgba(0,0,0,.6);
-  color:#fff; border:1px solid rgba(255,255,255,.2);
-  display:flex; align-items:center; justify-content:center;
-  z-index:6;
-}
-.menuDots{ width:18px; height:18px; position:relative }
-.menuDots::before, .menuDots::after, .menuDots span{
-  content:""; display:block; width:4px; height:4px; border-radius:999px; background:#fff;
-  position:absolute; left:50%; transform:translateX(-50%);
-}
-.menuDots::before{ top:2px}
-.menuDots span{ top:7px}
-.menuDots::after{ top:12px}
-
-/* ===== Панель настроек (локализация + инфо), скрыта по умолчанию ===== */
-.panel{
-  position:absolute; right:12px; bottom:64px;
-  background: var(--ui-bg);
-  border: 1px solid var(--ui-stroke);
-  border-radius: 14px;
-  padding: 14px;
-  color: var(--ui-ink);
-  font-size: 14px;
-  width: 320px;
-  box-shadow: 0 10px 40px rgba(0,0,0,.5);
-  display:none;
-  z-index: 6;
-}
-.panel.open{ display:block }
-.panel h3{
-  margin:0 0 8px; color: var(--ui-primary); font-size:16px
-}
-.panel .row{ display:grid; grid-template-columns:120px 1fr; gap:10px; align-items:center; margin:8px 0 }
-.panel label{ color:#fff; font-weight:700 }
-.panel select, .panel input[type=color]{
-  width:100%; background:#0f0f0f; color:#fff; border:1px solid #2a2a2a; border-radius:10px; padding:8px; outline:none
-}
-
-/* ===== КНОПКА НАЗАД (влево) — на случай многоуровневого набора ===== */
-.backBtn{
-  position:absolute; left:12px; bottom:12px;
-  width:44px; height:44px; border-radius:10px;
-  background: rgba(0,0,0,.6);
-  color:#fff; border:1px solid rgba(255,255,255,.2);
-  display:flex; align-items:center; justify-content:center;
-  z-index:6;
-}
-.backBtn svg{ width:20px; height:20px; fill:#fff }
-
-/* ===== СТАРТОВОЕ ОКНО ===== */
-.overlay{
-  position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column;
-  background: radial-gradient(40vmax 40vmax at center, rgba(0,0,0,.50), rgba(0,0,0,.85));
-  z-index:10;
-}
-.overlay .panel{
-  display:block;
-  width:auto; min-width:320px; max-width:70vw;
-  background: rgba(0,0,0,.55);
-  border:1px solid rgba(255,255,255,.12);
-  border-radius: 16px;
-  padding: 20px 26px;
-  text-align:center;
-  color:#fff;
-  box-shadow: 0 0 26px rgba(255,215,0,.1);
-}
-.overlay .title{
-  font-size:22px; color:#fff; font-weight:900; margin:0 0 10px
-}
-.overlay .hint{
-  font-size:14px; color: var(--ui-muted); margin: 0 0 16px
-}
-.overlay .startBtn{
-  background: linear-gradient(90deg, var(--ui-primary), #ffde49);
-  color: var(--ui-on-primary);
-  border: 0; border-radius: 10px;
-  font-weight: 900; padding: 12px 18px; cursor: pointer
-}
-
-/* ===== СОБСТВЕННО ИГРОВОЕ ПОЛЕ (слой с падающими элементами) ===== */
-#game{
-  position: absolute; inset:0;
-  z-index: 1;              /* ниже HUD и оверлеев, выше подложки сцены */
-  pointer-events: auto;    /* ловим клики на элементах */
-}
-
-/* Падающий контейнер-элемент */
-.item{
-  position:absolute;
-  top:-140px;
-  left:0;
-  transform:translateZ(0);
-  will-change:transform, top, left;
-  display:inline-flex;
-  align-items:center; justify-content:center;
-  min-width:120px; min-height:80px;
-  padding:0;          /* padding идёт в .content */
-  user-select:none; cursor:pointer;
-}
-.item .bg{
-  position:absolute; inset:0;
-  background:#222;   /* перекрывается из JS: цвет или bgImage */
-  opacity:1;
-  border:0 solid #fff;
-  box-shadow:none;
-  transition:filter .15s ease;
-}
-.item .content{
-  position:relative; z-index:1; pointer-events:none; /* клики идут на контейнер */
-  display:flex; align-items:center; justify-content:center;
-  padding:20px 26px;
-  max-width:320px; max-height:220px;
-  text-align:center; line-height:1.15;
-}
-.item .content span{
-  display:inline-block; font-weight:800; white-space:nowrap;
-  color: var(--text-color);
-  font-family: var(--text-font);
-  font-size: var(--text-size-px);
-}
-.item .content img{
-  display:block; max-width:180px; max-height:140px; object-fit:contain; pointer-events:none;
-}
-
-/* ФИГУРЫ: клипуем только фон (.bg), контент остаётся невырезанным */
-.shape-rect .bg    { border-radius:10px }
-.shape-rounded .bg { border-radius:20px }
-.shape-circle .bg  { border-radius:50% }
-.shape-diamond .bg { clip-path:polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%) }
-.shape-star   .bg  { clip-path:polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%) }
-
-/* Эффекты */
-.fx-shadow  .bg{ box-shadow:0 10px 30px rgba(0,0,0,.5) }
-.fx-3d      .bg{ box-shadow:7px 7px 20px rgba(0,0,0,.5), inset -5px -5px 12px rgba(255,255,255,.22) }
-.fx-glow    .bg{ box-shadow:0 0 18px var(--glow) }
-.fx-border  .bg{ border-style:solid }
-
-/* Анимация «поймано» */
-.caught{ animation:pop .45s ease forwards }
-@keyframes pop{
-  0%{ transform:scale(1); opacity:1 }
-  50%{ transform:scale(1.15); opacity:1 }
-  100%{ transform:scale(0.85); opacity:0 }
-}
-
-/* Блёстки при попадании */
-.sparkle{
-  position:absolute; width:6px; height:6px; border-radius:50%;
-  background:rgba(255,255,255,.9);
-  pointer-events:none;
-  animation:spark 0.9s forwards;
-  filter:drop-shadow(0 0 6px #fff);
-  z-index:7; /* поверх HUD */
-}
-@keyframes spark{
-  from{ opacity:1; transform:translate(0,0) scale(1) }
-  to  { opacity:0; transform:translate(var(--dx), var(--dy)) scale(.2) }
-}
-
-/* Сообщения об ошибках */
-#errorBox{
-  position:absolute; left:0; right:0; bottom:0;
-  color:#ffc6c6; text-align:center; padding:6px 14px 10px; white-space:pre-wrap;
-  z-index:8; pointer-events:none; text-shadow:0 2px 6px rgba(0,0,0,.6)
-}
+  /* стартовый экран */
+  .startOverlay{
+    position:fixed; inset:0; display:flex; align-items:center; justify-content:center; z-index:30;
+    background: rgba(0,0,0,.0); /* прозрачно, т.к. игра встраивается поверх чужого фона */
+  }
+  .startPanel{
+    background: rgba(0,0,0,.55);
+    border:1px solid var(--hudBorder);
+    border-radius:16px;
+    padding:22px 26px;
+    text-align:center;
+    box-shadow:0 0 26px rgba(255,215,0,.1);
+    color:#fff;
+    display:flex; flex-direction:column; gap:10px; align-items:center; justify-content:center;
+    min-width:280px;
+  }
+  .startTitle{ font-size:22px; color:var(--ui); font-weight:900 }
+  .startBtn{
+    background:linear-gradient(90deg,#ffbf00,#ffd700);
+    color:#000; border:0; border-radius:10px; font-weight:900; padding:12px 16px; cursor:pointer;
+    margin-top:6px;
+  }
 </style>
 </head>
 <body>
 
-<div class="scene">
-
-  <!-- HUD -->
-  <div class="hud" aria-hidden="true">
-    <div class="badge level" id="hudLevel">—</div>
-    <div class="badge timer" id="hudTimer">00</div>
-    <div class="badge score" id="hudScore">0</div>
-  </div>
-
-  <!-- Игровое поле -->
-  <div id="game" role="application" aria-label="Falling Items game"></div>
-
-  <!-- Стартовое окно -->
-  <div class="overlay" id="startOverlay" aria-modal="true" role="dialog">
-    <div class="panel">
-      <div class="title" id="startTitle">Готово к старту</div>
-      <p class="hint" id="startHint">Нажми, чтобы начать. Первый клик включает звук.</p>
-      <button class="startBtn" id="startBtn">Старт</button>
-    </div>
-  </div>
-
-  <!-- Кнопка «назад» (кастомное действие — напр., перезапуск) -->
-  <button class="backBtn" id="backBtn" title="Заново" aria-label="Restart">
-    <svg viewBox="0 0 24 24" focusable="false"><path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
-  </button>
-
-  <!-- Мини-меню -->
-  <button class="menuBtn" id="menuBtn" title="Меню" aria-label="Menu">
-    <span class="menuDots"><span></span></span>
-  </button>
-  <div class="panel" id="menuPanel" aria-hidden="true">
-    <h3 id="menuTitle">Параметры</h3>
-    <div class="row">
-      <label for="uiLang">Язык</label>
-      <select id="uiLang"></select>
-    </div>
-    <div class="row">
-      <label for="uiPrimary">Акцент HUD</label>
-      <input type="color" id="uiPrimary" value="#ffd700" />
-    </div>
-    <div class="row">
-      <label for="uiBg">Фон панелей</label>
-      <input type="color" id="uiBg" value="#151515" />
-    </div>
-    <div style="margin-top:10px; color:var(--ui-muted)">
-      <div id="menuHint">Изменения применяются сразу для интерфейса. Сцена остаётся прозрачной.</div>
-    </div>
-  </div>
-
-  <div id="errorBox" aria-live="polite"></div>
+<div class="hud" aria-hidden="true">
+  <div class="badge levelTitle" id="hudLevel">Уровень</div>
+  <div class="badge timer" id="hudTimer">00</div>
+  <div class="badge score" id="hudScore">0</div>
 </div>
 
-<!-- Звук «поп» -->
+<div id="game" aria-live="polite" aria-atomic="true"></div>
+
 <audio id="popSound" src="pop.mp3" preload="auto"></audio>
 
-<!-- MathJax для LaTeX (если язык math) -->
-<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" defer></script>
+<!-- MathJax для мат. формул -->
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js"></script>
 
 <script>
-/* =========================================================================
-   ПАРСИНГ ПАРАМЕТРОВ И ТЕМА ИЗ «РАМКИ» (редактора)
-   ========================================================================= */
-const qp = Object.fromEntries(new URLSearchParams(location.search).entries());
+(async function(){
 
-/* Параметры с дефолтами */
-function val(k, d){ return qp[k] !== undefined ? qp[k] : d }
+  // ===== utils =====
+  const $ = sel => document.querySelector(sel);
+  const rnd = (a,b)=> a + Math.random()*(b-a);
+  const clamp = (v,min,max)=> Math.max(min, Math.min(max,v));
 
-/* Глобальные переменные настроек (из JSON/редактора) */
-let CFG = {
-  language:   'ru',
-  font:       'Rubik',
-  fontSize:   24,
-  textColor:  '#ffffff',
-  speed:      5,   // 1..10
-  style: {
-    shape:       'rounded',
-    bgColor:     '#1a1a1a',
-    bgImage:     '',
-    borderOn:    true,
-    borderColor: '#ffd700',
-    borderWidth: 1,
-    shadow:      true,
-    glow:        false,
-    glowColor:   '#00f0ff',
-    fx3d:        false,
-    opacity:     1
-  },
-  randomLevels: false,
-  levels: []  // [{target, correct[], wrong[], timer}]
-};
+  // ===== загрузка конфига =====
+  const params = new URLSearchParams(location.search);
+  const id = params.get('id');
+  if(!id){ alert('Не передан id'); return; }
 
-/* ===== загрузка JSON с данными уровней =====
-   Есть две схемы:
-   1) ?data=data:application/json,... (передаёт редактор до публикации)
-   2) ?id=... → грузим https://nikashum93.github.io/texts/data/<id>.json
-   -------------------------------------------------------------------- */
-async function loadGameData(){
-  const BASE_TXT = 'https://nikashum93.github.io/texts/data/';
-
-  // приоритет: data → id → пустой
-  if(qp.data){
-    const url = decodeURIComponent(qp.data);
-    const r = await fetch(url, {cache:'no-store'});
-    if(!r.ok) throw new Error('Не удалось загрузить data: JSON');
-    return r.json();
-  }
-  if(qp.id){
-    const url = `${BASE_TXT}${encodeURIComponent(qp.id)}.json?v=${Date.now()}`;
-    const r = await fetch(url, {cache:'no-store'});
-    if(!r.ok) throw new Error('Не найдено или недоступно: ' + url);
-    return r.json();
-  }
-  // пустой прототип
-  return {
-    language: 'ru',
-    font: 'Rubik',
-    fontSize: 24,
-    textColor: '#ffffff',
-    speed: 5,
-    style: {
-      shape:'rounded', bgColor:'#1a1a1a', bgImage:'',
-      borderOn:true, borderColor:'#ffd700', borderWidth:1,
-      shadow:true, glow:false, glowColor:'#00f0ff', fx3d:false, opacity:1
-    },
-    randomLevels: false,
-    levels: [
-      { target: 'Demo', correct:['cat','sun','https://via.placeholder.com/160x120?text=img'], wrong:['dog','car'], timer: 30 }
-    ]
-  };
-}
-
-/* ===== локализация строк ===== */
-const L10N = {
-  ru: {
-    startTitle: 'Готово к старту',
-    startHint:  'Нажми, чтобы начать. Первый клик включает звук.',
-    startBtn:   'Старт',
-    menuTitle:  'Параметры',
-    menuHint:   'Изменения применяются сразу для интерфейса. Сцена остаётся прозрачной.',
-    levelLabel: (n,t)=> `Уровень ${n}${t?': '+t:''}`,
-  },
-  en: {
-    startTitle: 'Ready to start',
-    startHint:  'Click to start. The first click enables sound.',
-    startBtn:   'Start',
-    menuTitle:  'Settings',
-    menuHint:   'Changes apply to HUD instantly. Playfield stays transparent.',
-    levelLabel: (n,t)=> `Level ${n}${t?': '+t:''}`,
-  },
-  es: {
-    startTitle: 'Listo para empezar',
-    startHint:  'Haz clic para empezar. El primer clic habilita el sonido.',
-    startBtn:   'Iniciar',
-    menuTitle:  'Parámetros',
-    menuHint:   'Los cambios se aplican al HUD al instante. El campo de juego es transparente.',
-    levelLabel: (n,t)=> `Nivel ${n}${t?': '+t:''}`,
-  },
-  fr: {
-    startTitle: 'Prêt à démarrer',
-    startHint:  'Cliquez pour démarrer. Le premier clic active le son.',
-    startBtn:   'Démarrer',
-    menuTitle:  'Paramètres',
-    menuHint:   "Les changements s'appliquent au HUD immédiatement. Le terrain reste transparent.",
-    levelLabel: (n,t)=> `Niveau ${n}${t?': '+t:''}`,
-  },
-  de: {
-    startTitle: 'Bereit zum Start',
-    startHint:  'Klicken zum Starten. Der erste Klick aktiviert den Ton.',
-    startBtn:   'Start',
-    menuTitle:  'Einstellungen',
-    menuHint:   'Änderungen wirken sofort auf das HUD. Spielfeld bleibt transparent.',
-    levelLabel: (n,t)=> `Level ${n}${t?': '+t:''}`,
-  },
-  ja: {
-    startTitle: '開始の準備ができました',
-    startHint:  'クリックして開始。最初のクリックで音声が有効になります。',
-    startBtn:   'スタート',
-    menuTitle:  '設定',
-    menuHint:   '変更はすぐにHUDに適用されます。プレイフィールドは透明のままです。',
-    levelLabel: (n,t)=> `レベル ${n}${t?': '+t:''}`,
-  },
-  zh: {
-    startTitle: '准备开始',
-    startHint:  '点击开始。第一次点击会启用声音。',
-    startBtn:   '开始',
-    menuTitle:  '设置',
-    menuHint:   '修改会立即应用到HUD。场景保持透明。',
-    levelLabel: (n,t)=> `关卡 ${n}${t?': '+t:''}`,
-  },
-  ar: {
-    startTitle: 'جاهز للبدء',
-    startHint:  'انقر للبدء. أول نقرة تُفعِّل الصوت.',
-    startBtn:   'ابدأ',
-    menuTitle:  'الإعدادات',
-    menuHint:   'التغييرات تُطبّق فورًا على HUD. ساحة اللعب شفافة.',
-    levelLabel: (n,t)=> `المستوى ${n}${t?': '+t:''}`,
-  }
-}
-
-/* ===== применение темы интерфейса из «рамки» ===== */
-function applyThemeFromFrameStyle(){
-  const st = CFG.style || {};
-  /* Ключевая логика связки:
-     - primary ← borderColor
-     - bg      ← bgColor
-     - text    ← CFG.textColor
-     - font    ← CFG.font/fontSize
-  */
-  const primary  = st.borderColor || '#ffd700';
-  const panelBg  = st.bgColor     || '#151515';
-  const ink      = '#e9e9e9';
-  const stroke   = '#2a2a2a';
-
-  document.documentElement.style.setProperty('--ui-primary', primary);
-  document.documentElement.style.setProperty('--ui-bg', panelBg);
-  document.documentElement.style.setProperty('--ui-ink', ink);
-  document.documentElement.style.setProperty('--ui-stroke', stroke);
-  document.documentElement.style.setProperty('--text-color', CFG.textColor || '#ffffff');
-  document.documentElement.style.setProperty('--text-size-px', (parseInt(CFG.fontSize,10)||24) + 'px');
-
-  /* Шрифт из настроек */
-  const family = (CFG.font || 'Rubik').trim();
-  const gf = document.getElementById('gfLinkMain');
-  if(!gf){
-    const link = document.createElement('link');
-    link.id = 'gfLinkMain';
-    link.rel = 'stylesheet';
-    link.href = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(family).replace(/%20/g,'+') + ':wght@400;700&display=swap';
-    document.head.appendChild(link);
-  }else{
-    gf.href = 'https://fonts.googleapis.com/css2?family=' + encodeURIComponent(family).replace(/%20/g,'+') + ':wght@400;700&display=swap';
-  }
-  document.documentElement.style.setProperty('--text-font', `${family}, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif`);
-}
-
-/* =========================================================================
-   ИГРОВАЯ ЛОГИКА
-   ========================================================================= */
-const gameEl     = document.getElementById('game');
-const hudLevel   = document.getElementById('hudLevel');
-const hudTimer   = document.getElementById('hudTimer');
-const hudScore   = document.getElementById('hudScore');
-const errorBox   = document.getElementById('errorBox');
-
-const overlay    = document.getElementById('startOverlay');
-const startBtn   = document.getElementById('startBtn');
-
-const menuBtn    = document.getElementById('menuBtn');
-const menuPanel  = document.getElementById('menuPanel');
-const backBtn    = document.getElementById('backBtn');
-
-const uiLangSel  = document.getElementById('uiLang');
-const uiPrimary  = document.getElementById('uiPrimary');
-const uiBg       = document.getElementById('uiBg');
-
-const startTitle = document.getElementById('startTitle');
-const startHint  = document.getElementById('startHint');
-const menuTitle  = document.getElementById('menuTitle');
-const menuHint   = document.getElementById('menuHint');
-
-const popSound   = document.getElementById('popSound');
-
-let levelIndex = 0;
-let score = 0;
-let running = false;
-let levelTimerHandle = null;
-let spawnerHandle    = null;
-
-/* удобства */
-const clamp = (v,min,max)=> Math.max(min, Math.min(max,v));
-const rnd   = (a,b)=> a + Math.random()*(b-a);
-
-/* ===== локализация применить ===== */
-function applyL10n(){
-  const lang = (CFG.language || 'ru').toLowerCase();
-  const t = L10N[lang] || L10N.ru;
-  startTitle.textContent = t.startTitle;
-  startHint.textContent  = t.startHint;
-  startBtn.textContent   = t.startBtn;
-  menuTitle.textContent  = t.menuTitle;
-  menuHint.textContent   = t.menuHint;
-
-  // заполнить селектор языков
-  uiLangSel.innerHTML = '';
-  Object.keys(L10N).forEach(k=>{
-    const opt = document.createElement('option');
-    opt.value = k; opt.textContent = k.toUpperCase();
-    uiLangSel.appendChild(opt);
-  });
-  uiLangSel.value = lang;
-}
-
-/* ===== меню HUD ===== */
-menuBtn.addEventListener('click', ()=>{
-  menuPanel.classList.toggle('open');
-  menuPanel.setAttribute('aria-hidden', menuPanel.classList.contains('open') ? 'false' : 'true');
-});
-uiLangSel.addEventListener('change', ()=>{
-  CFG.language = uiLangSel.value;
-  applyL10n();
-  updateHudLevelTitle();
-});
-uiPrimary.addEventListener('input', ()=>{
-  document.documentElement.style.setProperty('--ui-primary', uiPrimary.value || '#ffd700');
-});
-uiBg.addEventListener('input', ()=>{
-  document.documentElement.style.setProperty('--ui-bg', uiBg.value || '#151515');
-});
-
-/* ===== старт/перезапуск ===== */
-function showOverlay(){ overlay.style.display = 'flex' }
-function hideOverlay(){ overlay.style.display = 'none' }
-
-startBtn.addEventListener('click', startGame);
-backBtn.addEventListener('click', restartGame);
-
-function startGame(){
-  hideOverlay();
-  // Разрешаем воспроизведение звука (первый клик)
-  try{ popSound.play().then(()=> popSound.pause()).catch(()=>{}); }catch(_){}
-  levelIndex = 0;
-  score = 0;
-  hudScore.textContent = '0';
-  running = true;
-  startLevel();
-}
-
-function restartGame(){
-  stopLevel();
-  // очистить сцену
-  document.querySelectorAll('.item').forEach(n=> n.remove());
-  showOverlay();
-}
-
-/* ===== текущий уровень ===== */
-function startLevel(){
-  if(levelIndex >= CFG.levels.length){
-    showFinish();
+  const jsonUrl = `https://nikashum93.github.io/texts/data/${encodeURIComponent(id)}.json?v=${Date.now()}`;
+  let cfg;
+  try{
+    const res = await fetch(jsonUrl, { cache:'no-store' });
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    cfg = await res.json();
+  }catch(e){
+    alert('Ошибка загрузки настроек: ' + e.message + '\nПодождите 30–60 сек, GitHub Pages мог закешировать.');
     return;
   }
-  const lv = CFG.levels[levelIndex];
-  updateHudLevelTitle();
 
-  // таймер
-  let timeLeft = Math.max(5, Number(lv.timer || 30));
-  hudTimer.textContent = String(timeLeft).padStart(2,'0');
-  if(levelTimerHandle) clearInterval(levelTimerHandle);
-  levelTimerHandle = setInterval(()=>{
-    timeLeft--;
-    hudTimer.textContent = String(timeLeft).padStart(2,'0');
-    if(timeLeft <= 0){
-      clearInterval(levelTimerHandle);
-      clearInterval(spawnerHandle);
-      document.querySelectorAll('.item').forEach(n=>n.remove());
-      levelIndex++;
-      startLevel();
+  // Глобальные из редактора
+  const SPEED = clamp(Number(cfg.speed ?? 5), 1, 10); // 1–10
+  const FONT = cfg.font || 'Rubik';
+  const FONT_SIZE = Number(cfg.fontSize || 24);
+  const TEXT_COLOR = cfg.textColor || '#ffffff';
+  const STYLE = cfg.style || {};
+  const CURSOR = cfg.cursor || '';
+  const LANG = (cfg.language || 'ru');
+
+  // Подгрузим шрифт
+  const gf = document.createElement('link');
+  gf.rel = 'stylesheet';
+  gf.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(FONT).replace(/%20/g,'+')}%3Awght@400;700&display=swap`;
+  document.head.appendChild(gf);
+
+  // Курсор
+  if(CURSOR) document.body.style.cursor = `url(${CURSOR}), auto`;
+
+  // Цвет UI
+  const uiColor = (STYLE.uiColor || STYLE.borderColor || STYLE.glowColor || '#ffd700');
+  document.documentElement.style.setProperty('--ui', uiColor);
+  document.documentElement.style.setProperty('--glow', STYLE.glowColor || '#00f0ff');
+
+  // Инициализация
+  const game = $('#game');
+  const popSound = $('#popSound');
+  const hudLevel = $('#hudLevel');
+  const hudTimer = $('#hudTimer');
+  const hudScore = $('#hudScore');
+
+  let score = 0;
+  let current = 0;
+  let levelTimerHandle = null;
+  let spawnerHandle = null;
+  let running = false;
+
+  // Рандом уровней (оставил выключенным в редакторе — но тут уважаем флаг)
+  const levels = Array.isArray(cfg.levels) ? [...cfg.levels] : [];
+  if(cfg.randomLevels){
+    for(let i=levels.length-1; i>0; i--){
+      const j = Math.floor(Math.random()*(i+1));
+      [levels[i], levels[j]] = [levels[j], levels[i]];
     }
-  }, 1000);
-
-  // спавн объектов
-  if(spawnerHandle) clearInterval(spawnerHandle);
-  const pool = [
-    ...(lv.correct||[]).map(v=>({val:v, good:true})),
-    ...(lv.wrong||[]).map(v=>({val:v, good:false}))
-  ];
-  const SPEED = clamp(Number(CFG.speed ?? 5), 1, 10);
-  const baseDelay = 1200;
-  const delay = clamp(baseDelay / (SPEED/5), 280, 3000);
-
-  spawnerHandle = setInterval(()=>{
-    const obj = pool[Math.floor(Math.random()*pool.length)];
-    drop(obj);
-  }, delay);
-}
-
-function stopLevel(){
-  running = false;
-  clearInterval(levelTimerHandle);
-  clearInterval(spawnerHandle);
-}
-
-/* ===== подпись уровня в HUD ===== */
-function updateHudLevelTitle(){
-  const lang = (CFG.language || 'ru').toLowerCase();
-  const t = L10N[lang] || L10N.ru;
-  const lv = CFG.levels[levelIndex];
-  const title = t.levelLabel(levelIndex+1, lv?.target||'');
-  hudLevel.textContent = title;
-}
-
-/* =========================================================================
-   ЛОГИКА ЭЛЕМЕНТОВ
-   ========================================================================= */
-function drop(obj){
-  const st = CFG.style || {};
-  const SPEED = clamp(Number(CFG.speed ?? 5), 1, 10);
-
-  const el = document.createElement('div');
-  el.className = `item shape-${st.shape || 'rounded'} ${st.shadow?'fx-shadow':''} ${st.fx3d?'fx-3d':''} ${st.glow?'fx-glow':''} ${st.borderOn && st.borderWidth>0 ? 'fx-border' : ''}`;
-  el.dataset.good = obj.good ? '1' : '0';
-  el.style.setProperty('--glow', st.glowColor || '#00f0ff');
-
-  const bg = document.createElement('div');
-  bg.className = 'bg';
-  const content = document.createElement('div');
-  content.className = 'content';
-  el.appendChild(bg); el.appendChild(content);
-
-  // фон-слой (цвет ИЛИ картинка; если картинка есть — она главнее, цвет можно подсунуть вторым слоем)
-  const bgImg = (st.bgImage||'').trim();
-  const bgCol = st.bgColor || 'transparent';
-  if(bgImg){
-    bg.style.background = `url(${bgImg}) center/contain no-repeat, ${bgCol}`;
-  }else{
-    bg.style.background = bgCol;
-  }
-  bg.style.opacity = clamp(Number(st.opacity ?? 1), 0, 1);
-  if(st.borderOn && st.borderWidth>0){
-    bg.style.borderColor = st.borderColor || '#fff';
-    bg.style.borderWidth = `${parseInt(st.borderWidth,10)}px`;
-  } else {
-    bg.style.borderWidth = '0px';
   }
 
-  // контент (картинка или текст/LaTeX)
-  const isUrl = /^https?:\/\//i.test(obj.val);
-  const isMath = (CFG.language || '') === 'math';
+  // Стартовый экран
+  makeStartOverlay();
 
-  if(isUrl){
-    const img = document.createElement('img');
-    img.src = obj.val;
-    content.appendChild(img);
-  }else if(isMath){
-    const span = document.createElement('span');
-    span.textContent = `\\(${obj.val}\\)`;
-    content.appendChild(span);
-    // typeset послe добавления в DOM
-  }else{
-    const span = document.createElement('span');
-    span.textContent = String(obj.val);
-    span.style.color = CFG.textColor || '#ffffff';
-    span.style.fontFamily = `${CFG.font || 'Rubik'}, system-ui, sans-serif`;
-    span.style.fontSize = `${parseInt(CFG.fontSize,10)||24}px`;
-    content.appendChild(span);
+  function makeStartOverlay(){
+    const ov = document.createElement('div');
+    ov.className = 'startOverlay';
+    ov.innerHTML = `
+      <div class="startPanel" role="dialog" aria-modal="true">
+        <div class="startTitle">${i18n('Старт игры', 'Start game', 'ゲーム開始')}</div>
+        <div style="opacity:.95">${i18n('Нажми, чтобы начать', 'Tap to start', 'クリックで開始')}</div>
+        <button class="startBtn" id="btnStart">${i18n('Начать', 'Start', '開始')}</button>
+      </div>
+    `;
+    document.body.appendChild(ov);
+    $('#btnStart').addEventListener('click', async ()=>{
+      try{ await unlockAudio(); }catch(_){}
+      ov.remove();
+      startLevel();
+    }, { once:true });
   }
 
-  // Стартовая позиция
-  const gw = gameEl.clientWidth;
-  const startX = Math.max(16, Math.min(gw-220, rnd(0, gw-220)));
-  el.style.left = startX + 'px';
-  el.style.top  = '-160px';
-
-  // Вставить в сцену и квадратнуть для геометрических фигур (круг/ромб/звезда)
-  gameEl.appendChild(el);
-  fitGeometryBox(el);
-
-  // Автофит текста (если не влезает)
-  if(!isUrl && !isMath){
-    autoFitText(el, parseInt(CFG.fontSize,10)||24, 12);
+  async function unlockAudio(){
+    try{
+      popSound.currentTime = 0;
+      await popSound.play().catch(()=>{});
+      popSound.pause();
+      popSound.currentTime = 0;
+    }catch(_){}
   }
 
-  // Если LaTeX — typeset, затем подправляем коробку
-  if(isMath && window.MathJax && MathJax.typesetPromise){
-    MathJax.typesetPromise([el]).then(()=> fitGeometryBox(el));
+  function i18n(ru,en,ja){
+    switch(LANG){
+      case 'en': return en;
+      case 'ja': return ja;
+      default: return ru;
+    }
   }
 
-  // Падение
-  const vel      = 1.2 + SPEED * 0.9;
-  const swayAmp  = rnd(8, 22);
-  const swayFreq = rnd(0.003, 0.008);
-  let y = -140;
-  let t = 0;
-  let alive = true;
+  // ===== старт уровня =====
+  function startLevel(){
+    running = true;
 
-  function step(){
-    if(!alive) return;
-    y += vel; t += 1;
-    const dx = Math.sin(t*swayFreq) * swayAmp;
-    el.style.top = y + 'px';
-    el.style.transform = `translateX(${dx}px)`;
-    if(y > gameEl.clientHeight + 200){
-      alive = false; el.remove();
-      // штраф за пропуск правильного
-      if(el.dataset.good === '1'){
-        score = Math.max(0, score - 5);
-        hudScore.textContent = String(score);
+    if(current >= levels.length){ showFinish(); return; }
+    const lv = levels[current];
+    hudLevel.textContent = `${i18n('Уровень','Level','レベル')} ${current+1}: ${lv.target || ''}`;
+
+    // таймер уровня
+    let timeLeft = Math.max(5, Number(lv.timer || 30));
+    hudTimer.textContent = timeLeft.toString().padStart(2,'0');
+    if(levelTimerHandle) clearInterval(levelTimerHandle);
+    levelTimerHandle = setInterval(()=>{
+      if(!running) return;
+      timeLeft--;
+      hudTimer.textContent = timeLeft.toString().padStart(2,'0');
+      if(timeLeft <= 0){
+        clearInterval(levelTimerHandle);
+        clearInterval(spawnerHandle);
+        document.querySelectorAll('.item').forEach(n=>n.remove());
+        current++;
+        startLevel();
       }
-      return;
+    }, 1000);
+
+    // спавн
+    if(spawnerHandle) clearInterval(spawnerHandle);
+    const pool = [
+      ...(lv.correct||[]).map(v=>({val:v, good:true})),
+      ...(lv.wrong||[]).map(v=>({val:v, good:false}))
+    ];
+    const baseDelay = 1200; // базовый интервал спавна
+    const delay = clamp(baseDelay / (SPEED/5), 280, 3000); // быстрее при большем SPEED
+    spawnerHandle = setInterval(()=>{
+      if(!running) return;
+      const obj = pool[Math.floor(Math.random()*pool.length)];
+      drop(obj);
+    }, delay);
+  }
+
+  // ===== создание и падение =====
+  function drop(obj){
+    const el = document.createElement('div');
+    el.className =
+      `item shape-${STYLE.shape || 'rounded'} ` +
+      `${STYLE.shadow?'fx-shadow':''} ` +
+      `${STYLE.fx3d?'fx-3d':''} ` +
+      `${STYLE.glow?'fx-glow':''} ` +
+      `${STYLE.borderOn && STYLE.borderWidth>0 ? 'fx-border' : ''}`;
+    el.dataset.good = obj.good ? '1' : '0';
+    el.style.setProperty('--glow', STYLE.glowColor || '#00f0ff');
+
+    // структура
+    const bg = document.createElement('div');
+    bg.className = 'bg';
+    const content = document.createElement('div');
+    content.className = 'content';
+    content.style.padding = clamp(Number(STYLE.pad ?? 22), 0, 120) + 'px';
+    el.appendChild(bg); el.appendChild(content);
+
+    // фон-слой (важно: если есть картинка — не рисуем цвет)
+    const bgImg = (STYLE.bgImage||'').trim();
+    const bgCol = (STYLE.bgColor || 'transparent');
+    if(bgImg){
+      bg.style.background = `url(${bgImg}) center/contain no-repeat`; // ТОЛЬКО картинка
+    }else{
+      bg.style.background = bgCol; // ТОЛЬКО цвет
+    }
+    bg.style.opacity = clamp(Number(STYLE.opacity ?? 1), 0, 1);
+    if(STYLE.borderOn && STYLE.borderWidth>0){
+      bg.style.borderColor = STYLE.borderColor || uiColor;
+      bg.style.borderWidth = `${parseInt(STYLE.borderWidth,10)}px`;
+    } else {
+      bg.style.borderWidth = '0px';
+      bg.style.borderColor = 'transparent';
+    }
+
+    // контент
+    if(/^https?:\/\//i.test(obj.val)){
+      const img = document.createElement('img');
+      img.src = obj.val;
+      content.appendChild(img);
+    } else if((cfg.language||'') === 'math'){
+      // MathJax
+      const span = document.createElement('span');
+      span.textContent = `\\(${obj.val}\\)`;
+      content.appendChild(span);
+      // отрисуем после добавления в DOM
+    } else {
+      const span = document.createElement('span');
+      span.textContent = String(obj.val);
+      span.style.color = TEXT_COLOR;
+      span.style.fontFamily = `${FONT}, system-ui, sans-serif`;
+      span.style.fontSize = `${FONT_SIZE}px`;
+      content.appendChild(span);
+    }
+
+    // Позиция старта
+    const gw = game.clientWidth;
+    const startX = Math.max(16, Math.min(gw-180, rnd(0, gw-180)));
+    el.style.left = startX + 'px';
+    el.style.top = '-160px';
+
+    // На сцену, потом геом.подгонка
+    game.appendChild(el);
+
+    // Авто-фит текста/картинки под контейнер с отступами
+    // (сначала ставим ширину/высоту по содержимому)
+    fitGeometryBox(el, /*squareFor=*/STYLE.shape);
+
+    // Дополнительный автофит текста (уменьшаем, если не влазит)
+    autoFitText(el, FONT_SIZE, 12, STYLE.shape);
+
+    // MathJax typeset, если надо
+    if((cfg.language||'') === 'math') {
+      MathJax.typesetPromise([el]).then(()=> {
+        fitGeometryBox(el, STYLE.shape);
+        autoFitText(el, FONT_SIZE, 12, STYLE.shape);
+      });
+    }
+
+    // падение
+    const vel = 1.2 + SPEED * 0.9;       // базовая скорость
+    const swayAmp = rnd(8, 22);          // небольшое качание
+    const swayFreq = rnd(0.003, 0.008);  // частота
+    let y = -140;
+    let t = 0;
+    let alive = true;
+
+    function step(){
+      if(!alive) return;
+      y += vel; t += 1;
+      const dx = Math.sin(t*swayFreq) * swayAmp;
+      el.style.top = y+'px';
+      el.style.transform = `translateX(${dx}px)`;
+      if(y > game.clientHeight + 200){
+        alive = false;
+        // штраф за пропуск правильного
+        if(el.dataset.good === '1'){
+          score = Math.max(0, score - 5);
+          hudScore.textContent = score;
+        }
+        el.remove();
+        return;
+      }
+      requestAnimationFrame(step);
     }
     requestAnimationFrame(step);
-  }
-  requestAnimationFrame(step);
 
-  // Клик
-  el.addEventListener('click', ()=>{
-    if(!alive) return;
-    if(el.dataset.good === '1'){
-      score++; hudScore.textContent = String(score);
-      playPop(el);
-      alive = false;
-      el.classList.add('caught');
-      setTimeout(()=> el.remove(), 380);
-    }else{
-      score = Math.max(0, score - 1); // штраф за ошибку
-      hudScore.textContent = String(score);
-      bg.style.filter = 'brightness(2) saturate(1.6) hue-rotate(-24deg)';
-      setTimeout(()=> bg.style.filter = 'none', 220);
+    // клик
+    el.addEventListener('click', ()=>{
+      if(!alive) return;
+      if(el.dataset.good === '1'){
+        score++; hudScore.textContent = score;
+        playPop(el);
+        alive = false;
+        el.classList.add('caught');
+        setTimeout(()=> el.remove(), 400);
+      } else {
+        // штраф за неверный клик
+        score = Math.max(0, score - 1);
+        hudScore.textContent = score;
+        // «штраф»: вспышка
+        bg.style.filter = 'brightness(2) saturate(1.6) hue-rotate(-30deg)';
+        setTimeout(()=> bg.style.filter = 'none', 220);
+      }
+    });
+  }
+
+  // ===== геометрия фигур (квадрат для круга/ромба/звезды), отступы и автофит фона
+  function fitGeometryBox(el, shape){
+    const content = el.querySelector('.content');
+    const bg = el.querySelector('.bg');
+
+    // измерим контент
+    const rect = content.getBoundingClientRect();
+    // исходные размеры = контент без «сжатия»
+    let W = rect.width;
+    let H = rect.height;
+
+    // если фигура геометрическая — делаем квадрат + чуть воздуха
+    if(shape === 'circle' || shape === 'diamond' || shape === 'star'){
+      const size = Math.max(W, H) + 30; // +30 воздуха вокруг
+      W = size;
+      H = size;
+    } else {
+      // прямоугольные формы — оставляем как есть + немного воздуха
+      W = Math.max(W + 10, 80);
+      H = Math.max(H + 10, 60);
     }
-  }, {passive:true});
-}
 
-/* квадратим контейнер под геом.фигуры */
-function fitGeometryBox(el){
-  const shape = (CFG.style?.shape) || 'rounded';
-  const content = el.querySelector('.content');
-  const rect = content.getBoundingClientRect();
-  // Базово — под контент
-  el.style.width  = rect.width  + 'px';
-  el.style.height = rect.height + 'px';
-  // Геометрические — квадрат с отступом
-  if(shape === 'circle' || shape === 'diamond' || shape === 'star'){
-    const size = Math.max(rect.width, rect.height) + 30;
-    el.style.width  = size + 'px';
-    el.style.height = size + 'px';
+    el.style.width = W + 'px';
+    el.style.height = H + 'px';
+
+    // фон-картинка уже стоит как contain; цвет — просто заполняет bg
+    // никаких чёрных прямоугольников: bg по умолчанию transparent
   }
-}
 
-/* Авто-уменьшение текста до влезания */
-function autoFitText(el, startPx, minPx){
-  const span = el.querySelector('.content span');
-  if(!span) return;
-  let fs = startPx;
-  const maxW = el.clientWidth  - 24;
-  const maxH = el.clientHeight - 24;
+  // ===== авто-уменьшение текста, чтобы поместился =====
+  function autoFitText(el, startPx, minPx, shape){
+    const span = el.querySelector('.content span');
+    if(!span) return;
+    let fs = startPx;
 
-  const ok = ()=> {
-    const r = span.getBoundingClientRect();
-    return (r.width <= maxW && r.height <= maxH);
-  };
-  while(fs > minPx){
-    span.style.fontSize = fs + 'px';
-    if(ok()) break;
-    fs -= 1;
-  }
-}
+    const content = el.querySelector('.content');
+    const bg = el.querySelector('.bg');
 
-/* Звёздочки при попадании + звук */
-function playPop(el){
-  try{
-    popSound.currentTime = 0;
-    popSound.play().catch(()=>{});
-  }catch(_) {}
-  const r = el.getBoundingClientRect();
-  for(let i=0;i<14;i++){
-    const s = document.createElement('div');
-    s.className = 'sparkle';
-    s.style.left = (r.left + r.width/2) + 'px';
-    s.style.top  = (r.top  + r.height/2) + 'px';
-    const angle = Math.random() * Math.PI * 2;
-    const dist  = 40 + Math.random()*70;
-    s.style.setProperty('--dx', (Math.cos(angle)*dist) + 'px');
-    s.style.setProperty('--dy', (Math.sin(angle)*dist) + 'px');
-    s.style.animationDuration = (0.9 / (clamp(Number(CFG.speed ?? 5),1,10)/5)) + 's';
-    document.body.appendChild(s);
-    setTimeout(()=> s.remove(), 1000);
-  }
-}
+    // после fitGeometryBox размеры для проверки:
+    const maxW = el.clientWidth - 12; // немного запаса
+    const maxH = el.clientHeight - 12;
 
-/* Финал */
-function showFinish(){
-  stopLevel();
-  const ov = document.createElement('div');
-  ov.className = 'overlay';
-  ov.innerHTML = `
-    <div class="panel">
-      <div class="title" style="color:var(--ui-primary)">Финиш! 🎉</div>
-      <div style="opacity:.9; margin-bottom:10px">Счёт: <b>${score}</b></div>
-      <button class="startBtn" id="againBtn" style="background:linear-gradient(90deg,var(--ui-primary),#ffde49)">Начать заново</button>
-    </div>
-  `;
-  document.body.appendChild(ov);
-  ov.querySelector('#againBtn').addEventListener('click', ()=>{
-    ov.remove();
-    restartGame();
-  });
-}
-
-/* =========================================================================
-   ИНИЦИАЛИЗАЦИЯ
-   ========================================================================= */
-(async function init(){
-  try{
-    // Подтянуть JSON уровней
-    const fromServer = await loadGameData();
-    // Слить в CFG (с приоритетом URL для базовых ключей)
-    CFG = {
-      ...CFG,
-      ...fromServer,
-      language: (val('language', fromServer.language) || 'ru'),
-      font:     val('font', fromServer.font || 'Rubik'),
-      fontSize: parseInt(val('fontSize', fromServer.fontSize || 24),10),
-      textColor: val('textColor', fromServer.textColor || '#ffffff'),
-      speed: parseInt(val('speed', fromServer.speed || 5),10),
-      style: {...CFG.style, ...(fromServer.style||{})}
+    const measure = ()=>{
+      const r = span.getBoundingClientRect();
+      return (r.width <= maxW && r.height <= maxH);
     };
 
-    // Рандом уровней?
-    if(fromServer.randomLevels){
-      CFG.randomLevels = true;
-      CFG.levels = Array.isArray(fromServer.levels) ? [...fromServer.levels] : [];
-      for(let i=CFG.levels.length-1; i>0; i--){
-        const j = Math.floor(Math.random()*(i+1));
-        [CFG.levels[i], CFG.levels[j]] = [CFG.levels[j], CFG.levels[i]];
-      }
-    }else{
-      CFG.levels = Array.isArray(fromServer.levels) ? fromServer.levels : [];
+    while(fs > minPx){
+      span.style.fontSize = fs + 'px';
+      if(measure()) break;
+      fs -= 1;
     }
-
-    // Применить тему
-    applyThemeFromFrameStyle();
-
-    // Локализация
-    applyL10n();
-
-    // Проставить текущие цвета в панель
-    uiPrimary.value = getComputedStyle(document.documentElement).getPropertyValue('--ui-primary').trim() || '#ffd700';
-    uiBg.value      = getComputedStyle(document.documentElement).getPropertyValue('--ui-bg').trim()      || '#151515';
-
-    // Если курсор задан
-    if(fromServer.cursor){
-      document.body.style.cursor = `url(${fromServer.cursor}), auto`;
-    }
-
-    // Готово
-    errorBox.textContent = '';
-
-  }catch(e){
-    errorBox.textContent = 'Ошибка загрузки: ' + (e.message || e);
-    console.error(e);
   }
+
+  // ===== эффекты при клике =====
+  function playPop(el){
+    try{ popSound.currentTime = 0; popSound.play(); }catch(_){}
+    const r = el.getBoundingClientRect();
+    for(let i=0;i<14;i++){
+      const s = document.createElement('div');
+      s.className = 'sparkle';
+      s.style.left = (r.left + r.width/2) + 'px';
+      s.style.top  = (r.top  + r.height/2) + 'px';
+      const angle = Math.random() * Math.PI * 2;
+      const dist = 40 + Math.random()*70;
+      s.style.setProperty('--dx', (Math.cos(angle)*dist) + 'px');
+      s.style.setProperty('--dy', (Math.sin(angle)*dist) + 'px');
+      s.style.animationDuration = (0.9 / (SPEED/5)) + 's';
+      document.body.appendChild(s);
+      setTimeout(()=> s.remove(), 1000);
+    }
+  }
+
+  // ===== финал =====
+  function showFinish(){
+    const ov = document.createElement('div');
+    ov.className = 'startOverlay';
+    ov.innerHTML = `
+      <div class="startPanel">
+        <div class="startTitle">${i18n('Финиш! 🎉','Finish! 🎉','フィニッシュ! 🎉')}</div>
+        <div style="opacity:.9; margin-bottom:6px">${i18n('Счёт','Score','スコア')}: <b>${score}</b></div>
+        <button class="startBtn" id="btnAgain">${i18n('Начать заново','Play again','もう一度')}</button>
+      </div>
+    `;
+    document.body.appendChild(ov);
+    $('#btnAgain').onclick = ()=> location.reload();
+  }
+
 })();
 </script>
 </body>
