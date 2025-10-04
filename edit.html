@@ -64,30 +64,22 @@
 
     /* ПРЕДПРОСМОТР */
     .preview-wrap{display:grid; grid-template-rows:auto 1fr; gap:12px; height:100%}
-    .preview-stage{background:#0a0a0a; border:1px dashed #333; border-radius:12px; display:flex; align-items:center; justify-content:center; padding:24px; min-height:320px}
     .preview-controls{display:grid; grid-template-columns:1fr auto; gap:12px}
-
-    /* Превью-элемент: структура как в игре (bg + content) */
+    .preview-stage{background:#0a0a0a; border:1px dashed #333; border-radius:12px; display:flex; align-items:center; justify-content:center; padding:24px; min-height:320px}
     .preview-item{
       position:relative; display:inline-flex; align-items:center; justify-content:center;
-      min-width:120px; min-height:80px; transition:all .2s ease;
-      /* внешние эффекты (тень/подсветка/3D/бордер) вешаем на .bg, но рамка визуально вокруг */
+      min-width:140px; min-height:64px; transition:all .2s ease; isolation:isolate;
+      /* без фонового цвета по умолчанию — фон цвет/картинка ставим на .bg */
     }
+    /* двухслойная структура, как в main.html */
     .preview-item .bg{
-      position:absolute; inset:0;
-      background:#222;
-      opacity:1;
-      border:0 solid #fff;
-      box-shadow:none;
-      will-change:width,height;
+      position:absolute; inset:0; z-index:0;
+      background:transparent; border:0 solid #fff; opacity:1; box-shadow:none;
       transition:filter .15s ease;
     }
     .preview-item .content{
-      position:relative; z-index:1;
-      display:flex; align-items:center; justify-content:center;
-      padding:20px 26px;
-      max-width:320px; max-height:220px;
-      text-align:center; line-height:1.15;
+      position:relative; z-index:1; display:flex; align-items:center; justify-content:center;
+      padding:20px 26px; max-width:320px; max-height:220px; text-align:center; line-height:1.15;
     }
     .preview-item .content span{
       display:inline-block; font-weight:800; white-space:nowrap;
@@ -96,21 +88,29 @@
       display:block; max-width:180px; max-height:140px; object-fit:contain; pointer-events:none;
     }
 
-    /* ФИГУРЫ (клип/скругление применяем к .bg) */
+    /* ФИГУРЫ — клипуем только фон */
     .shape-rect .bg{ border-radius:10px }
     .shape-rounded .bg{ border-radius:20px }
     .shape-circle .bg{ border-radius:50% }
     .shape-diamond .bg{ clip-path:polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%) }
-    .shape-star .bg{ clip-path:polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%) }
+    .shape-star .bg{ clip-path:polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%) }
 
-    /* ЭФФЕКТЫ (к .bg) */
+    /* ЭФФЕКТЫ (на фон-слой) */
     .fx-shadow .bg{ box-shadow:0 10px 30px rgba(0,0,0,.5) }
     .fx-3d .bg{ box-shadow:7px 7px 20px rgba(0,0,0,.5), inset -5px -5px 12px rgba(255,255,255,.22) }
     .fx-glow .bg{ box-shadow:0 0 18px var(--glow, #00f0ff) }
     .fx-border .bg{ border-style:solid }
+
+    /* РЕЗУЛЬТАТ */
+    .result{display:grid; grid-template-columns:1fr auto; gap:12px; align-items:start}
+    .result textarea{height:120px; font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace}
+    .status{margin-top:10px; padding:10px 12px; border-radius:10px; background:#0e0e0e; border:1px solid #2a2a2a; color:#c9c9c9; display:none}
+    .status.ok{color:#b8ffd6; border-color:#1f6f47}
+    .status.bad{color:#ffbbbb; border-color:#7a1f1f}
+    .status.warn{color:#ffe3a6; border-color:#6f591f}
   </style>
 
-  <!-- Google Fonts (динамическая подгрузка выбранного шрифта) -->
+  <!-- Google Fonts (динамически подгружаем нужный) -->
   <link id="gf" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700&display=swap">
 </head>
 <body>
@@ -122,7 +122,7 @@
   </header>
 
   <main>
-    <!-- ЛЕВАЯ КОЛОНКА -->
+    <!-- ЛЕВАЯ КОЛОНКА: Глобальные настройки + предпросмотр -->
     <section class="card stack">
       <h2>⚙️ Общие настройки</h2>
 
@@ -159,48 +159,36 @@
         </div>
       </div>
 
-      <div class="inline" style="margin-top:-6px">
-        <input type="checkbox" id="randomLevels"><label for="randomLevels">Рандом уровней</label>
+      <div class="row">
+        <div class="inline" style="align-items:end;">
+          <input type="checkbox" id="randomLevels"><label for="randomLevels">Рандом уровней</label>
+        </div>
       </div>
 
       <div class="card">
         <h2>🎨 Оформление элементов (для всех уровней)</h2>
+
         <div class="row">
           <div>
             <label>Фигура</label>
             <select id="shape">
               <option value="rect">Прямоугольник</option>
-              <option value="rounded">Скруглённый</option>
+              <option value="rounded" selected>Скруглённый</option>
               <option value="circle">Круг</option>
               <option value="diamond">Ромб</option>
               <option value="star">Звезда</option>
             </select>
           </div>
           <div>
-            <label>Фон — режим</label>
-            <select id="bgMode">
-              <option value="color" selected>Только цвет</option>
-              <option value="image">Только картинка</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="row" id="bgRowColor">
-          <div>
             <label>Фон — цвет</label>
             <input type="color" id="bgColor" value="#1a1a1a">
           </div>
-          <div>
-            <label>Прозрачность фона (0–1)</label>
-            <input type="text" id="opacity" value="1">
-          </div>
         </div>
 
-        <div id="bgRowImage" style="display:none">
-          <label>Фон — картинка (URL)</label>
-          <input type="url" id="bgImage" placeholder="https://.../bubble.png">
-          <div class="hint">Картинка фона масштабируется под контент с отступами; для круга/ромба/звезды — квадрат без сплющивания.</div>
-        </div>
+        <label>Фон — картинка (URL, необязательно)</label>
+        <input type="url" id="bgImage" placeholder="https://.../bubble.png">
+
+        <div class="hint">Если указан URL картинки, цвет фона отключается автоматически. Если очистить URL — вернётся цвет.</div>
 
         <div class="row-3" style="margin-top:6px">
           <div>
@@ -225,14 +213,22 @@
             <input type="checkbox" id="glowOn"><label for="glowOn">Подсветка</label>
             <input type="color" id="glowColor" value="#00f0ff" title="Цвет подсветки">
           </div>
+        </div>
+
+        <div class="row">
           <div class="inline">
             <input type="checkbox" id="fx3d"><label for="fx3d">3D эффект</label>
+          </div>
+          <div>
+            <label>Прозрачность фона (0–1)</label>
+            <input type="text" id="opacity" value="1">
           </div>
         </div>
       </div>
 
       <div class="card" style="border-style:dashed">
         <h2>🧪 Предпросмотр</h2>
+
         <div class="preview-controls">
           <input type="text" id="previewValue" placeholder="Текст предпросмотра или URL картинки..." value="Preview">
           <div class="right">
@@ -242,19 +238,17 @@
         </div>
 
         <div class="preview-stage">
-          <!-- построено как в игре: item -> bg + content -->
-          <div id="previewItem" class="preview-item shape-rounded" style="--glow:#00f0ff;">
+          <div id="previewItem" class="preview-item shape-rounded fx-shadow" style="--glow:#00f0ff;">
             <div class="bg"></div>
-            <div class="content">
-              <span id="previewText" style="font-weight:800; font-size:24px">Preview</span>
-            </div>
+            <div class="content"><span id="previewText" style="font-weight:800; font-size:24px">Preview</span></div>
           </div>
         </div>
-        <div class="hint">Предпросмотр обновляется сразу при изменении любой настройки.</div>
+
+        <div class="hint">Предпросмотр обновляется сразу при изменении любой настройки. Картинка-фон плашки масштабируется под контент + отступы. Текст/картинка задания — всегда поверх.</div>
       </div>
     </section>
 
-    <!-- ПРАВАЯ КОЛОНКА -->
+    <!-- ПРАВАЯ КОЛОНКА: уровни + публикация -->
     <section class="card stack">
       <h2>🎯 Уровни</h2>
       <div class="levels" id="levels"></div>
@@ -273,6 +267,7 @@
         <textarea id="iframeOut" readonly placeholder="Здесь появится iframe для Genially"></textarea>
         <button id="copyBtn" class="btn-ghost">📋 Копировать</button>
       </div>
+      <div class="status" id="status"></div>
       <div class="hint">После публикации может потребоваться подождать 30–60 секунд (кеш GitHub Pages).</div>
     </section>
   </main>
@@ -280,20 +275,32 @@
   <footer>© 2025 <a href="https://kgbgamecorp.ru" target="_blank" rel="noopener">Корпорация Геймификации Будущего</a></footer>
 
   <script>
-    // ——— helpers ———
-    const $ = sel => document.querySelector(sel);
-    const $$ = sel => document.querySelectorAll(sel);
+    // ===== Константы публикации =====
+    // ВАЖНО: это твой рабочий сервер и ключ
+    const ENDPOINT    = "https://server-kjnn.onrender.com/publish";
+    const PUBLISH_KEY = "nika_read_pub_2025";
+    // Встраиваем ИМЕННО falling main:
+    const BASE_MAIN   = "https://nikashum93.github.io/falling/main.html";
 
-    // === Языки и шрифты ===
+    // ===== helpers =====
+    const $  = sel => document.querySelector(sel);
+    const $$ = sel => document.querySelectorAll(sel);
+    const statusBox = $('#status');
+    function setStatus(html, cls=''){ statusBox.style.display='block'; statusBox.className='status '+cls; statusBox.innerHTML=html; }
+    function slug(s){return (s||'untitled').toString().toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40)||'note'}
+    function stamp(){const d=new Date(),p=n=>String(n).padStart(2,'0');return`${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;}
+    function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+
+    // ===== Языки и шрифты =====
     const FONT_MAP = {
-      ru: ["PT Sans","Rubik","Lobster","Marck Script","Cormorant","Montserrat","Open Sans","Noto Sans"],
-      en: ["Roboto","Open Sans","Montserrat","Inter","Poppins","Playfair Display","Indie Flower","Special Elite","Anton","Rubik"],
-      fr: ["Noto Sans","Playfair Display","Parisienne","Montserrat","Cormorant","Rubik","Inter"],
-      es: ["Montserrat","Alegreya","Caveat","Roboto","Open Sans","Rubik"],
-      de: ["PT Sans","Rubik","Inter","Montserrat","Open Sans","Playfair Display"],
+      ru: ["PT Sans","Rubik","Lobster","Marck Script","Cormorant","Montserrat","Open Sans","Noto Sans","Inter","Nunito","Comfortaa","Neucha"],
+      en: ["Roboto","Open Sans","Montserrat","Inter","Poppins","Playfair Display","Indie Flower","Special Elite","Anton","Rubik","Nunito","Caveat"],
+      fr: ["Noto Sans","Playfair Display","Parisienne","Montserrat","Cormorant","Rubik","Inter","Merriweather"],
+      es: ["Montserrat","Alegreya","Caveat","Roboto","Open Sans","Rubik","Nunito","PT Sans"],
+      de: ["PT Sans","Rubik","Inter","Montserrat","Open Sans","Playfair Display","Source Sans 3"],
       zh: ["Noto Sans SC","ZCOOL XiaoWei","Ma Shan Zheng","Noto Sans"],
       ja: ["Noto Sans JP","Noto Serif JP","Kosugi Maru","Noto Sans"],
-      math: ["Latin Modern Math","Rubik"] // для math-режима, текст в уровнях — LaTeX
+      math: ["Latin Modern Math","Rubik"]
     };
     const LANG_LABELS = {
       ru:"Русский", en:"English (Latin)", fr:"Français", es:"Español",
@@ -327,126 +334,148 @@
       const gf = document.getElementById('gf');
       const family = fontName.replace(/ /g, '+');
       gf.href = `https://fonts.googleapis.com/css2?family=${family}:wght@400;700&display=swap`;
-
       const text = $('#previewText');
       text.style.fontFamily = fontName + ", system-ui, sans-serif";
       text.style.fontSize = (parseInt($('#fontSize').value,10)||24) + 'px';
     }
 
-    // === Предпросмотр: применяем стиль и авто-подгон размеров ===
+    // ===== Предпросмотр =====
+    // структура предпросмотра — .preview-item внутри: .bg (фон) и .content (контент)
     function updatePreview(){
-      const item = $('#previewItem');
-      const bg   = item.querySelector('.bg');
+      const item    = $('#previewItem');
+      const bg      = item.querySelector('.bg');
       const content = item.querySelector('.content');
-      let text = $('#previewText');
+      const text    = $('#previewText');
+      const val     = $('#previewValue').value.trim();
 
-      const val  = $('#previewValue').value.trim();
-      const modeIsImage = item.dataset.mode === 'image';
+      // режим
+      const asImage = item.dataset.mode === 'image' || /^https?:\/\//i.test(val);
 
-      // фигура и эффекты
-      item.classList.remove('shape-rect','shape-rounded','shape-circle','shape-diamond','shape-star','fx-shadow','fx-3d','fx-glow','fx-border');
-      item.classList.add('shape-'+$('#shape').value);
-      if($('#shadowOn').checked) item.classList.add('fx-shadow');
-      if($('#fx3d').checked) item.classList.add('fx-3d');
-      if($('#glowOn').checked) item.classList.add('fx-glow');
+      // сброс классов и инлайн-стилей контейнера
+      item.className = 'preview-item';
+      item.style.removeProperty('--glow');
+
+      // фигура
+      const shape = $('#shape').value;
+      item.classList.add('shape-' + shape);
+
+      // эффекты
+      item.classList.toggle('fx-shadow', $('#shadowOn').checked);
+      item.classList.toggle('fx-3d',     $('#fx3d').checked);
+      item.classList.toggle('fx-glow',   $('#glowOn').checked);
       item.style.setProperty('--glow', $('#glowColor').value);
 
-      // рамка
-      if($('#borderOn').checked && Number($('#borderWidth').value) > 0){
-        item.classList.add('fx-border');
-        bg.style.borderWidth = Number($('#borderWidth').value) + 'px';
+      // рамка на bg-слое
+      const borderOn = $('#borderOn').checked && Number($('#borderWidth').value) > 0;
+      item.classList.toggle('fx-border', borderOn);
+      if(borderOn){
         bg.style.borderColor = $('#borderColor').value;
+        bg.style.borderWidth = Number($('#borderWidth').value) + 'px';
       } else {
         bg.style.borderWidth = '0px';
+        bg.style.borderColor = 'transparent';
       }
 
-      // фон — строго либо цвет, либо картинка
-      const bgMode = $('#bgMode').value;
-      if(bgMode === 'image'){
-        const bgImg = $('#bgImage').value.trim();
-        bg.style.background = bgImg ? `url(${bgImg}) center/contain no-repeat` : 'transparent';
-        bg.style.opacity = Math.max(0, Math.min(1, parseFloat($('#opacity').value||'1'))); // опционально — прозрачность поверхности
+      // фон-цвет / фон-картинка — взаимоисключающие
+      const bgImg = $('#bgImage').value.trim();
+      const bgCol = $('#bgColor').value;
+      if(bgImg){
+        // картинка главная, цвет убираем
+        bg.style.background = `url(${bgImg}) center/contain no-repeat`;
       } else {
-        const bgCol = $('#bgColor').value;
-        bg.style.background = bgCol; // без картинки
-        bg.style.opacity = Math.max(0, Math.min(1, parseFloat($('#opacity').value||'1')));
+        // только цвет
+        bg.style.background = bgCol;
       }
+      // прозрачность фона/облака
+      const op = clamp(parseFloat($('#opacity').value||'1'), 0, 1);
+      bg.style.opacity = op;
 
-      // режим предпросмотра: текст или картинка-содержимое
-      // содержимое (внутри контента) не клипается фигурами — как в игре
-      while(content.firstChild) content.removeChild(content.firstChild);
+      // текстовые параметры
+      text.style.color      = $('#textColor').value;
+      text.style.fontSize   = (parseInt($('#fontSize').value,10)||24) + 'px';
+      text.style.fontFamily = $('#font').value + ", system-ui, sans-serif";
 
-      if(modeIsImage || /^https?:\/\//i.test(val)){
+      // контент
+      // сначала уберём картинку если есть
+      const oldImg = content.querySelector('img');
+      if(oldImg) oldImg.remove();
+
+      if(asImage){
+        // режим картинки задания (контент)
+        text.style.display = 'none';
         const img = document.createElement('img');
         img.src = val || 'https://via.placeholder.com/200x140?text=Image';
         content.appendChild(img);
       } else {
-        text = document.createElement('span');
-        text.id = 'previewText';
+        // режим текста задания (контент)
+        text.style.display = 'inline-block';
         text.textContent = val || 'Preview';
-        text.style.color = $('#textColor').value;
-        text.style.fontSize = (parseInt($('#fontSize').value,10)||24) + 'px';
-        text.style.fontFamily = $('#font').value + ", system-ui, sans-serif";
-        text.style.fontWeight = '800';
-        text.style.whiteSpace = 'nowrap';
-        content.appendChild(text);
       }
 
-      // курсор (для ощущения)
-      const cursor = $('#cursorUrl').value.trim();
-      document.body.style.cursor = cursor ? `url(${cursor}), auto` : 'auto';
-
-      // ===== авто-подгон размеров bg под контент, + паддинги =====
-      // сначала «естественные» размеры контента
-      requestAnimationFrame(()=>{
-        // базовые внутренние отступы (как в main)
-        const padX = 26, padY = 20;
-
-        // узнаём размеры контента
-        const rect = content.getBoundingClientRect();
-        let cw = rect.width, ch = rect.height;
-
-        // итоговый бокс под фигуру (по умолчанию — под контент + паддинги)
-        let W = Math.ceil(cw + padX*2);
-        let H = Math.ceil(ch + padY*2);
-
-        // для геометрических фигур — делаем квадрат без сплющивания
-        const shape = $('#shape').value;
-        if(shape === 'circle' || shape === 'diamond' || shape === 'star'){
-          const size = Math.max(W, H);
-          W = H = size;
-        }
-
-        // задаём размеры контейнера (item) и bg
-        item.style.width  = W + 'px';
-        item.style.height = H + 'px';
-        // bg тянется absolute inset:0; размер совпадёт с item
-
-        // никаких «приплюснутых» звёзд/кругов: они клипятся поверх ровного квадрата
-      });
+      // Подгон размеров плашки под контент + безопасность для «геометрических» фигур
+      fitGeometryBox(item);
+      autoFitText(item, parseInt($('#fontSize').value, 10) || 24, 12);
+      // повторный fit если добавилась картинка
+      fitGeometryBox(item);
     }
 
-    // переключатели предпросмотра
-    $('#btnText').onclick = (e)=>{ e.preventDefault(); const it=$('#previewItem'); it.dataset.mode='text'; updatePreview(); }
-    $('#btnImage').onclick= (e)=>{ e.preventDefault(); const it=$('#previewItem'); it.dataset.mode='image'; updatePreview(); }
+    // квадрат/круг/звезда/ромб — делаем квадрат по большей стороне + поля; прямоугольные — по контенту
+    function fitGeometryBox(item){
+      const bg      = item.querySelector('.bg');
+      const content = item.querySelector('.content');
+      if(!bg || !content) return;
 
-    // показать/скрыть блоки фона по режиму
-    function updateBgModeFields(){
-      const m = $('#bgMode').value;
-      $('#bgRowColor').style.display = (m==='color') ? 'grid' : 'none';
-      $('#bgRowImage').style.display = (m==='image') ? 'block' : 'none';
-      updatePreview();
+      // сначала снимем фиксированные размеры, чтобы измерить контент
+      item.style.width  = '';
+      item.style.height = '';
+
+      // измеряем контент
+      const r = content.getBoundingClientRect();
+      const padX = 10;  // «воздух» вокруг контента (добавка к фоновой картинке)
+      const padY = 10;
+
+      // дефолт: размеры под контент
+      let w = Math.max(140, Math.ceil(r.width))  + padX*2;
+      let h = Math.max(64,  Math.ceil(r.height)) + padY*2;
+
+      const shape = $('#shape').value;
+      if(shape === 'circle' || shape === 'diamond' || shape === 'star'){
+        const size = Math.max(w, h) + 30; // доп. воздух, чтобы фигуры не казались приплюснутыми
+        w = size; h = size;
+      }
+
+      item.style.width  = w + 'px';
+      item.style.height = h + 'px';
     }
 
-    // === Уровни ===
+    // автоуменьшение шрифта, чтобы текст уместился в плашку
+    function autoFitText(item, startPx, minPx){
+      const span = item.querySelector('.content span');
+      if(!span) return;
+      let fs = startPx;
+      const maxW = item.clientWidth  - 24;
+      const maxH = item.clientHeight - 24;
+
+      const fits = ()=>{
+        const r = span.getBoundingClientRect();
+        return (r.width <= maxW && r.height <= maxH);
+      };
+      while(fs > minPx){
+        span.style.fontSize = fs + 'px';
+        if(fits()) break;
+        fs -= 1;
+      }
+    }
+
+    // ===== Уровни =====
     function levelTemplate(idx){
       const wrap = document.createElement('div');
       wrap.className = 'level';
       wrap.innerHTML = `
         <h3>Уровень <span class="num">${idx+1}</span>
           <span class="right">
-            <button type="button" class="btn-ghost up">▲</button>
-            <button type="button" class="btn-ghost down">▼</button>
+            <button type="button" class="btn-ghost up"   title="Выше">▲</button>
+            <button type="button" class="btn-ghost down" title="Ниже">▼</button>
             <button type="button" class="btn-danger del">Удалить</button>
           </span>
         </h3>
@@ -467,21 +496,18 @@
             <label>Таймер уровня (сек.)</label>
             <input type="number" class="timer" value="30" min="5">
           </div>
-          <div class="hint" style="align-self:end">Поддерживаются: слова, URL картинок, LaTeX-формулы (math режим).</div>
+          <div class="hint" style="align-self:end">Поддерживаются: слова, URL картинок, LaTeX-формулы (режим Math).</div>
         </div>
       `;
-
-      // обработчики кнопок уровня
       wrap.querySelector('.del').onclick = () => { wrap.remove(); renumber(); };
       wrap.querySelector('.up').onclick  = () => { const p=wrap.previousElementSibling; if(p){ wrap.parentNode.insertBefore(wrap,p); renumber(); } };
       wrap.querySelector('.down').onclick= () => { const n=wrap.nextElementSibling; if(n){ wrap.parentNode.insertBefore(n,wrap); renumber(); } };
-
       return wrap;
     }
     function renumber(){ $$('#levels .level .num').forEach((el,i)=> el.textContent = i+1); }
     function addLevel(){ const levels=$('#levels'); const idx=levels.querySelectorAll('.level').length; levels.appendChild(levelTemplate(idx)); renumber(); }
 
-    // сбор формы → JSON
+    // ===== Сбор формы → JSON =====
     function collectConfig(){
       const levels = [];
       $$('#levels .level').forEach(div=>{
@@ -498,15 +524,11 @@
         font: $('#font').value,
         fontSize: Math.max(10, parseInt($('#fontSize').value||'24',10)),
         textColor: $('#textColor').value,
-        speed: Math.max(1, Math.min(10, parseInt($('#speed').value||'5',10))),
+        speed: clamp(parseInt($('#speed').value||'5',10), 1, 10),
         style: {
           shape: $('#shape').value,
-
-          // фон: строго одно из двух
-          bgMode: $('#bgMode').value, // 'color' | 'image'
-          bgColor: $('#bgMode').value === 'color' ? $('#bgColor').value : 'transparent',
-          bgImage: $('#bgMode').value === 'image' ? $('#bgImage').value.trim() : '',
-
+          bgColor: $('#bgColor').value,
+          bgImage: $('#bgImage').value.trim(),
           borderOn: $('#borderOn').checked,
           borderColor: $('#borderColor').value,
           borderWidth: Math.max(0, parseInt($('#borderWidth').value||'0', 10)),
@@ -514,7 +536,7 @@
           glow: $('#glowOn').checked,
           glowColor: $('#glowColor').value,
           fx3d: $('#fx3d').checked,
-          opacity: Math.max(0, Math.min(1, parseFloat($('#opacity').value||'1')))
+          opacity: clamp(parseFloat($('#opacity').value||'1'), 0, 1)
         },
         cursor: $('#cursorUrl').value.trim(),
         randomLevels: $('#randomLevels').checked,
@@ -523,7 +545,7 @@
       return cfg;
     }
 
-    // валидация
+    // ===== Валидация =====
     function validate(cfg){
       if(!cfg.levels.length) return 'Добавьте хотя бы один уровень.';
       for(const [i,lv] of cfg.levels.entries()){
@@ -533,85 +555,78 @@
       return null;
     }
 
-    // ——— Публикация ———
-    const ENDPOINT    = "https://server-kjnn.onrender.com/publish";
-    const PUBLISH_KEY = "nika_read_pub_2025";
-    const MAIN_URL    = "https://nikashum93.github.io/falling/main.html";
-
-    // Служебное — запоминаем последний id
-    let LAST_ID = localStorage.getItem('falling_last_id') || "";
-
-    function slug(s){return (s||'untitled').toString().toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40)||'note'}
-    function stamp(){const d=new Date(),p=n=>String(n).padStart(2,'0');return`${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`}
-
+    // ===== Публикация → Render → texts/data/*.json =====
     async function publish(){
-      const cfg = collectConfig();
-      const err = validate(cfg);
-      if(err){ alert(err); return; }
-
-      // применим шрифт к предпросмотру прямо перед публикацией (визуальная консистентность)
-      applyGoogleFont(cfg.font);
-
-      // готовим JSON для репозитория texts/data/<id>.json
-      const id = `${slug(cfg.levels?.[0]?.target || 'falling')}-${stamp()}`;
-      const payload = {
-        id, mode:"json", folder:"data",
-        content: JSON.stringify({ type: "falling", data: cfg }, null, 2)
-      };
-
       try{
+        const cfg = collectConfig();
+        const err = validate(cfg);
+        if(err){ alert(err); return; }
+
+        setStatus("🔮 Публикую…","warn");
+
+        // id = slug(title/timestamp) — пусть берём из первого уровня или shape, если target пуст
+        const rootTitle = (cfg.levels[0]?.target || 'falling').toString();
+        const id = `${slug(rootTitle)}-${stamp()}`;
+
+        // сохраняем ровно JSON конфигурации игры
         const res = await fetch(ENDPOINT, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
+          method:"POST",
+          headers:{
+            "Content-Type":"application/json",
             "X-Publish-Key": PUBLISH_KEY
           },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({
+            id,               // texts/data/${id}.json
+            mode:"json",
+            folder:"data",
+            content: JSON.stringify(cfg, null, 2)
+          })
         });
-        if(!res.ok){
-          const t = await res.text().catch(()=>res.statusText);
-          throw new Error(t || ('HTTP '+res.status));
-        }
-        LAST_ID = id;
-        localStorage.setItem('falling_last_id', LAST_ID);
 
-        const iframe = `<iframe src="${MAIN_URL}?id=${encodeURIComponent(LAST_ID)}" width="900" height="640" style="border:0;" allow="autoplay" allowfullscreen></iframe>`;
+        if(!res.ok){
+          const msg = await res.text().catch(()=>res.statusText);
+          throw new Error(msg);
+        }
+
+        // iframe на FALLING main
+        const iframe = `<iframe src="${BASE_MAIN}?id=${encodeURIComponent(id)}" width="900" height="640" style="border:0;" allow="autoplay; microphone" allowfullscreen></iframe>`;
         $('#iframeOut').value = iframe;
-        alert('Опубликовано! Подождите 30–60 секунд (кеш GitHub Pages).');
+
+        setStatus(`✅ Готово! ID: <b>${id}</b><br>Если JSON ещё не доступен — подожди 30–60 сек (кеш GitHub Pages).`, "ok");
+        alert('Опубликовано! Подожди 30–60 секунд (кеш GitHub Pages).');
       }catch(e){
-        alert("Сеть/сервер: " + e.message);
+        setStatus('☠ Ошибка публикации: '+e.message, 'bad');
+        alert('Сеть/сервер: '+e.message);
       }
     }
 
-    // ——— UI события ———
+    // ===== UI события =====
     // язык → обновить список шрифтов
-    $('#language').addEventListener('change', e=>{
-      fillFontsForLanguage(e.target.value);
-      updatePreview();
-    });
+    $('#language').addEventListener('change', e=>{ fillFontsForLanguage(e.target.value); updatePreview(); });
 
     // смена шрифта / размера
     $('#font').addEventListener('change', e=> { applyGoogleFont(e.target.value); updatePreview(); });
     $('#fontSize').addEventListener('input', ()=> { applyGoogleFont($('#font').value); updatePreview(); });
 
-    // режим фона
-    $('#bgMode').addEventListener('change', updateBgModeFields);
+    // предпросмотр: любые поля
+    ;['textColor','opacity','shape','bgColor','bgImage','borderColor','borderWidth','borderOn','shadowOn','glowOn','glowColor','fx3d','cursorUrl','randomLevels','previewValue','speed']
+      .forEach(id => {
+        const el = $('#'+id);
+        el.addEventListener('input', updatePreview);
+        el.addEventListener('change', updatePreview);
+      });
 
-    // предпросмотр реагирует на всё остальное
-    ;[
-      'textColor','opacity','shape','bgColor','bgImage','borderColor','borderWidth','borderOn',
-      'shadowOn','glowOn','glowColor','fx3d','cursorUrl','randomLevels','previewValue','speed'
-    ].forEach(id => {
-      const el = $('#'+id);
-      el.addEventListener('input', updatePreview);
-      el.addEventListener('change', updatePreview);
-    });
+    // переключатели предпросмотра
+    $('#btnText').onclick = (e)=>{ e.preventDefault(); const it=$('#previewItem'); it.dataset.mode='text'; updatePreview(); }
+    $('#btnImage').onclick= (e)=>{ e.preventDefault(); const it=$('#previewItem'); it.dataset.mode='image'; updatePreview(); }
 
     // уровни
     $('#addLevel').addEventListener('click', (e)=>{ e.preventDefault(); addLevel(); });
 
-    // кнопки
+    // публикация
     $('#saveBtn').addEventListener('click', publish);
+
+    // тест
     $('#testBtn').addEventListener('click', ()=> {
       const cfg = collectConfig();
       const err = validate(cfg);
@@ -619,21 +634,21 @@
       alert('JSON валиден. Уровней: '+cfg.levels.length);
       console.log(cfg);
     });
-    $('#copyBtn').addEventListener('click', async ()=> {
-      try{
-        await navigator.clipboard.writeText($('#iframeOut').value.trim());
-        alert('iframe скопирован');
-      }catch(e){
-        alert('Не удалось скопировать: '+e.message);
-      }
+
+    // копирование iframe
+    $('#copyBtn').addEventListener('click', ()=> {
+      const ta = $('#iframeOut');
+      if(!ta.value.trim()){ alert('Сначала опубликуй, чтобы получить iframe.'); return; }
+      navigator.clipboard.writeText(ta.value.trim())
+        .then(()=> setStatus("📝 iframe скопирован","ok"))
+        .catch(err => { console.error(err); alert('Не удалось скопировать.'); });
     });
 
-    // init
+    // ===== init =====
     fillLanguageSelect();
     fillFontsForLanguage($('#language').value);
-    addLevel();
+    addLevel(); // один уровень по умолчанию
     applyGoogleFont($('#font').value);
-    updateBgModeFields();
     updatePreview();
   </script>
 </body>
