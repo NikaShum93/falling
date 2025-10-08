@@ -312,9 +312,12 @@
       LANG = (cfg.language || 'ru').toLowerCase();
 
       // Цвет интерфейса — даже если рамка заменена картинкой, берём borderColor (или glowColor)
-      const uiColor = (cfg.style && (cfg.style.borderColor || cfg.style.glowColor)) || '#ffd700';
-      document.documentElement.style.setProperty('--ui', uiColor);
-      document.documentElement.style.setProperty('--ui-soft', 'rgba('+Object.values(hexToRgb(uiColor)).join(',') + ',.14)');
+        // Цвет интерфейса: приоритет cfg.uiColor, потом borderColor/glowColor
+  const uiColor = cfg.uiColor || (cfg.style && (cfg.style.borderColor || cfg.style.glowColor)) || '#ffd700';
+  document.documentElement.style.setProperty('--ui', uiColor);
+  document.documentElement.style.setProperty('--ui-soft',
+    'rgba(' + Object.values(hexToRgb(uiColor)).join(',') + ',.14)');
+
 
       if (cfg.style && cfg.style.glowColor){
         document.documentElement.style.setProperty('--glow', cfg.style.glowColor);
@@ -336,6 +339,10 @@
       const title = cfg && cfg.levels && cfg.levels[current-1] ? (cfg.levels[current-1].target || "") : "";
       hudLevel.textContent = title ? `${t(LANG,'level', current)}: ${title}` : `${t(LANG,'level', current)}`;
     }
+     // если язык math или target содержит \, прогоняем через MathJax
+  if ((cfg.language||'') === 'math' || /\\/.test(title)){
+    MathJax.typesetPromise([hudLevel]);
+  }
 
     function showFatal(title, message){
       const ov = document.createElement('div');
