@@ -352,7 +352,14 @@
   hudLevel.textContent = title
     ? `${t(LANG, 'level', current)}: ${title}`
     : `${t(LANG, 'level', current)}`;
-
+// Если нужно отрисовать формулу в заголовке уровня
+try {
+  if ((cfg.language||'') === 'math' || /\\/.test(title)) {
+    MathJax.typesetPromise([hudLevel]);
+  }
+} catch(e) {
+  console.warn('MathJax error in HUD:', e);
+}
     function showFatal(title, message){
       const ov = document.createElement('div');
       ov.className = 'overlay';
@@ -618,10 +625,6 @@
       // Автофит текста
       autoFitText(el, FONT_SIZE, 12);
 
-      // Если математический режим — перетайпсетить и ещё раз подровнять
-      if ((cfg.language||'') === 'math'){
-        MathJax.typesetPromise([el]).then(()=> fitGeometryBox(el));
-      }
 
       // Падение
       const vel = SPEED.vel;
