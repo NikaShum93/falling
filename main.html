@@ -344,10 +344,20 @@
     const hudTimer = $('#hudTimer');
     const hudScore = $('#hudScore');
 
-   function updateHUD(current, total){
-  const title = (cfg && cfg.levels && cfg.levels[current-1])
-    ? (cfg.levels[current-1].target || "")
-    : "";
+  function updateHUD(current, total){
+  const lv = (cfg && cfg.levels && cfg.levels[current-1]) || null;
+  const title = lv ? (lv.target || "") : "";
+  hudLevel.textContent = title
+    ? `${t(LANG,'level', current)}: ${title}`
+    : `${t(LANG,'level', current)}`;
+
+  // MathJax для заголовка уровня, если язык math или в target есть LaTeX
+  if ((cfg.language||'') === 'math' || /\\/.test(title)){
+    if (window.MathJax && MathJax.typesetPromise){
+      MathJax.typesetPromise([hudLevel]).catch(()=>{});
+    }
+  }
+}
 
   hudLevel.textContent = title
     ? `${t(LANG, 'level', current)}: ${title}`
