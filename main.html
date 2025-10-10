@@ -312,22 +312,10 @@
       LANG = (cfg.language || 'ru').toLowerCase();
 
       // Цвет интерфейса — даже если рамка заменена картинкой, берём borderColor (или glowColor)
-        // Цвет интерфейса: приоритет cfg.uiColor, потом borderColor/glowColor
-  try {
-  const uiColor = cfg.uiColor || (cfg.style && (cfg.style.borderColor || cfg.style.glowColor)) || '#ffd700';
-  const rgb = hexToRgb(uiColor);
-  if (rgb && typeof rgb.r === "number") {
-    document.documentElement.style.setProperty('--ui', uiColor);
-    document.documentElement.style.setProperty('--ui-soft', `rgba(${rgb.r},${rgb.g},${rgb.b},.14)`);
-  } else {
-    document.documentElement.style.setProperty('--ui', '#ffd700');
-    document.documentElement.style.setProperty('--ui-soft', 'rgba(255,215,0,.14)');
-  }
-} catch(e){
-  console.error("Ошибка применения цвета интерфейса:", e);
-  document.documentElement.style.setProperty('--ui', '#ffd700');
-  document.documentElement.style.setProperty('--ui-soft', 'rgba(255,215,0,.14)');
-}
+      const uiColor = (cfg.style && (cfg.style.borderColor || cfg.style.glowColor)) || '#ffd700';
+      document.documentElement.style.setProperty('--ui', uiColor);
+      document.documentElement.style.setProperty('--ui-soft', 'rgba('+Object.values(hexToRgb(uiColor)).join(',') + ',.14)');
+
       if (cfg.style && cfg.style.glowColor){
         document.documentElement.style.setProperty('--glow', cfg.style.glowColor);
       }
@@ -343,21 +331,12 @@
     const hudLevel = $('#hudLevel');
     const hudTimer = $('#hudTimer');
     const hudScore = $('#hudScore');
-let overlayNode = null;
-  function updateHUD(current, total){
-  const lv = (cfg && cfg.levels && cfg.levels[current-1]) || null;
-  const title = lv ? (lv.target || "") : "";
-  hudLevel.textContent = title
-    ? `${t(LANG,'level', current)}: ${title}`
-    : `${t(LANG,'level', current)}`;
 
-  // MathJax для заголовка уровня, если язык math или в target есть LaTeX
-  if ((cfg.language||'') === 'math' || /\\/.test(title)){
-    if (window.MathJax && MathJax.typesetPromise){
-      MathJax.typesetPromise([hudLevel]).catch(()=>{});
+    function updateHUD(current, total){
+      const title = cfg && cfg.levels && cfg.levels[current-1] ? (cfg.levels[current-1].target || "") : "";
+      hudLevel.textContent = title ? `${t(LANG,'level', current)}: ${title}` : `${t(LANG,'level', current)}`;
     }
-  }
-}
+
     function showFatal(title, message){
       const ov = document.createElement('div');
       ov.className = 'overlay';
@@ -370,6 +349,7 @@ let overlayNode = null;
     }
 
     let overlayNode = null;
+
     function showStartOverlay(){
       if (overlayNode) overlayNode.remove();
       overlayNode = document.createElement('div');
@@ -622,6 +602,10 @@ let overlayNode = null;
       // Автофит текста
       autoFitText(el, FONT_SIZE, 12);
 
+      // Если математический режим — перетайпсетить и ещё раз подровнять
+      if ((cfg.language||'') === 'math'){
+        MathJax.typesetPromise([el]).then(()=> fitGeometryBox(el));
+      }
 
       // Падение
       const vel = SPEED.vel;
