@@ -358,18 +358,6 @@
     }
   }
 }
-
-  hudLevel.textContent = title
-    ? `${t(LANG, 'level', current)}: ${title}`
-    : `${t(LANG, 'level', current)}`;
-// Если нужно отрисовать формулу в заголовке уровня
-try {
-  if ((cfg.language||'') === 'math' || /\\/.test(title)) {
-    MathJax.typesetPromise([hudLevel]);
-  }
-} catch(e) {
-  console.warn('MathJax error in HUD:', e);
-}
     function showFatal(title, message){
       const ov = document.createElement('div');
       ov.className = 'overlay';
@@ -382,7 +370,6 @@ try {
     }
 
     let overlayNode = null;
-
     function showStartOverlay(){
       if (overlayNode) overlayNode.remove();
       overlayNode = document.createElement('div');
