@@ -216,22 +216,22 @@
           </div>
         </div>
       </div>
-
-      <div class="card" style="border-style:dashed">
-        <h2>🧪 Предпросмотр</h2>
-        <div class="preview-controls">
-          <input type="text" id="previewValue" placeholder="Текст предпросмотра или URL картинки..." value="Preview">
-          <div class="right">
-            <div class="card">
+ <div class="card">
     <h2>🏁 Финальный фидбек</h2>
     <label>Текст, который появится после завершения игры</label>
     <textarea id="finalFeedback" placeholder="Например: Отличная работа!"></textarea>
     <div class="hint">Если оставить пустым, будет показан стандартный текст («Отличная работа!» или локализованный).</div>
   </div>
+      <div class="card" style="border-style:dashed">
+        <h2>🧪 Предпросмотр</h2>
+        <div class="preview-controls">
+          <input type="text" id="previewValue" placeholder="Текст предпросмотра или URL картинки..." value="Preview">
+          <div class="right">
             <button class="btn-ghost" id="btnText">Текст</button>
             <button class="btn-ghost" id="btnImage">Картинка</button>
           </div>
         </div>
+        
         <div class="preview-stage">
           <div id="previewItem" class="preview-item shape-rounded fx-shadow" style="--glow:#00f0ff;">
             <span id="previewText" style="font-weight:800; font-size:24px">Preview</span>
