@@ -550,14 +550,6 @@ function showLevelCompleteOverlay(current, total, onNext){
   }, { once:true });
 }
 
-
-      document.body.appendChild(overlayNode);
-      $('#btnNext').addEventListener('click', ()=>{
-        overlayNode.remove();
-        onNext && onNext();
-      }, { once:true });
-    }
-
     function showGameCompleteOverlay(stats){
   if (overlayNode) overlayNode.remove();
   overlayNode = document.createElement('div');
