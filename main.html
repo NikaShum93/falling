@@ -390,7 +390,6 @@ math:{
   catchAll:"Поймай все"
 }
 };
-    };
     function t(lang,key,...args){
       const dict = I18N[lang]||I18N.ru; const v = dict[key];
       return (typeof v==="function")?v(...args):(v??key);
