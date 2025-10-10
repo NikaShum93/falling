@@ -475,33 +475,6 @@ let LANG = 'ru'; // по умолчанию
 
 
 
-      // Цвет интерфейса — даже если рамка заменена картинкой, берём borderColor (или glowColor)
-const uiColor =
-  (cfg.style && (cfg.style.uiColor || cfg.style.borderColor || cfg.style.glowColor))
-  || '#ffd700';
-
-// Устанавливаем все переменные интерфейса
-document.documentElement.style.setProperty('--ui', uiColor);
-document.documentElement.style.setProperty('--ui-soft', 'rgba('+Object.values(hexToRgb(uiColor)).join(',') + ',.14)');
-document.documentElement.style.setProperty('--text-color', cfg.textColor || '#ffffff');
-
-// Цвет текста (HUD, меню, кнопки) из настроек
-const txtColor = (cfg.textColor || '#ffffff');
-document.documentElement.style.setProperty('--text-color', txtColor);
-      if (cfg.style && cfg.style.glowColor){
-        document.documentElement.style.setProperty('--glow', cfg.style.glowColor);
-      }
-
-      // Кастомный курсор
-      if (cfg.cursor) document.body.style.cursor = `url(${cfg.cursor}), auto`;
-// Шрифт интерфейса
-if (cfg.font) {
-  document.body.style.fontFamily = `${cfg.font}, system-ui, sans-serif`;
-}
-      updateHUD(1, (cfg.levels||[]).length||0);
-      showStartOverlay();
-    })();
-
     /* ===================== HUD / Оверлеи ===================== */
     const hudLevel = $('#hudLevel');
     const hudTimer = $('#hudTimer');
