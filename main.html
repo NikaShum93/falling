@@ -438,7 +438,7 @@ math:{
       LANG = (cfg.language || 'ru').toLowerCase();
 
       // Цвет интерфейса — даже если рамка заменена картинкой, берём borderColor (или glowColor)
-      const uiColor = (cfg.style && (cfg.style.borderColor || cfg.style.glowColor)) || '#ffd700';
+const uiColor = (cfg.style && (cfg.style.uiColor || cfg.style.borderColor || cfg.style.glowColor)) || '#ffd700';
       document.documentElement.style.setProperty('--ui', uiColor);
       document.documentElement.style.setProperty('--ui-soft', 'rgba('+Object.values(hexToRgb(uiColor)).join(',') + ',.14)');
 
