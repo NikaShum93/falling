@@ -23,10 +23,13 @@
   -->
 
   <style>
-    :root{
-      /* Цвет интерфейса (HUD/кнопки/акценты) подставим из cfg.style.borderColor */
-      --ui: #ffd700;
-      --ui-soft: rgba(255,215,0,.14);
+   :root{
+  --ui: #ffd700;
+  --ui-soft: rgba(255,215,0,.14);
+  --glow: #00f0ff;
+  --text-color: #ffffff; /* ← дефолт, потом заменится из cfg.textColor */
+}
+
 
       /* Цвет неона для элементов (если включён cfg.style.glow) */
       --glow: #00f0ff;
@@ -57,14 +60,15 @@
       display:flex; gap:12px; align-items:center; justify-content:space-between;
       font-weight:700; z-index:10; pointer-events:none;
     }
-   .badge{
-  background:rgba(0,0,0,.45);
+ .badge{
+  background: var(--ui);   /* фон = uiColor */
   border:1px solid var(--ui-soft);
   border-radius:12px;
   padding:10px 14px;
   box-shadow:0 8px 24px rgba(0,0,0,.35), 0 0 18px var(--ui-soft) inset;
-  color:var(--ui);
+  color: var(--text-color); /* текст = textColor */
 }
+
     .levelTitle{ color:var(--ui) }
     .timer{min-width:110px; text-align:center}
     .score{min-width:110px; text-align:center}
@@ -78,7 +82,7 @@
       pointer-events:auto;
     }
 .overlay .panel{
-  background:rgba(0,0,0,.85);
+  background: var(--ui);      /* фон = uiColor */
   padding:36px 28px;
   border-radius:16px;
   border:1px solid var(--ui-soft);
@@ -86,20 +90,22 @@
   margin:auto;
   text-align:center;
   box-shadow:0 8px 32px rgba(0,0,0,.45), 0 0 22px var(--ui-soft);
-  color:var(--ui);
+  color: var(--text-color);   /* текст = textColor */
 }
 .overlay .panel h2{
   margin:0 0 12px;
-  color:var(--ui);
+  color: var(--text-color);   /* заголовок = textColor */
   font-size:24px;
   text-shadow:0 0 20px var(--ui-soft);
 }
+
     .overlay p{ margin:0 0 8px; opacity:.9 }
     .overlay .row{ display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap }
+    
     .overlay button{
-      background:linear-gradient(90deg,#ffbf00,#ffd700);
-      color:#000; border:0; border-radius:10px; font-weight:900; padding:12px 16px; cursor:pointer;
-      transition:transform .12s ease, box-shadow .12s ease;
+  background: var(--ui);        /* фон = uiColor */
+  color: var(--text-color);     /* текст = textColor */
+transition:transform .12s ease, box-shadow .12s ease;
     }
     .overlay button:hover{ transform:translateY(-1px); box-shadow:0 10px 24px rgba(255,215,0,.35) }
 
@@ -442,10 +448,14 @@ const uiColor =
   (cfg.style && (cfg.style.uiColor || cfg.style.borderColor || cfg.style.glowColor))
   || '#ffd700';
 
-      document.documentElement.style.setProperty('--text-color', cfg.textColor || '#ffffff');
+// Устанавливаем все переменные интерфейса
+document.documentElement.style.setProperty('--ui', uiColor);
+document.documentElement.style.setProperty('--ui-soft', 'rgba('+Object.values(hexToRgb(uiColor)).join(',') + ',.14)');
+document.documentElement.style.setProperty('--text-color', cfg.textColor || '#ffffff');
 
-      document.documentElement.style.setProperty('--ui-soft', 'rgba('+Object.values(hexToRgb(uiColor)).join(',') + ',.14)');
-
+// Цвет текста (HUD, меню, кнопки) из настроек
+const txtColor = (cfg.textColor || '#ffffff');
+document.documentElement.style.setProperty('--text-color', txtColor);
       if (cfg.style && cfg.style.glowColor){
         document.documentElement.style.setProperty('--glow', cfg.style.glowColor);
       }
