@@ -426,22 +426,34 @@ math:{
     let cfg = null;
     let LANG = 'ru'; // по умолчанию
 
-    (async function boot(){
-      if(!GAME_ID){
-        showFatal("No id", "Не передан id в строке запроса.");
-        return;
-      }
-      try{
-        const url = `${JSON_BASE}${encodeURIComponent(GAME_ID)}.json?v=${Date.now()}`;
-        const res = await fetch(url, { cache:'no-store' });
-        if(!res.ok) throw new Error('HTTP '+res.status);
-        cfg = await res.json();
-      }catch(e){
-        showFatal("Load error", `Ошибка загрузки настроек: ${e.message}\nПроверь публикацию в texts/data.`);
-        return;
-      }
+   (async function boot(){
+  if(!GAME_ID){
+    showFatal("No id", "Не передан id в строке запроса (?id=...).");
+    return;
+  }
+  try{
+    const url = `${JSON_BASE}${encodeURIComponent(GAME_ID)}.json?v=${Date.now()}`;
+    const res = await fetch(url, { cache:'no-store' });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    cfg = await res.json();
+  }catch(e){
+    showFatal("Load error", `Ошибка загрузки настроек: ${e.message}\nПроверь публикацию в texts/data.`);
+    return;
+  }
 
-      LANG = (cfg.language || 'ru').toLowerCase();
+  LANG = (cfg.language || 'ru').toLowerCase();
+
+  // 🛡 Проверка на пустые уровни
+  if (!cfg.levels || !Array.isArray(cfg.levels) || cfg.levels.length === 0){
+    showFatal("Нет уровней", "Файл настроек загружен, но уровни не найдены.");
+    return;
+  }
+
+  // Всё ок → запускаем HUD и стартовое меню
+  updateHUD(1, cfg.levels.length);
+  showStartOverlay();
+})();
+
 
       // Цвет интерфейса — даже если рамка заменена картинкой, берём borderColor (или glowColor)
 const uiColor =
