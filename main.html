@@ -661,53 +661,52 @@ function showLevelCompleteOverlay(current, total, onNext){
       return a;
     }
 
-    function startLevel(){
-      currentLevel++;
-      const levels = Array.isArray(cfg.levels) ? cfg.levels : [];
-      if(currentLevel > levels.length){
-        running = false;
-        fireworks();
-        try{ winSound.currentTime=0; winSound.play(); }catch(_){}
-        showGameCompleteOverlay({hits, wrong:wrongClicks, missed: missedCorrect, total: score});
-        return;
-      }
+   function startLevel(){
+  currentLevel++;
+  const levels = Array.isArray(cfg.levels) ? cfg.levels : [];
+  if(currentLevel > levels.length){
+    running = false;
+    fireworks();
+    try{ winSound.currentTime=0; winSound.play(); }catch(_){}
+    showGameCompleteOverlay({hits, wrong:wrongClicks, missed: missedCorrect, total: score});
+    return;
+  }
 
-      updateHUD(currentLevel, levels.length);
-      const lv = levels[currentLevel-1];
+  updateHUD(currentLevel, levels.length);
+  const lv = levels[currentLevel-1];
 
-      // Таймер уровня
-      let timeLeft = Math.max(5, Number(lv.timer || 30));
-      hudTimer.textContent = timeLeft.toString().padStart(2,'0');
-      if (levelTimerHandle) clearInterval(levelTimerHandle);
-      levelTimerHandle = setInterval(()=>{
-        if(!running) return;
-        timeLeft--;
-        hudTimer.textContent = timeLeft.toString().padStart(2,'0');
-        if(timeLeft <= 0){
-          clearInterval(levelTimerHandle);
-          if (spawnerHandle) clearInterval(spawnerHandle);
-          // Почистим сцену
-          document.querySelectorAll('.item').forEach(n=>n.remove());
-          // Мини-фейерверк и переход
-          fireworks(5);
-          try{ winSound.currentTime=0; winSound.play(); }catch(_){}
-          showLevelCompleteOverlay(currentLevel, levels.length, ()=> startLevel());
-        }
-      }, 1000);
-
-      // Спавн
+  // Таймер уровня
+  let timeLeft = Math.max(5, Number(lv.timer || 30));
+  hudTimer.textContent = timeLeft.toString().padStart(2,'0');
+  if (levelTimerHandle) clearInterval(levelTimerHandle);
+  levelTimerHandle = setInterval(()=>{
+    if(!running) return;
+    timeLeft--;
+    hudTimer.textContent = timeLeft.toString().padStart(2,'0');
+    if(timeLeft <= 0){
+      clearInterval(levelTimerHandle);
       if (spawnerHandle) clearInterval(spawnerHandle);
-      const pool = [
-        ...(lv.correct||[]).map(v=>({val:v, good:true})),
-        ...(lv.wrong||[]).map(v=>({val:v, good:false}))
-      ];
-      const delay = clamp(SPEED.spawn, 300, 2200);
-      spawnerHandle = setInterval(()=>{
-        if(!running) return;
-        const obj = pool[Math.floor(Math.random()*pool.length)] || {val:'?', good:false};
-        drop(obj);
-      }, delay);
+      document.querySelectorAll('.item').forEach(n=>n.remove());
+      fireworks(5);
+      try{ winSound.currentTime=0; winSound.play(); }catch(_){}
+      showLevelCompleteOverlay(currentLevel, levels.length, ()=> startLevel());
     }
+  }, 1000);
+
+  // Спавн (исправлено!)
+  if (spawnerHandle) clearInterval(spawnerHandle);
+  const delay = clamp(SPEED.spawn, 300, 2200);
+  spawnerHandle = setInterval(()=>{
+    if(!running) return;
+    const pool = [
+      ...(lv.correct||[]).map(v=>({val:v, good:true})),
+      ...(lv.wrong||[]).map(v=>({val:v, good:false}))
+    ];
+    if(pool.length===0) return;
+    const obj = pool[Math.floor(Math.random()*pool.length)];
+    drop(obj);
+  }, delay);
+}
 
     /* ===================== Элемент: создание/падение/клик ===================== */
     function drop(obj){
