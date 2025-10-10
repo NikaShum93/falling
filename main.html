@@ -740,8 +740,13 @@ function showLevelCompleteOverlay(current, total, onNext){
         bg.style.backgroundColor = bgCol;                   // чистый цвет
       }
 
-      // Прозрачность фон-слоя
-      bg.style.opacity = String(clamp(Number(STYLE.opacity ?? 1), 0, 1));
+     // Прозрачность фон-слоя (по умолчанию 1 — полностью видно)
+if (STYLE.opacity !== undefined && STYLE.opacity !== "") {
+  bg.style.opacity = String(clamp(Number(STYLE.opacity), 0, 1));
+} else {
+  bg.style.opacity = "1";
+}
+
 
       // Рамка (граница) — только если включена
       if (STYLE.borderOn && STYLE.borderWidth>0){
