@@ -443,13 +443,13 @@ let LANG = 'ru'; // по умолчанию
 
   LANG = (cfg.language || 'ru').toLowerCase();
 
-  // 🛡 Проверка на пустые уровни
+  // Проверка на пустые уровни
   if (!cfg.levels || !Array.isArray(cfg.levels) || cfg.levels.length === 0){
     showFatal("Нет уровней", "Файл настроек загружен, но уровни не найдены.");
     return;
   }
 
-  // ================== Устанавливаем цвета интерфейса ==================
+  // Цвета интерфейса
   const uiColor =
     (cfg.style && (cfg.style.uiColor || cfg.style.borderColor || cfg.style.glowColor))
     || '#ffd700';
@@ -467,10 +467,11 @@ let LANG = 'ru'; // по умолчанию
   if (cfg.cursor) document.body.style.cursor = `url(${cfg.cursor}), auto`;
   if (cfg.font) document.body.style.fontFamily = `${cfg.font}, system-ui, sans-serif`;
 
-  // ================== Старт игры ==================
+  // Старт
   updateHUD(1, cfg.levels.length);
   showStartOverlay();
-})();   // ← закрывается только один раз!
+})();   // ← только один раз
+
 
 
 
