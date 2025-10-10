@@ -711,7 +711,7 @@ function showLevelCompleteOverlay(current, total, onNext){
 
     /* ===================== Элемент: создание/падение/клик ===================== */
     function drop(obj){
-     const STYLE = cfg.style || {};
+  const STYLE = cfg.style || {};
 const FONT = cfg.font || 'Rubik';
 const FONT_SIZE = Number(cfg.fontSize || 24);
 
@@ -721,7 +721,7 @@ function invertColor(hex){
   return (r*0.299 + g*0.587 + b*0.114) > 186 ? '#000000' : '#ffffff';
 }
 
-const bgCol = STYLE.bgColor || '#000000';   // фон по умолчанию чёрный, не прозрачный
+let bgCol = STYLE.bgColor || '#000000';   // фон по умолчанию чёрный, не прозрачный
 let TEXT_COLOR = cfg.textColor || '#ffffff';
 
 // если цвет текста и фон близки → меняем текст на инверсию
@@ -734,8 +734,7 @@ if (bgCol && bgCol !== 'transparent'){
   }
 }
 
-
-      const el = document.createElement('div');
+  const el = document.createElement('div');
       el.className = `item shape-${STYLE.shape || 'rounded'} ${STYLE.shadow?'fx-shadow':''} ${STYLE.fx3d?'fx-3d':''} ${STYLE.glow?'fx-glow':''} ${STYLE.borderOn && STYLE.borderWidth>0 ? 'fx-border' : ''}`;
       el.dataset.good = obj.good ? '1' : '0';
       el.style.setProperty('--glow', STYLE.glowColor || '#00f0ff');
