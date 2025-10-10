@@ -343,7 +343,7 @@
     const hudLevel = $('#hudLevel');
     const hudTimer = $('#hudTimer');
     const hudScore = $('#hudScore');
-
+let overlayNode = null;
   function updateHUD(current, total){
   const lv = (cfg && cfg.levels && cfg.levels[current-1]) || null;
   const title = lv ? (lv.target || "") : "";
