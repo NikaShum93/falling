@@ -712,159 +712,144 @@ function showLevelCompleteOverlay(current, total, onNext){
     /* ===================== Элемент: создание/падение/клик ===================== */
     function drop(obj){
   const STYLE = cfg.style || {};
-const FONT = cfg.font || 'Rubik';
-const FONT_SIZE = Number(cfg.fontSize || 24);
+  const FONT = cfg.font || 'Rubik';
+  const FONT_SIZE = Number(cfg.fontSize || 24);
 
-// Цвет текста с защитой от совпадения с фоном
-function invertColor(hex){
-  const {r,g,b} = hexToRgb(hex);
-  return (r*0.299 + g*0.587 + b*0.114) > 186 ? '#000000' : '#ffffff';
-}
+  // Помощники для контрастности текста
+  function invertColor(hex){
+    const {r,g,b} = hexToRgb(hex);
+    return (r*0.299 + g*0.587 + b*0.114) > 186 ? '#000000' : '#ffffff';
+  }
 
-let bgCol = STYLE.bgColor || '#000000';   // фон по умолчанию чёрный, не прозрачный
-let TEXT_COLOR = cfg.textColor || '#ffffff';
+  // Фон и текст по умолчанию — НЕ прозрачные
+  const bgCol = (STYLE.bgColor && STYLE.bgColor !== 'transparent') ? STYLE.bgColor : '#ffffff';
+  let TEXT_COLOR = (cfg.textColor && cfg.textColor !== 'transparent') ? cfg.textColor : '#000000';
 
-// если цвет текста и фон близки → меняем текст на инверсию
-if (bgCol && bgCol !== 'transparent'){
+  // Если фон и текст слишком похожи — инвертируем цвет текста
   const bgRgb = hexToRgb(bgCol);
   const txtRgb = hexToRgb(TEXT_COLOR);
   const diff = Math.abs(bgRgb.r - txtRgb.r) + Math.abs(bgRgb.g - txtRgb.g) + Math.abs(bgRgb.b - txtRgb.b);
-  if (diff < 100){
-    TEXT_COLOR = invertColor(bgCol);
-  }
-}
+  if (diff < 100){ TEXT_COLOR = invertColor(bgCol); }
 
+  // Коробка элемента
   const el = document.createElement('div');
-      el.className = `item shape-${STYLE.shape || 'rounded'} ${STYLE.shadow?'fx-shadow':''} ${STYLE.fx3d?'fx-3d':''} ${STYLE.glow?'fx-glow':''} ${STYLE.borderOn && STYLE.borderWidth>0 ? 'fx-border' : ''}`;
-      el.dataset.good = obj.good ? '1' : '0';
-      el.style.setProperty('--glow', STYLE.glowColor || '#00f0ff');
+  el.className = `item shape-${STYLE.shape || 'rounded'} ${STYLE.shadow?'fx-shadow':''} ${STYLE.fx3d?'fx-3d':''} ${STYLE.glow?'fx-glow':''} ${STYLE.borderOn && STYLE.borderWidth>0 ? 'fx-border' : ''}`;
+  el.dataset.good = obj.good ? '1' : '0';
+  el.style.setProperty('--glow', STYLE.glowColor || '#00f0ff');
 
-      // структура
-      const bg = document.createElement('div');
-      bg.className = 'bg';
-      const content = document.createElement('div');
-      content.className = 'content';
-      el.appendChild(bg); el.appendChild(content);
+  // Фоновый слой
+  const bg = document.createElement('div');
+  bg.className = 'bg';
 
-      // Фон рамки: либо картинка, либо цвет (строго взаимоисключающие)
-      const bgImg = (STYLE.bgImage||'').trim();
-      
+  // Контент
+  const content = document.createElement('div');
+  content.className = 'content';
+  content.style.color = TEXT_COLOR; // <- чтобы всё внутри было читаемо
 
-      if (bgImg) {
-        bg.style.backgroundImage = `url(${bgImg})`;
-        bg.style.backgroundColor = 'transparent';           // не смешиваем цвет с картинкой
-      } else {
-        bg.style.backgroundImage = 'none';
-        bg.style.backgroundColor = bgCol;                   // чистый цвет
-      }
+  el.appendChild(bg);
+  el.appendChild(content);
 
-     // Прозрачность фон-слоя (по умолчанию 1 — полностью видно)
-if (STYLE.opacity !== undefined && STYLE.opacity !== "") {
-  bg.style.opacity = String(clamp(Number(STYLE.opacity), 0, 1));
-} else {
-  bg.style.opacity = "1";
-}
+  // Либо картинка-рама, либо сплошной цвет (не смешиваем)
+  const bgImg = (STYLE.bgImage||'').trim();
+  if (bgImg) {
+    bg.style.backgroundImage = `url(${bgImg})`;
+    bg.style.backgroundColor = 'transparent';
+  } else {
+    bg.style.backgroundImage = 'none';
+    bg.style.backgroundColor = bgCol;
+  }
 
+  // Прозрачность фона (по умолчанию 1)
+  const op = STYLE.opacity;
+  bg.style.opacity = (op === undefined || op === '') ? '1' : String(clamp(Number(op), 0, 1));
 
-      // Рамка (граница) — только если включена
-      if (STYLE.borderOn && STYLE.borderWidth>0){
-        bg.style.borderColor = STYLE.borderColor || '#fff';
-        bg.style.borderWidth = `${parseInt(STYLE.borderWidth,10)}px`;
-      } else {
-        bg.style.borderWidth = '0px';
-      }
+  // Рамка — только если включена
+  if (STYLE.borderOn && STYLE.borderWidth>0){
+    bg.style.borderColor = STYLE.borderColor || '#fff';
+    bg.style.borderWidth = `${parseInt(STYLE.borderWidth,10)}px`;
+  } else {
+    bg.style.borderWidth = '0px';
+  }
 
-      // Контент: картинка/математика/текст
-      if(/^https?:\/\//i.test(obj.val)){
-        const img = document.createElement('img');
-        img.src = obj.val;
-        content.appendChild(img);
-      } else if ((cfg.language||'') === 'math'){
-        const span = document.createElement('span');
-        span.textContent = `\\(${obj.val}\\)`;
-        span.style.color = TEXT_COLOR;
-        content.appendChild(span);
-      } else {
-        const span = document.createElement('span');
-        span.textContent = String(obj.val);
-        span.style.color = TEXT_COLOR;
-        span.style.fontFamily = `${FONT}, system-ui, sans-serif`;
-        span.style.fontSize = `${FONT_SIZE}px`;
-        content.appendChild(span);
-      }
+  // Содержимое: картинка / формула / текст
+  if(/^https?:\/\//i.test(obj.val)){
+    const img = document.createElement('img');
+    img.src = obj.val;
+    content.appendChild(img);
+  } else if ((cfg.language||'') === 'math'){
+    const span = document.createElement('span');
+    span.textContent = `\\(${obj.val}\\)`;
+    span.style.color = TEXT_COLOR; // на всякий случай — явно
+    content.appendChild(span);
+  } else {
+    const span = document.createElement('span');
+    span.textContent = String(obj.val);
+    span.style.color = TEXT_COLOR;
+    span.style.fontFamily = `${FONT}, system-ui, sans-serif`;
+    span.style.fontSize = `${FONT_SIZE}px`;
+    content.appendChild(span);
+  }
 
-      // Стартовая позиция
-      const gw = game.clientWidth;
-      const startX = Math.max(16, Math.min(gw-220, rnd(0, gw-220)));
-      el.style.left = startX + 'px';
-      el.style.top = '-160px';
+  // Стартовая позиция
+  const gw = game.clientWidth;
+  const startX = Math.max(16, Math.min(gw-220, rnd(0, gw-220)));
+  el.style.left = startX + 'px';
+  el.style.top = '-160px';
 
-      game.appendChild(el);
+  game.appendChild(el);
 
-      // Подгоняем геометрию под контент + воздух
-      fitGeometryBox(el);
+  // Размер под контент
+  fitGeometryBox(el);
+  autoFitText(el, FONT_SIZE, 12);
+  if ((cfg.language||'') === 'math'){ MathJax.typesetPromise([el]).then(()=> fitGeometryBox(el)); }
 
-      // Автофит текста
-      autoFitText(el, FONT_SIZE, 12);
+  // Падение
+  const vel = SPEED.vel;
+  const swayAmp = rnd(6, 22);
+  const swayFreq = rnd(0.003, 0.008);
+  let y = -160, t = 0, alive = true;
 
-      // Если математический режим — перетайпсетить и ещё раз подровнять
-      if ((cfg.language||'') === 'math'){
-        MathJax.typesetPromise([el]).then(()=> fitGeometryBox(el));
-      }
-
-      // Падение
-      const vel = SPEED.vel;
-      const swayAmp = rnd(6, 22);
-      const swayFreq = rnd(0.003, 0.008);
-      let y = -160;
-      let t = 0;
-      let alive = true;
-
-      function step(){
-        if(!alive) return;
-        y += vel; t += 1;
-        const dx = Math.sin(t*swayFreq) * swayAmp;
-        el.style.top = y+'px';
-        el.style.transform = `translateX(${dx}px)`;
-        if(y > game.clientHeight + 200){
-          alive = false;
-          if (el.dataset.good === '1') {
-            missedCorrect++;
-          }
-          el.remove();
-          return;
-        }
-        requestAnimationFrame(step);
-      }
-      requestAnimationFrame(step);
-
-      // Клик
-      el.addEventListener('click', ()=>{
-        if(!alive) return;
-
-        if(el.dataset.good === '1'){
-          // Очки
-          streak++;
-          const comboMult = 1 + (streak-1)*0.25;             // растущее комбо без потолка
-          const pts = Math.round(SPEED.basePts * comboMult);  // скорость влияет на базу
-          score += pts; hits++;
-          hudScore.textContent = String(score);
-
-          popScore(el, `+${pts}`);
-          playPop(el);
-          alive = false;
-          el.classList.add('caught');
-          setTimeout(()=> el.remove(), 380);
-        } else {
-          // Мимо: не вычитаем очки, но сбрасываем серию и даём визуальный фидбек
-          wrongClicks++;
-          streak = 0;
-          bg.style.filter = 'brightness(2) saturate(1.6) hue-rotate(-30deg)';
-          setTimeout(()=> bg.style.filter = 'none', 220);
-        }
-      });
+  function step(){
+    if(!alive) return;
+    y += vel; t += 1;
+    const dx = Math.sin(t*swayFreq) * swayAmp;
+    el.style.top = y+'px';
+    el.style.transform = `translateX(${dx}px)`;
+    if(y > game.clientHeight + 200){
+      alive = false;
+      if (el.dataset.good === '1') missedCorrect++;
+      el.remove();
+      return;
     }
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
 
+  // Клик
+  el.addEventListener('click', ()=>{
+    if(!alive) return;
+
+    if(el.dataset.good === '1'){
+      // Очки
+      streak++;
+      const comboMult = 1 + (streak-1)*0.25;
+      const pts = Math.round(SPEED.basePts * comboMult);
+      score += pts; hits++;
+      hudScore.textContent = String(score);
+
+      popScore(el, `+${pts}`);
+      playPop(el);
+      alive = false;
+      el.classList.add('caught');
+      setTimeout(()=> el.remove(), 380);
+    } else {
+      wrongClicks++;
+      streak = 0;
+      bg.style.filter = 'brightness(2) saturate(1.6) hue-rotate(-30deg)';
+      setTimeout(()=> bg.style.filter = 'none', 220);
+    }
+  });
+}
     /* ===================== Геометрия/автофит ===================== */
     function fitGeometryBox(el){
       const STYLE = cfg.style || {};
