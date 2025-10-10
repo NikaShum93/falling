@@ -57,14 +57,14 @@
       display:flex; gap:12px; align-items:center; justify-content:space-between;
       font-weight:700; z-index:10; pointer-events:none;
     }
-    .badge{
-      pointer-events:none;
-      background:rgba(0,0,0,.45);
-      border:1px solid rgba(255,255,255,.12);
-      border-radius:12px;
-      padding:10px 14px;
-      box-shadow:0 8px 24px rgba(0,0,0,.35), 0 0 18px var(--ui-soft) inset;
-    }
+   .badge{
+  background:rgba(0,0,0,.45);
+  border:1px solid var(--ui-soft);
+  border-radius:12px;
+  padding:10px 14px;
+  box-shadow:0 8px 24px rgba(0,0,0,.35), 0 0 18px var(--ui-soft) inset;
+  color:var(--ui);
+}
     .levelTitle{ color:var(--ui) }
     .timer{min-width:110px; text-align:center}
     .score{min-width:110px; text-align:center}
@@ -77,20 +77,23 @@
       color:#fff; z-index:20; gap:18px;
       pointer-events:auto;
     }
-    .overlay .panel{
-      background: rgba(0,0,0,.55);
-      border:1px solid rgba(255,255,255,.12);
-      border-radius:16px;
-      padding:22px 26px;
-      text-align:center;
-      box-shadow:0 0 26px var(--ui-soft);
-      min-width:min(92vw,560px);
-    }
-    .overlay h2{
-      margin:6px 0 6px;
-      font-size:24px; font-weight:900; color:var(--ui);
-      text-shadow:0 0 20px var(--ui-soft);
-    }
+.overlay .panel{
+  background:rgba(0,0,0,.85);
+  padding:36px 28px;
+  border-radius:16px;
+  border:1px solid var(--ui-soft);
+  max-width:400px;
+  margin:auto;
+  text-align:center;
+  box-shadow:0 8px 32px rgba(0,0,0,.45), 0 0 22px var(--ui-soft);
+  color:var(--ui);
+}
+.overlay .panel h2{
+  margin:0 0 12px;
+  color:var(--ui);
+  font-size:24px;
+  text-shadow:0 0 20px var(--ui-soft);
+}
     .overlay p{ margin:0 0 8px; opacity:.9 }
     .overlay .row{ display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap }
     .overlay button{
@@ -484,38 +487,70 @@ if (cfg.font) {
 
     let overlayNode = null;
 
-    function showStartOverlay(){
-      if (overlayNode) overlayNode.remove();
-      overlayNode = document.createElement('div');
-      overlayNode.className = 'overlay';
-      const total = (cfg.levels||[]).length||0;
+  function showStartOverlay(){
+  if (overlayNode) overlayNode.remove();
+  overlayNode = document.createElement('div');
+  overlayNode.className = 'overlay';
+  const total = (cfg.levels||[]).length||0;
+  const firstTarget = (cfg.levels[0] && cfg.levels[0].target) ? String(cfg.levels[0].target) : "";
 
-      overlayNode.innerHTML = `
-        <div class="panel">
-          <h2>${t(LANG,'startTitle')}</h2>
-          <p style="opacity:.9">${t(LANG,'levelOf', 1, total)}</p>
-          <div class="row">
-            <button id="btnStart">${t(LANG,'startBtn')}</button>
-          </div>
-        </div>`;
-      document.body.appendChild(overlayNode);
+  const catchAll = t(LANG,'catchAll');
+  const targetLine = firstTarget
+    ? ((cfg.language||'') === 'math'
+        ? `<p>${catchAll}: \\(${firstTarget}\\)</p>`
+        : `<p>${catchAll}: ${firstTarget}</p>`)
+    : '';
 
-      $('#btnStart').addEventListener('click', ()=>{
-        overlayNode.remove();
-        startGame();
-      }, { once: true });
-    }
+  overlayNode.innerHTML = `
+    <div class="panel">
+      <h2>${t(LANG,'startTitle')}</h2>
+      <p style="opacity:.9">${t(LANG,'levelOf', 1, total)}</p>
+      ${targetLine}
+      <div class="row">
+        <button id="btnStart">${t(LANG,'startBtn')}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlayNode);
 
-    function showLevelCompleteOverlay(current, total, onNext){
-      if (overlayNode) overlayNode.remove();
-      overlayNode = document.createElement('div');
-      overlayNode.className = 'overlay';
-      overlayNode.innerHTML = `
-        <div class="panel">
-          <h2>${t(LANG,'levelComplete')}</h2>
-          <p>${t(LANG,'levelOf', current, total)}</p>
-          <div class="row"><button id="btnNext">${t(LANG,'nextBtn')}</button></div>
-        </div>`;
+  if ((cfg.language||'') === 'math' && firstTarget){
+    MathJax.typesetPromise([overlayNode]);
+  }
+
+  $('#btnStart').addEventListener('click', ()=>{
+    overlayNode.remove();
+    startGame();
+  }, { once: true });
+}
+
+function showLevelCompleteOverlay(current, total, onNext){
+  if (overlayNode) overlayNode.remove();
+  overlayNode = document.createElement('div');
+  overlayNode.className = 'overlay';
+
+  overlayNode.innerHTML = `
+    <div class="panel">
+      <h2>${t(LANG,'levelComplete')}</h2>
+      <p style="opacity:.9">${t(LANG,'levelOf', current, total)}</p>
+      <div style="margin:10px 0; text-align:left">
+        <div>${t(LANG,'hits')}: <b>${hits}</b></div>
+        <div>${t(LANG,'wrong')}: <b>${wrongClicks}</b></div>
+        <div>${t(LANG,'missed')}: <b>${missedCorrect}</b></div>
+        <div>${t(LANG,'total')}: <b>${score}</b></div>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <button id="btnNext">${t(LANG,'nextBtn')}</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlayNode);
+
+  $('#btnNext').addEventListener('click', ()=>{
+    overlayNode.remove();
+    onNext && onNext();
+  }, { once:true });
+}
+
+
       document.body.appendChild(overlayNode);
       $('#btnNext').addEventListener('click', ()=>{
         overlayNode.remove();
@@ -524,34 +559,36 @@ if (cfg.font) {
     }
 
     function showGameCompleteOverlay(stats){
-      if (overlayNode) overlayNode.remove();
-      overlayNode = document.createElement('div');
-      overlayNode.className = 'overlay';
+  if (overlayNode) overlayNode.remove();
+  overlayNode = document.createElement('div');
+  overlayNode.className = 'overlay';
 
-      const custom = (cfg.finalFeedback || cfg.feedback || "").trim();
-      const fbTitle = t(LANG,'finalFeedbackTitle');
-      const fbText = custom || t(LANG,'defaultFinalFeedback');
+  const custom = (cfg.finalFeedback || cfg.feedback || "").trim();
+  const fbTitle = t(LANG,'finalFeedbackTitle');
+  const fbText = custom || t(LANG,'defaultFinalFeedback');
 
-      overlayNode.innerHTML = `
-        <div class="panel">
-          <h2>${t(LANG,'gameComplete')}</h2>
-          <p style="margin:6px 0 6px; font-size:18px; color:var(--ui)">${fbTitle}</p>
-          <p style="white-space:pre-wrap">${fbText}</p>
+  overlayNode.innerHTML = `
+    <div class="panel">
+      <h2>${t(LANG,'gameComplete')}</h2>
+      <p style="margin:6px 0 6px; font-size:18px; color:var(--ui)">${fbTitle}</p>
+      <p style="white-space:pre-wrap">${fbText}</p>
 
-          <div style="margin-top:12px; display:grid; grid-template-columns:1fr 1fr; gap:10px; text-align:left">
-            <div>${t(LANG,'hits')}: <b>${stats.hits}</b></div>
-            <div>${t(LANG,'wrong')}: <b>${stats.wrong}</b></div>
-            <div>${t(LANG,'missed')}: <b>${stats.missed}</b></div>
-            <div>${t(LANG,'total')}: <b>${stats.total}</b></div>
-          </div>
+      <div style="margin-top:12px; display:grid; grid-template-columns:1fr 1fr; gap:10px; text-align:left">
+        <div>${t(LANG,'hits')}: <b>${stats.hits}</b></div>
+        <div>${t(LANG,'wrong')}: <b>${stats.wrong}</b></div>
+        <div>${t(LANG,'missed')}: <b>${stats.missed}</b></div>
+        <div>${t(LANG,'total')}: <b>${stats.total}</b></div>
+      </div>
 
-          <div class="row" style="margin-top:14px">
-            <button id="btnRestart">${t(LANG,'restartBtn')}</button>
-          </div>
-        </div>`;
-      document.body.appendChild(overlayNode);
-      $('#btnRestart').addEventListener('click', ()=> location.reload(), { once:true });
-    }
+      <div class="row" style="margin-top:14px">
+        <button id="btnRestart">${t(LANG,'restartBtn')}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlayNode);
+
+  $('#btnRestart').addEventListener('click', ()=> location.reload(), { once:true });
+}
+
 
     /* ===================== Геймплей ===================== */
     const game = $('#game');
