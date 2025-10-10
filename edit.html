@@ -222,6 +222,12 @@
         <div class="preview-controls">
           <input type="text" id="previewValue" placeholder="Текст предпросмотра или URL картинки..." value="Preview">
           <div class="right">
+            <div class="card">
+    <h2>🏁 Финальный фидбек</h2>
+    <label>Текст, который появится после завершения игры</label>
+    <textarea id="finalFeedback" placeholder="Например: Отличная работа!"></textarea>
+    <div class="hint">Если оставить пустым, будет показан стандартный текст («Отличная работа!» или локализованный).</div>
+  </div>
             <button class="btn-ghost" id="btnText">Текст</button>
             <button class="btn-ghost" id="btnImage">Картинка</button>
           </div>
@@ -362,7 +368,8 @@
       text.style.color = $('#textColor').value;
       text.style.fontSize = (parseInt($('#fontSize').value,10)||24) + 'px';
       text.style.fontFamily = $('#font').value + ", system-ui, sans-serif";
-
+// Применяем выбранный шрифт ко всему интерфейсу редактора
+document.body.style.fontFamily = $('#font').value + ", system-ui, sans-serif";
       // Контент
       if(asImage){
         item.dataset.mode = 'image';
@@ -471,9 +478,10 @@
           uiColor: uiColor || $('#borderColor').value || '#ffd700' // если не задан — берём из рамки
         },
         cursor: $('#cursorUrl').value.trim(),
-        randomLevels: false,
-        levels
-      };
+  randomLevels: false,
+  finalFeedback: $('#finalFeedback').value.trim(),
+  levels
+};
       return cfg;
     }
 
