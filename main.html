@@ -418,14 +418,13 @@
   const isMath = (cfg.language || '') === 'math';
   const targetHtml = isMath ? `\\(${targetVal}\\)` : targetVal;
 
-  overlayNode.innerHTML = `
-    <div class="panel">
-      <h2>${t(LANG,'startTitle')}</h2>
-      <p>${t(LANG,'catchAll')} ${targetHtml}</p>
-      <div class="row" style="margin-top:14px">
-        <button id="btnStart">${t(LANG,'startBtn')}</button>
-      </div>
-    </div>`;
+overlayNode.innerHTML = `
+  <div class="panel">
+    <h2>${t(LANG,'levelComplete')}</h2>
+    <p>${t(LANG,'levelOf', current, total)}</p>
+    <p>${t(LANG,'score')}: <b>${score}</b></p>
+    <div class="row"><button id="btnNext">${t(LANG,'nextBtn')}</button></div>
+  </div>`;
   document.body.appendChild(overlayNode);
 
   if (isMath) {
