@@ -408,34 +408,38 @@
 
     let overlayNode = null;
 
-    function showStartOverlay(){
+  function showStartOverlay(){
   if (overlayNode) overlayNode.remove();
   overlayNode = document.createElement('div');
   overlayNode.className = 'overlay';
-  const total = (cfg.levels||[]).length||0;
 
-  const targetVal = cfg.levels[0]?.target || '';
+  const total = (cfg.levels||[]).length || 0;
+  const targetVal = cfg.levels.length > 0 ? (cfg.levels[0].target || "") : "";
   const isMath = (cfg.language || '') === 'math';
-  const targetHtml = isMath ? `\\(${targetVal}\\)` : targetVal;
+  const targetHtml = targetVal ? (isMath ? `\\(${targetVal}\\)` : targetVal) : "";
 
-overlayNode.innerHTML = `
-  <div class="panel">
-    <h2>${t(LANG,'levelComplete')}</h2>
-    <p>${t(LANG,'levelOf', current, total)}</p>
-    <p>${t(LANG,'score')}: <b>${score}</b></p>
-    <div class="row"><button id="btnNext">${t(LANG,'nextBtn')}</button></div>
-  </div>`;
+  overlayNode.innerHTML = `
+    <div class="panel">
+      <h2>${t(LANG,'startTitle')}</h2>
+      <p>${t(LANG,'catchAll')} ${targetHtml}</p>
+      <div class="row" style="margin-top:14px">
+        <button id="btnStart">${t(LANG,'startBtn')}</button>
+      </div>
+    </div>
+  `;
   document.body.appendChild(overlayNode);
 
-  if (isMath) {
+  if (isMath && targetHtml) {
     MathJax.typesetPromise([overlayNode]);
   }
 
+  // Теперь кнопка реально есть
   $('#btnStart').addEventListener('click', ()=>{
     overlayNode.remove();
     startGame();
   }, { once: true });
 }
+
     function showLevelCompleteOverlay(current, total, onNext){
       if (overlayNode) overlayNode.remove();
       overlayNode = document.createElement('div');
