@@ -408,7 +408,7 @@
 
     let overlayNode = null;
 
-  function showStartOverlay(){
+   function showStartOverlay(){
   if (overlayNode) overlayNode.remove();
   overlayNode = document.createElement('div');
   overlayNode.className = 'overlay';
@@ -416,30 +416,27 @@
   const total = (cfg.levels||[]).length || 0;
   const targetVal = cfg.levels.length > 0 ? (cfg.levels[0].target || "") : "";
   const isMath = (cfg.language || '') === 'math';
-  const targetHtml = targetVal ? (isMath ? `\\(${targetVal}\\)` : targetVal) : "";
 
   overlayNode.innerHTML = `
-    <div class="panel">
-      <h2>${t(LANG,'startTitle')}</h2>
-      <p>${t(LANG,'catchAll')} ${targetHtml}</p>
-      <div class="row" style="margin-top:14px">
-        <button id="btnStart">${t(LANG,'startBtn')}</button>
-      </div>
+    <div class="overlay-inner">
+      <h2>${t(LANG,'title')}</h2>
+      <p>${t(LANG,'catchAll')} ${isMath ? "\\(${targetVal}\\)" : targetVal}</p>
+      <button onclick="startGame()">${t(LANG,'start')}</button>
     </div>
   `;
   document.body.appendChild(overlayNode);
 
-  if (isMath && targetHtml) {
+  if (isMath) {
     MathJax.typesetPromise([overlayNode]);
   }
+}
 
-  // Теперь кнопка реально есть
+
   $('#btnStart').addEventListener('click', ()=>{
     overlayNode.remove();
     startGame();
   }, { once: true });
 }
-
     function showLevelCompleteOverlay(current, total, onNext){
       if (overlayNode) overlayNode.remove();
       overlayNode = document.createElement('div');
