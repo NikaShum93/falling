@@ -306,17 +306,17 @@
     hits:"ヒット", wrong:"ミスクリック", missed:"見逃した正解", total:"合計",
     finalFeedbackTitle:"よくできました！", defaultFinalFeedback:"その調子！"
   },
-  math:{
-    startTitle:"Falling Items (Math)",
-    startBtn:"Start", contBtn:"Continue", nextBtn:"Next level",
-    restartBtn:"Play again",
-    catchAll:"Catch all",
-    level:n=>`Level ${n}`, levelOf:(n,t)=>`Level ${n} of ${t}`,
-    time:"Time", score:"Score",
-    levelComplete:"Level complete!", gameComplete:"Game complete!",
-    hits:"Hits", wrong:"Wrong", missed:"Missed", total:"Total",
-    finalFeedbackTitle:"Great!", defaultFinalFeedback:"Nice work!"
-  }
+ math:{
+  startTitle:"Игра «Падающие элементы» (Математика)",
+  startBtn:"Начать", contBtn:"Продолжить", nextBtn:"Следующий уровень",
+  restartBtn:"Играть снова",
+  catchAll:"Поймай все",
+  level:n=>`Уровень ${n}`, levelOf:(n,t)=>`Уровень ${n} из ${t}`,
+  time:"Время", score:"Счёт",
+  levelComplete:"Уровень пройден!", gameComplete:"Игра пройдена!",
+  hits:"Попаданий", wrong:"Мимо", missed:"Ушло правильных", total:"Итого",
+  finalFeedbackTitle:"Молодец!", defaultFinalFeedback:"Отличная работа!"
+}
 };
     function t(lang,key,...args){
       const dict = I18N[lang]||I18N.ru; const v = dict[key];
