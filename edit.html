@@ -209,12 +209,7 @@
             <label>Внутренние отступы (px)</label>
             <input type="number" id="pad" value="22" min="0" max="120">
           </div>
-          <div>
-            <label>Цвет интерфейса (UI)</label>
-            <input type="color" id="uiColor" value="#ffd700">
-            <div class="hint">Цвет HUD/кнопок. По умолчанию берётся из рамки/подсветки.</div>
-          </div>
-        </div>
+         </div>
       </div>
  <div class="card">
     <h2>🏁 Финальный фидбек</h2>
@@ -455,7 +450,6 @@ document.body.style.fontFamily = $('#font').value + ", system-ui, sans-serif";
         });
       });
 
-      const uiColor = ($('#uiColor').value || '').trim();
       const cfg = {
         language: $('#language').value,
         font: $('#font').value,
@@ -475,7 +469,6 @@ document.body.style.fontFamily = $('#font').value + ", system-ui, sans-serif";
           glowColor: $('#glowColor').value,
           fx3d: $('#fx3d').checked,
           opacity: Math.max(0, Math.min(1, parseFloat($('#opacity').value||'1'))),
-          uiColor: uiColor || $('#borderColor').value || '#ffd700' // если не задан — берём из рамки
         },
         cursor: $('#cursorUrl').value.trim(),
   randomLevels: false,
@@ -575,8 +568,8 @@ document.body.style.fontFamily = $('#font').value + ", system-ui, sans-serif";
     $('#fontSize').addEventListener('input', ()=> { applyGoogleFont($('#font').value); updatePreview(); });
 
     // предпросмотр реагирует на всё
-    ;['textColor','opacity','shape','bgColor','bgImage','borderColor','borderWidth','borderOn','shadowOn','glowOn','glowColor','fx3d','previewValue','speed','pad','uiColor','cursorUrl']
-      .forEach(id => { $('#'+id).addEventListener('input', updatePreview); $('#'+id).addEventListener('change', updatePreview); });
+  ;['textColor','opacity','shape','bgColor','bgImage','borderColor','borderWidth','borderOn','shadowOn','glowOn','glowColor','fx3d','previewValue','speed','pad','cursorUrl']
+  .forEach(id => { $('#'+id).addEventListener('input', updatePreview); $('#'+id).addEventListener('change', updatePreview); });
 
     // переключатели предпросмотра
     $('#btnText').onclick = (e)=>{ e.preventDefault(); const it=$('#previewItem'); it.dataset.mode='text'; updatePreview(); }
