@@ -23,13 +23,10 @@
   -->
 
   <style>
-   :root{
-  --ui: #ffd700;
-  --ui-soft: rgba(255,215,0,.14);
-  --glow: #00f0ff;
-  --text-color: #ffffff; /* ← дефолт, потом заменится из cfg.textColor */
-}
-
+    :root{
+      /* Цвет интерфейса (HUD/кнопки/акценты) подставим из cfg.style.borderColor */
+      --ui: #ffd700;
+      --ui-soft: rgba(255,215,0,.14);
 
       /* Цвет неона для элементов (если включён cfg.style.glow) */
       --glow: #00f0ff;
@@ -60,15 +57,14 @@
       display:flex; gap:12px; align-items:center; justify-content:space-between;
       font-weight:700; z-index:10; pointer-events:none;
     }
- .badge{
-  background: var(--ui);   /* фон = uiColor */
-  border:1px solid var(--ui-soft);
-  border-radius:12px;
-  padding:10px 14px;
-  box-shadow:0 8px 24px rgba(0,0,0,.35), 0 0 18px var(--ui-soft) inset;
-  color: var(--text-color); /* текст = textColor */
-}
-
+    .badge{
+      pointer-events:none;
+      background:rgba(0,0,0,.45);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:12px;
+      padding:10px 14px;
+      box-shadow:0 8px 24px rgba(0,0,0,.35), 0 0 18px var(--ui-soft) inset;
+    }
     .levelTitle{ color:var(--ui) }
     .timer{min-width:110px; text-align:center}
     .score{min-width:110px; text-align:center}
@@ -81,31 +77,26 @@
       color:#fff; z-index:20; gap:18px;
       pointer-events:auto;
     }
-.overlay .panel{
-  background: var(--ui);      /* фон = uiColor */
-  padding:36px 28px;
-  border-radius:16px;
-  border:1px solid var(--ui-soft);
-  max-width:400px;
-  margin:auto;
-  text-align:center;
-  box-shadow:0 8px 32px rgba(0,0,0,.45), 0 0 22px var(--ui-soft);
-  color: var(--text-color);   /* текст = textColor */
-}
-.overlay .panel h2{
-  margin:0 0 12px;
-  color: var(--text-color);   /* заголовок = textColor */
-  font-size:24px;
-  text-shadow:0 0 20px var(--ui-soft);
-}
-
+    .overlay .panel{
+      background: rgba(0,0,0,.55);
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:16px;
+      padding:22px 26px;
+      text-align:center;
+      box-shadow:0 0 26px var(--ui-soft);
+      min-width:min(92vw,560px);
+    }
+    .overlay h2{
+      margin:6px 0 6px;
+      font-size:24px; font-weight:900; color:var(--ui);
+      text-shadow:0 0 20px var(--ui-soft);
+    }
     .overlay p{ margin:0 0 8px; opacity:.9 }
     .overlay .row{ display:flex; gap:10px; align-items:center; justify-content:center; flex-wrap:wrap }
-    
     .overlay button{
-  background: var(--ui);        /* фон = uiColor */
-  color: var(--text-color);     /* текст = textColor */
-transition:transform .12s ease, box-shadow .12s ease;
+      background:linear-gradient(90deg,#ffbf00,#ffd700);
+      color:#000; border:0; border-radius:10px; font-weight:900; padding:12px 16px; cursor:pointer;
+      transition:transform .12s ease, box-shadow .12s ease;
     }
     .overlay button:hover{ transform:translateY(-1px); box-shadow:0 10px 24px rgba(255,215,0,.35) }
 
@@ -238,167 +229,44 @@ transition:transform .12s ease, box-shadow .12s ease;
   <script>
     /* ===================== Локализация ===================== */
     const I18N = {
-  ru:{
-    startTitle:"Игра «Падающие элементы»",
-    startBtn:"Начать",
-    contBtn:"Продолжить",
-    nextBtn:"Следующий уровень",
-    restartBtn:"Играть снова",
-    level:n=>`Уровень ${n}`,
-    levelOf:(n,t)=>`Уровень ${n} из ${t}`,
-    time:"Время",
-    score:"Счёт",
-    levelComplete:"Уровень пройден!",
-    gameComplete:"Игра пройдена!",
-    hits:"Попаданий",
-    wrong:"Мимо",
-    missed:"Ушло правильных",
-    total:"Итого",
-    finalFeedbackTitle:"Молодец!",
-    defaultFinalFeedback:"Отличная работа!",
-    catchAll:"Поймай все"
-  },
-  en:{
-    startTitle:"Falling Items",
-    startBtn:"Start",
-    contBtn:"Continue",
-    nextBtn:"Next level",
-    restartBtn:"Play again",
-    level:n=>`Level ${n}`,
-    levelOf:(n,t)=>`Level ${n} of ${t}`,
-    time:"Time",
-    score:"Score",
-    levelComplete:"Level complete!",
-    gameComplete:"Game complete!",
-    hits:"Hits",
-    wrong:"Wrong clicks",
-    missed:"Missed correct",
-    total:"Total",
-    finalFeedbackTitle:"Well done!",
-    defaultFinalFeedback:"Great job!",
-    catchAll:"Catch all"
-  },
-  fr:{
-    startTitle:"Objets Tombants",
-    startBtn:"Commencer",
-    contBtn:"Continuer",
-    nextBtn:"Niveau suivant",
-    restartBtn:"Rejouer",
-    level:n=>`Niveau ${n}`,
-    levelOf:(n,t)=>`Niveau ${n} sur ${t}`,
-    time:"Temps",
-    score:"Score",
-    levelComplete:"Niveau terminé !",
-    gameComplete:"Jeu terminé !",
-    hits:"Touchés",
-    wrong:"Faux clics",
-    missed:"Justes ratés",
-    total:"Total",
-    finalFeedbackTitle:"Bravo !",
-    defaultFinalFeedback:"Excellent travail !",
-    catchAll:"Attrape tous"
-  },
-  es:{
-    startTitle:"Elementos Cayendo",
-    startBtn:"Comenzar",
-    contBtn:"Continuar",
-    nextBtn:"Siguiente nivel",
-    restartBtn:"Jugar de nuevo",
-    level:n=>`Nivel ${n}`,
-    levelOf:(n,t)=>`Nivel ${n} de ${t}`,
-    time:"Tiempo",
-    score:"Puntuación",
-    levelComplete:"¡Nivel completado!",
-    gameComplete:"¡Juego completado!",
-    hits:"Aciertos",
-    wrong:"Clics erróneos",
-    missed:"Correctos perdidos",
-    total:"Total",
-    finalFeedbackTitle:"¡Bien hecho!",
-    defaultFinalFeedback:"¡Gran trabajo!",
-    catchAll:"Atrapa todos"
-  },
-  de:{
-    startTitle:"Fallende Elemente",
-    startBtn:"Start",
-    contBtn:"Weiter",
-    nextBtn:"Nächste Stufe",
-    restartBtn:"Nochmals spielen",
-    level:n=>`Level ${n}`,
-    levelOf:(n,t)=>`Level ${n} von ${t}`,
-    time:"Zeit",
-    score:"Punkte",
-    levelComplete:"Level geschafft!",
-    gameComplete:"Spiel beendet!",
-    hits:"Treffer",
-    wrong:"Falsche Klicks",
-    missed:"Verpasste Richtige",
-    total:"Gesamt",
-    finalFeedbackTitle:"Gut gemacht!",
-    defaultFinalFeedback:"Weiter so!",
-    catchAll:"Fange alle"
-  },
-  zh:{
-    startTitle:"下落元素",
-    startBtn:"开始",
-    contBtn:"继续",
-    nextBtn:"下一关",
-    restartBtn:"再玩一次",
-    level:n=>`第 ${n} 关`,
-    levelOf:(n,t)=>`第 ${n}/${t} 关`,
-    time:"时间",
-    score:"分数",
-    levelComplete:"关卡通过！",
-    gameComplete:"游戏完成！",
-    hits:"命中",
-    wrong:"误点",
-    missed:"错过正确",
-    total:"总分",
-    finalFeedbackTitle:"做得好！",
-    defaultFinalFeedback:"继续努力！",
-    catchAll:"抓住所有"
-  },
-  ja:{
-    startTitle:"落下アイテム",
-    startBtn:"スタート",
-    contBtn:"つづける",
-    nextBtn:"次のレベル",
-    restartBtn:"もう一度",
-    level:n=>`レベル ${n}`,
-    levelOf:(n,t)=>`${t} 中 ${n} レベル`,
-    time:"時間",
-    score:"スコア",
-    levelComplete:"レベルクリア！",
-    gameComplete:"ゲームクリア！",
-    hits:"ヒット",
-    wrong:"ミスクリック",
-    missed:"見逃した正解",
-    total:"合計",
-    finalFeedbackTitle:"よくできました！",
-    defaultFinalFeedback:"その調子！",
-    catchAll:"全部キャッチ"
-  },
-math:{
-  startTitle:"Игра «Падающие элементы» (Математика)",
-  startBtn:"Начать",
-  contBtn:"Продолжить",
-  nextBtn:"Следующий уровень",
-  restartBtn:"Играть снова",
-  level:n=>`Уровень ${n}`,
-  levelOf:(n,t)=>`Уровень ${n} из ${t}`,
-  time:"Время",
-  score:"Счёт",
-  levelComplete:"Уровень пройден!",
-  gameComplete:"Игра пройдена!",
-  hits:"Попаданий",
-  wrong:"Мимо",
-  missed:"Ушло правильных",
-  total:"Итого",
-  finalFeedbackTitle:"Молодец!",
-  defaultFinalFeedback:"Отличная работа!",
-  catchAll:"Поймай все"
-}
-};
+      ru:{startTitle:"Игра «Падающие элементы»",startBtn:"Начать",contBtn:"Продолжить",nextBtn:"Следующий уровень",
+          restartBtn:"Играть снова",level:n=>`Уровень ${n}`,levelOf:(n,t)=>`Уровень ${n} из ${t}`,time:"Время",
+          score:"Счёт",levelComplete:"Уровень пройден!",gameComplete:"Игра пройдена!",hits:"Попаданий",
+          wrong:"Мимо",missed:"Ушло правильных",total:"Итого",finalFeedbackTitle:"Молодец!",
+          defaultFinalFeedback:"Отличная работа!"},
+      en:{startTitle:"Falling Items",startBtn:"Start",contBtn:"Continue",nextBtn:"Next level",
+          restartBtn:"Play again",level:n=>`Level ${n}`,levelOf:(n,t)=>`Level ${n} of ${t}`,time:"Time",
+          score:"Score",levelComplete:"Level complete!",gameComplete:"Game complete!",hits:"Hits",
+          wrong:"Wrong clicks",missed:"Missed correct",total:"Total",finalFeedbackTitle:"Well done!",
+          defaultFinalFeedback:"Great job!"},
+      fr:{startTitle:"Objets Tombants",startBtn:"Commencer",contBtn:"Continuer",nextBtn:"Niveau suivant",
+          restartBtn:"Rejouer",level:n=>`Niveau ${n}`,levelOf:(n,t)=>`Niveau ${n} sur ${t}`,time:"Temps",
+          score:"Score",levelComplete:"Niveau terminé !",gameComplete:"Jeu terminé !",hits:"Touchés",
+          wrong:"Faux clics",missed:"Justes ratés",total:"Total",finalFeedbackTitle:"Bravo !",
+          defaultFinalFeedback:"Excellent travail !"},
+      es:{startTitle:"Elementos Cayendo",startBtn:"Comenzar",contBtn:"Continuar",nextBtn:"Siguiente nivel",
+          restartBtn:"Jugar de nuevo",level:n=>`Nivel ${n}`,levelOf:(n,t)=>`Nivel ${n} de ${t}`,time:"Tiempo",
+          score:"Puntuación",levelComplete:"¡Nivel completado!",gameComplete:"¡Juego completado!",hits:"Aciertos",
+          wrong:"Clics erróneos",missed:"Correctos perdidos",total:"Total",finalFeedbackTitle:"¡Bien hecho!",
+          defaultFinalFeedback:"¡Gran trabajo!"},
+      de:{startTitle:"Fallende Elemente",startBtn:"Start",contBtn:"Weiter",nextBtn:"Nächste Stufe",
+          restartBtn:"Nochmals spielen",level:n=>`Level ${n}`,levelOf:(n,t)=>`Level ${n} von ${t}`,time:"Zeit",
+          score:"Punkte",levelComplete:"Level geschafft!",gameComplete:"Spiel beendet!",hits:"Treffer",
+          wrong:"Falsche Klicks",missed:"Verpasste Richtige",total:"Gesamt",finalFeedbackTitle:"Gut gemacht!",
+          defaultFinalFeedback:"Weiter so!"},
+      zh:{startTitle:"下落元素",startBtn:"开始",contBtn:"继续",nextBtn:"下一关",restartBtn:"再玩一次",
+          level:n=>`第 ${n} 关`,levelOf:(n,t)=>`第 ${n}/${t} 关`,time:"时间",score:"分数",levelComplete:"关卡通过！",
+          gameComplete:"游戏完成！",hits:"命中",wrong:"误点",missed:"错过正确",total:"总分",finalFeedbackTitle:"做得好！",
+          defaultFinalFeedback:"继续努力！"},
+      ja:{startTitle:"落下アイテム",startBtn:"スタート",contBtn:"つづける",nextBtn:"次のレベル",restartBtn:"もう一度",
+          level:n=>`レベル ${n}`,levelOf:(n,t)=>`${t} 中 ${n} レベル`,time:"時間",score:"スコア",
+          levelComplete:"レベルクリア！",gameComplete:"ゲームクリア！",hits:"ヒット",wrong:"ミスクリック",
+          missed:"見逃した正解",total:"合計",finalFeedbackTitle:"よくできました！",defaultFinalFeedback:"その調子！"},
+      math:{startTitle:"Falling Items (Math)",startBtn:"Start",contBtn:"Continue",nextBtn:"Next level",
+          restartBtn:"Play again",level:n=>`Level ${n}`,levelOf:(n,t)=>`Level ${n} of ${t}`,time:"Time",
+          score:"Score",levelComplete:"Level complete!",gameComplete:"Game complete!",hits:"Hits",
+          wrong:"Wrong",missed:"Missed",total:"Total",finalFeedbackTitle:"Great!",defaultFinalFeedback:"Nice work!"}
+    };
     function t(lang,key,...args){
       const dict = I18N[lang]||I18N.ru; const v = dict[key];
       return (typeof v==="function")?v(...args):(v??key);
@@ -419,80 +287,56 @@ math:{
     }
 
     /* ===================== Загрузка cfg по id ===================== */
-const params = new URLSearchParams(location.search);
-const GAME_ID = params.get('id');
-const JSON_BASE = "https://nikashum93.github.io/texts/data/";
+    const params = new URLSearchParams(location.search);
+    const GAME_ID = params.get('id');                           // старая логика сохранена
+    const JSON_BASE = "https://nikashum93.github.io/texts/data/"; // оставляем как было
 
-let cfg = null;
-let LANG = 'ru'; // по умолчанию
+    let cfg = null;
+    let LANG = 'ru'; // по умолчанию
 
-(async function boot(){
-  if(!GAME_ID){
-    showFatal("No id", "Не передан id в строке запроса (?id=...).");
-    return;
-  }
-  try{
-    const url = `${JSON_BASE}${encodeURIComponent(GAME_ID)}.json?v=${Date.now()}`;
-    const res = await fetch(url, { cache:'no-store' });
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    cfg = await res.json();
-  }catch(e){
-    showFatal("Load error", `Ошибка загрузки настроек: ${e.message}\nПроверь публикацию в texts/data.`);
-    return;
-  }
+    (async function boot(){
+      if(!GAME_ID){
+        showFatal("No id", "Не передан id в строке запроса.");
+        return;
+      }
+      try{
+        const url = `${JSON_BASE}${encodeURIComponent(GAME_ID)}.json?v=${Date.now()}`;
+        const res = await fetch(url, { cache:'no-store' });
+        if(!res.ok) throw new Error('HTTP '+res.status);
+        cfg = await res.json();
+      }catch(e){
+        showFatal("Load error", `Ошибка загрузки настроек: ${e.message}\nПроверь публикацию в texts/data.`);
+        return;
+      }
 
-  LANG = (cfg.language || 'ru').toLowerCase();
+      LANG = (cfg.language || 'ru').toLowerCase();
 
-  // Проверка на пустые уровни
-  if (!cfg.levels || !Array.isArray(cfg.levels) || cfg.levels.length === 0){
-    showFatal("Нет уровней", "Файл настроек загружен, но уровни не найдены.");
-    return;
-  }
+      // Цвет интерфейса — даже если рамка заменена картинкой, берём borderColor (или glowColor)
+      const uiColor = (cfg.style && (cfg.style.borderColor || cfg.style.glowColor)) || '#ffd700';
+      document.documentElement.style.setProperty('--ui', uiColor);
+      document.documentElement.style.setProperty('--ui-soft', 'rgba('+Object.values(hexToRgb(uiColor)).join(',') + ',.14)');
 
-  // Цвета интерфейса
-  const uiColor =
-    (cfg.style && (cfg.style.uiColor || cfg.style.borderColor || cfg.style.glowColor))
-    || '#ffd700';
+      if (cfg.style && cfg.style.glowColor){
+        document.documentElement.style.setProperty('--glow', cfg.style.glowColor);
+      }
 
-  document.documentElement.style.setProperty('--ui', uiColor);
-  document.documentElement.style.setProperty('--ui-soft',
-    'rgba('+Object.values(hexToRgb(uiColor)).join(',') + ',.14)'
-  );
-  document.documentElement.style.setProperty('--text-color', cfg.textColor || '#ffffff');
+      // Кастомный курсор
+      if (cfg.cursor) document.body.style.cursor = `url(${cfg.cursor}), auto`;
 
-  if (cfg.style && cfg.style.glowColor){
-    document.documentElement.style.setProperty('--glow', cfg.style.glowColor);
-  }
-
-  if (cfg.cursor) document.body.style.cursor = `url(${cfg.cursor}), auto`;
-  if (cfg.font) document.body.style.fontFamily = `${cfg.font}, system-ui, sans-serif`;
-
-  // Старт
-  updateHUD(1, cfg.levels.length);
-  showStartOverlay();
-})();   // ← только один раз
-
-
-
+      updateHUD(1, (cfg.levels||[]).length||0);
+      showStartOverlay();
+    })();
 
     /* ===================== HUD / Оверлеи ===================== */
     const hudLevel = $('#hudLevel');
     const hudTimer = $('#hudTimer');
     const hudScore = $('#hudScore');
 
-   function updateHUD(current, total){
-  const title = cfg && cfg.levels && cfg.levels[current-1] ? (cfg.levels[current-1].target || "") : "";
-  if (title) {
-    if ((cfg.language||'') === 'math') {
-      hudLevel.innerHTML = `${t(LANG,'level', current)}: \\(${title}\\)`;
-      MathJax.typesetPromise([hudLevel]);
-    } else {
-      hudLevel.textContent = `${t(LANG,'level', current)}: ${title}`;
+    function updateHUD(current, total){
+      const title = cfg && cfg.levels && cfg.levels[current-1] ? (cfg.levels[current-1].target || "") : "";
+      hudLevel.textContent = title ? `${t(LANG,'level', current)}: ${title}` : `${t(LANG,'level', current)}`;
     }
-  } else {
-    hudLevel.textContent = `${t(LANG,'level', current)}`;
-  }
-}
+
     function showFatal(title, message){
       const ov = document.createElement('div');
       ov.className = 'overlay';
@@ -506,68 +350,44 @@ let LANG = 'ru'; // по умолчанию
 
     let overlayNode = null;
 
-  function showStartOverlay(){
-  if (overlayNode) overlayNode.remove();
-  overlayNode = document.createElement('div');
-  overlayNode.className = 'overlay';
-  const total = (cfg.levels||[]).length||0;
-  const firstTarget = (cfg.levels[0] && cfg.levels[0].target) ? String(cfg.levels[0].target) : "";
+    function showStartOverlay(){
+      if (overlayNode) overlayNode.remove();
+      overlayNode = document.createElement('div');
+      overlayNode.className = 'overlay';
+      const total = (cfg.levels||[]).length||0;
 
-  const catchAll = t(LANG,'catchAll');
-  const targetLine = firstTarget
-    ? ((cfg.language||'') === 'math'
-        ? `<p>${catchAll}: \\(${firstTarget}\\)</p>`
-        : `<p>${catchAll}: ${firstTarget}</p>`)
-    : '';
+      overlayNode.innerHTML = `
+        <div class="panel">
+          <h2>${t(LANG,'startTitle')}</h2>
+          <p style="opacity:.9">${t(LANG,'levelOf', 1, total)}</p>
+          <div class="row">
+            <button id="btnStart">${t(LANG,'startBtn')}</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlayNode);
 
-  overlayNode.innerHTML = `
-    <div class="panel">
-      <h2>${t(LANG,'startTitle')}</h2>
-      <p style="opacity:.9">${t(LANG,'levelOf', 1, total)}</p>
-      ${targetLine}
-      <div class="row">
-        <button id="btnStart">${t(LANG,'startBtn')}</button>
-      </div>
-    </div>`;
-  document.body.appendChild(overlayNode);
+      $('#btnStart').addEventListener('click', ()=>{
+        overlayNode.remove();
+        startGame();
+      }, { once: true });
+    }
 
-  if ((cfg.language||'') === 'math' && firstTarget){
-    MathJax.typesetPromise([overlayNode]);
-  }
-
-  $('#btnStart').addEventListener('click', ()=>{
-    overlayNode.remove();
-    startGame();
-  }, { once: true });
-}
-
-function showLevelCompleteOverlay(current, total, onNext){
-  if (overlayNode) overlayNode.remove();
-  overlayNode = document.createElement('div');
-  overlayNode.className = 'overlay';
-
-  overlayNode.innerHTML = `
-    <div class="panel">
-      <h2>${t(LANG,'levelComplete')}</h2>
-      <p style="opacity:.9">${t(LANG,'levelOf', current, total)}</p>
-      <div style="margin:10px 0; text-align:left">
-        <div>${t(LANG,'hits')}: <b>${hits}</b></div>
-        <div>${t(LANG,'wrong')}: <b>${wrongClicks}</b></div>
-        <div>${t(LANG,'missed')}: <b>${missedCorrect}</b></div>
-        <div>${t(LANG,'total')}: <b>${score}</b></div>
-      </div>
-      <div class="row" style="margin-top:14px">
-        <button id="btnNext">${t(LANG,'nextBtn')}</button>
-      </div>
-    </div>`;
-
-  document.body.appendChild(overlayNode);
-
-  $('#btnNext').addEventListener('click', ()=>{
-    overlayNode.remove();
-    onNext && onNext();
-  }, { once:true });
-}
+    function showLevelCompleteOverlay(current, total, onNext){
+      if (overlayNode) overlayNode.remove();
+      overlayNode = document.createElement('div');
+      overlayNode.className = 'overlay';
+      overlayNode.innerHTML = `
+        <div class="panel">
+          <h2>${t(LANG,'levelComplete')}</h2>
+          <p>${t(LANG,'levelOf', current, total)}</p>
+          <div class="row"><button id="btnNext">${t(LANG,'nextBtn')}</button></div>
+        </div>`;
+      document.body.appendChild(overlayNode);
+      $('#btnNext').addEventListener('click', ()=>{
+        overlayNode.remove();
+        onNext && onNext();
+      }, { once:true });
+    }
 
     function showGameCompleteOverlay(stats){
   if (overlayNode) overlayNode.remove();
@@ -599,7 +419,6 @@ function showLevelCompleteOverlay(current, total, onNext){
 
   $('#btnRestart').addEventListener('click', ()=> location.reload(), { once:true });
 }
-
 
     /* ===================== Геймплей ===================== */
     const game = $('#game');
@@ -661,194 +480,187 @@ function showLevelCompleteOverlay(current, total, onNext){
       return a;
     }
 
-   function startLevel(){
-  currentLevel++;
-  const levels = Array.isArray(cfg.levels) ? cfg.levels : [];
-  if(currentLevel > levels.length){
-    running = false;
-    fireworks();
-    try{ winSound.currentTime=0; winSound.play(); }catch(_){}
-    showGameCompleteOverlay({hits, wrong:wrongClicks, missed: missedCorrect, total: score});
-    return;
-  }
+    function startLevel(){
+      currentLevel++;
+      const levels = Array.isArray(cfg.levels) ? cfg.levels : [];
+      if(currentLevel > levels.length){
+        running = false;
+        fireworks();
+        try{ winSound.currentTime=0; winSound.play(); }catch(_){}
+        showGameCompleteOverlay({hits, wrong:wrongClicks, missed: missedCorrect, total: score});
+        return;
+      }
 
-  updateHUD(currentLevel, levels.length);
-  const lv = levels[currentLevel-1];
+      updateHUD(currentLevel, levels.length);
+      const lv = levels[currentLevel-1];
 
-  // Таймер уровня
-  let timeLeft = Math.max(5, Number(lv.timer || 30));
-  hudTimer.textContent = timeLeft.toString().padStart(2,'0');
-  if (levelTimerHandle) clearInterval(levelTimerHandle);
-  levelTimerHandle = setInterval(()=>{
-    if(!running) return;
-    timeLeft--;
-    hudTimer.textContent = timeLeft.toString().padStart(2,'0');
-    if(timeLeft <= 0){
-      clearInterval(levelTimerHandle);
+      // Таймер уровня
+      let timeLeft = Math.max(5, Number(lv.timer || 30));
+      hudTimer.textContent = timeLeft.toString().padStart(2,'0');
+      if (levelTimerHandle) clearInterval(levelTimerHandle);
+      levelTimerHandle = setInterval(()=>{
+        if(!running) return;
+        timeLeft--;
+        hudTimer.textContent = timeLeft.toString().padStart(2,'0');
+        if(timeLeft <= 0){
+          clearInterval(levelTimerHandle);
+          if (spawnerHandle) clearInterval(spawnerHandle);
+          // Почистим сцену
+          document.querySelectorAll('.item').forEach(n=>n.remove());
+          // Мини-фейерверк и переход
+          fireworks(5);
+          try{ winSound.currentTime=0; winSound.play(); }catch(_){}
+          showLevelCompleteOverlay(currentLevel, levels.length, ()=> startLevel());
+        }
+      }, 1000);
+
+      // Спавн
       if (spawnerHandle) clearInterval(spawnerHandle);
-      document.querySelectorAll('.item').forEach(n=>n.remove());
-      fireworks(5);
-      try{ winSound.currentTime=0; winSound.play(); }catch(_){}
-      showLevelCompleteOverlay(currentLevel, levels.length, ()=> startLevel());
+      const pool = [
+        ...(lv.correct||[]).map(v=>({val:v, good:true})),
+        ...(lv.wrong||[]).map(v=>({val:v, good:false}))
+      ];
+      const delay = clamp(SPEED.spawn, 300, 2200);
+      spawnerHandle = setInterval(()=>{
+        if(!running) return;
+        const obj = pool[Math.floor(Math.random()*pool.length)] || {val:'?', good:false};
+        drop(obj);
+      }, delay);
     }
-  }, 1000);
-
-  // Спавн (исправлено!)
-  if (spawnerHandle) clearInterval(spawnerHandle);
-  const delay = clamp(SPEED.spawn, 300, 2200);
-  spawnerHandle = setInterval(()=>{
-    if(!running) return;
-    const pool = [
-      ...(lv.correct||[]).map(v=>({val:v, good:true})),
-      ...(lv.wrong||[]).map(v=>({val:v, good:false}))
-    ];
-    if(pool.length===0) return;
-    const obj = pool[Math.floor(Math.random()*pool.length)];
-    drop(obj);
-  }, delay);
-}
 
     /* ===================== Элемент: создание/падение/клик ===================== */
     function drop(obj){
-  const STYLE = cfg.style || {};
-  const FONT = cfg.font || 'Rubik';
-  const FONT_SIZE = Number(cfg.fontSize || 24);
+      const STYLE = cfg.style || {};
+      const FONT = cfg.font || 'Rubik';
+      const FONT_SIZE = Number(cfg.fontSize || 24);
+      const TEXT_COLOR = cfg.textColor || '#ffffff';
 
-  // Помощники для контрастности текста
-  function invertColor(hex){
-    const {r,g,b} = hexToRgb(hex);
-    return (r*0.299 + g*0.587 + b*0.114) > 186 ? '#000000' : '#ffffff';
-  }
+      const el = document.createElement('div');
+      el.className = `item shape-${STYLE.shape || 'rounded'} ${STYLE.shadow?'fx-shadow':''} ${STYLE.fx3d?'fx-3d':''} ${STYLE.glow?'fx-glow':''} ${STYLE.borderOn && STYLE.borderWidth>0 ? 'fx-border' : ''}`;
+      el.dataset.good = obj.good ? '1' : '0';
+      el.style.setProperty('--glow', STYLE.glowColor || '#00f0ff');
 
-  // Фон и текст по умолчанию — НЕ прозрачные
-  const bgCol = (STYLE.bgColor && STYLE.bgColor !== 'transparent') ? STYLE.bgColor : '#ffffff';
-  let TEXT_COLOR = (cfg.textColor && cfg.textColor !== 'transparent') ? cfg.textColor : '#000000';
+      // структура
+      const bg = document.createElement('div');
+      bg.className = 'bg';
+      const content = document.createElement('div');
+      content.className = 'content';
+      el.appendChild(bg); el.appendChild(content);
 
-  // Если фон и текст слишком похожи — инвертируем цвет текста
-  const bgRgb = hexToRgb(bgCol);
-  const txtRgb = hexToRgb(TEXT_COLOR);
-  const diff = Math.abs(bgRgb.r - txtRgb.r) + Math.abs(bgRgb.g - txtRgb.g) + Math.abs(bgRgb.b - txtRgb.b);
-  if (diff < 100){ TEXT_COLOR = invertColor(bgCol); }
+      // Фон рамки: либо картинка, либо цвет (строго взаимоисключающие)
+      const bgImg = (STYLE.bgImage||'').trim();
+      const bgCol = STYLE.bgColor || 'transparent';
 
-  // Коробка элемента
-  const el = document.createElement('div');
-  el.className = `item shape-${STYLE.shape || 'rounded'} ${STYLE.shadow?'fx-shadow':''} ${STYLE.fx3d?'fx-3d':''} ${STYLE.glow?'fx-glow':''} ${STYLE.borderOn && STYLE.borderWidth>0 ? 'fx-border' : ''}`;
-  el.dataset.good = obj.good ? '1' : '0';
-  el.style.setProperty('--glow', STYLE.glowColor || '#00f0ff');
+      if (bgImg) {
+        bg.style.backgroundImage = `url(${bgImg})`;
+        bg.style.backgroundColor = 'transparent';           // не смешиваем цвет с картинкой
+      } else {
+        bg.style.backgroundImage = 'none';
+        bg.style.backgroundColor = bgCol;                   // чистый цвет
+      }
 
-  // Фоновый слой
-  const bg = document.createElement('div');
-  bg.className = 'bg';
+      // Прозрачность фон-слоя
+      bg.style.opacity = String(clamp(Number(STYLE.opacity ?? 1), 0, 1));
 
-  // Контент
-  const content = document.createElement('div');
-  content.className = 'content';
-  content.style.color = TEXT_COLOR; // <- чтобы всё внутри было читаемо
+      // Рамка (граница) — только если включена
+      if (STYLE.borderOn && STYLE.borderWidth>0){
+        bg.style.borderColor = STYLE.borderColor || '#fff';
+        bg.style.borderWidth = `${parseInt(STYLE.borderWidth,10)}px`;
+      } else {
+        bg.style.borderWidth = '0px';
+      }
 
-  el.appendChild(bg);
-  el.appendChild(content);
+      // Контент: картинка/математика/текст
+      if(/^https?:\/\//i.test(obj.val)){
+        const img = document.createElement('img');
+        img.src = obj.val;
+        content.appendChild(img);
+      } else if ((cfg.language||'') === 'math'){
+        const span = document.createElement('span');
+        span.textContent = `\\(${obj.val}\\)`;
+        span.style.color = TEXT_COLOR;
+        content.appendChild(span);
+      } else {
+        const span = document.createElement('span');
+        span.textContent = String(obj.val);
+        span.style.color = TEXT_COLOR;
+        span.style.fontFamily = `${FONT}, system-ui, sans-serif`;
+        span.style.fontSize = `${FONT_SIZE}px`;
+        content.appendChild(span);
+      }
 
-  // Либо картинка-рама, либо сплошной цвет (не смешиваем)
-  const bgImg = (STYLE.bgImage||'').trim();
-  if (bgImg) {
-    bg.style.backgroundImage = `url(${bgImg})`;
-    bg.style.backgroundColor = 'transparent';
-  } else {
-    bg.style.backgroundImage = 'none';
-    bg.style.backgroundColor = bgCol;
-  }
+      // Стартовая позиция
+      const gw = game.clientWidth;
+      const startX = Math.max(16, Math.min(gw-220, rnd(0, gw-220)));
+      el.style.left = startX + 'px';
+      el.style.top = '-160px';
 
-  // Прозрачность фона (по умолчанию 1)
-  const op = STYLE.opacity;
-  bg.style.opacity = (op === undefined || op === '') ? '1' : String(clamp(Number(op), 0, 1));
+      game.appendChild(el);
 
-  // Рамка — только если включена
-  if (STYLE.borderOn && STYLE.borderWidth>0){
-    bg.style.borderColor = STYLE.borderColor || '#fff';
-    bg.style.borderWidth = `${parseInt(STYLE.borderWidth,10)}px`;
-  } else {
-    bg.style.borderWidth = '0px';
-  }
+      // Подгоняем геометрию под контент + воздух
+      fitGeometryBox(el);
 
-  // Содержимое: картинка / формула / текст
-  if(/^https?:\/\//i.test(obj.val)){
-    const img = document.createElement('img');
-    img.src = obj.val;
-    content.appendChild(img);
-  } else if ((cfg.language||'') === 'math'){
-    const span = document.createElement('span');
-    span.textContent = `\\(${obj.val}\\)`;
-    span.style.color = TEXT_COLOR; // на всякий случай — явно
-    content.appendChild(span);
-  } else {
-    const span = document.createElement('span');
-    span.textContent = String(obj.val);
-    span.style.color = TEXT_COLOR;
-    span.style.fontFamily = `${FONT}, system-ui, sans-serif`;
-    span.style.fontSize = `${FONT_SIZE}px`;
-    content.appendChild(span);
-  }
+      // Автофит текста
+      autoFitText(el, FONT_SIZE, 12);
 
-  // Стартовая позиция
-  const gw = game.clientWidth;
-  const startX = Math.max(16, Math.min(gw-220, rnd(0, gw-220)));
-  el.style.left = startX + 'px';
-  el.style.top = '-160px';
+      // Если математический режим — перетайпсетить и ещё раз подровнять
+      if ((cfg.language||'') === 'math'){
+        MathJax.typesetPromise([el]).then(()=> fitGeometryBox(el));
+      }
 
-  game.appendChild(el);
+      // Падение
+      const vel = SPEED.vel;
+      const swayAmp = rnd(6, 22);
+      const swayFreq = rnd(0.003, 0.008);
+      let y = -160;
+      let t = 0;
+      let alive = true;
 
-  // Размер под контент
-  fitGeometryBox(el);
-  autoFitText(el, FONT_SIZE, 12);
-  if ((cfg.language||'') === 'math'){ MathJax.typesetPromise([el]).then(()=> fitGeometryBox(el)); }
+      function step(){
+        if(!alive) return;
+        y += vel; t += 1;
+        const dx = Math.sin(t*swayFreq) * swayAmp;
+        el.style.top = y+'px';
+        el.style.transform = `translateX(${dx}px)`;
+        if(y > game.clientHeight + 200){
+          alive = false;
+          if (el.dataset.good === '1') {
+            missedCorrect++;
+          }
+          el.remove();
+          return;
+        }
+        requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
 
-  // Падение
-  const vel = SPEED.vel;
-  const swayAmp = rnd(6, 22);
-  const swayFreq = rnd(0.003, 0.008);
-  let y = -160, t = 0, alive = true;
+      // Клик
+      el.addEventListener('click', ()=>{
+        if(!alive) return;
 
-  function step(){
-    if(!alive) return;
-    y += vel; t += 1;
-    const dx = Math.sin(t*swayFreq) * swayAmp;
-    el.style.top = y+'px';
-    el.style.transform = `translateX(${dx}px)`;
-    if(y > game.clientHeight + 200){
-      alive = false;
-      if (el.dataset.good === '1') missedCorrect++;
-      el.remove();
-      return;
+        if(el.dataset.good === '1'){
+          // Очки
+          streak++;
+          const comboMult = 1 + (streak-1)*0.25;             // растущее комбо без потолка
+          const pts = Math.round(SPEED.basePts * comboMult);  // скорость влияет на базу
+          score += pts; hits++;
+          hudScore.textContent = String(score);
+
+          popScore(el, `+${pts}`);
+          playPop(el);
+          alive = false;
+          el.classList.add('caught');
+          setTimeout(()=> el.remove(), 380);
+        } else {
+          // Мимо: не вычитаем очки, но сбрасываем серию и даём визуальный фидбек
+          wrongClicks++;
+          streak = 0;
+          bg.style.filter = 'brightness(2) saturate(1.6) hue-rotate(-30deg)';
+          setTimeout(()=> bg.style.filter = 'none', 220);
+        }
+      });
     }
-    requestAnimationFrame(step);
-  }
-  requestAnimationFrame(step);
 
-  // Клик
-  el.addEventListener('click', ()=>{
-    if(!alive) return;
-
-    if(el.dataset.good === '1'){
-      // Очки
-      streak++;
-      const comboMult = 1 + (streak-1)*0.25;
-      const pts = Math.round(SPEED.basePts * comboMult);
-      score += pts; hits++;
-      hudScore.textContent = String(score);
-
-      popScore(el, `+${pts}`);
-      playPop(el);
-      alive = false;
-      el.classList.add('caught');
-      setTimeout(()=> el.remove(), 380);
-    } else {
-      wrongClicks++;
-      streak = 0;
-      bg.style.filter = 'brightness(2) saturate(1.6) hue-rotate(-30deg)';
-      setTimeout(()=> bg.style.filter = 'none', 220);
-    }
-  });
-}
     /* ===================== Геометрия/автофит ===================== */
     function fitGeometryBox(el){
       const STYLE = cfg.style || {};
