@@ -385,7 +385,18 @@
 
     function updateHUD(current, total){
       const title = cfg && cfg.levels && cfg.levels[current-1] ? (cfg.levels[current-1].target || "") : "";
-      hudLevel.textContent = title ? `${t(LANG,'level', current)}: ${title}` : `${t(LANG,'level', current)}`;
+     function updateHUD(current, total){
+  const title = cfg && cfg.levels && cfg.levels[current-1] ? (cfg.levels[current-1].target || "") : "";
+  const isMath = (cfg.language || '') === 'math';
+  const html = title
+    ? `${t(LANG,'level', current)}: ${isMath ? `\\(${title}\\)` : title}`
+    : `${t(LANG,'level', current)}`;
+  hudLevel.innerHTML = html;
+  if (isMath) {
+    MathJax.typesetPromise([hudLevel]);
+  }
+}
+
     }
 
     function showFatal(title, message){
@@ -402,27 +413,34 @@
     let overlayNode = null;
 
     function showStartOverlay(){
-      if (overlayNode) overlayNode.remove();
-      overlayNode = document.createElement('div');
-      overlayNode.className = 'overlay';
-      const total = (cfg.levels||[]).length||0;
+  if (overlayNode) overlayNode.remove();
+  overlayNode = document.createElement('div');
+  overlayNode.className = 'overlay';
+  const total = (cfg.levels||[]).length||0;
 
-     overlayNode.innerHTML = `
-  <div class="panel">
-    <h2>${t(LANG,'startTitle')}</h2>
-    <p>${t(LANG,'catchAll')} ${cfg.levels[0]?.target || ''}</p>
-    <div class="row" style="margin-top:14px">
-      <button id="btnStart">${t(LANG,'startBtn')}</button>
-    </div>
-  </div>`;
-      document.body.appendChild(overlayNode);
+  const targetVal = cfg.levels[0]?.target || '';
+  const isMath = (cfg.language || '') === 'math';
+  const targetHtml = isMath ? `\\(${targetVal}\\)` : targetVal;
 
-      $('#btnStart').addEventListener('click', ()=>{
-        overlayNode.remove();
-        startGame();
-      }, { once: true });
-    }
+  overlayNode.innerHTML = `
+    <div class="panel">
+      <h2>${t(LANG,'startTitle')}</h2>
+      <p>${t(LANG,'catchAll')} ${targetHtml}</p>
+      <div class="row" style="margin-top:14px">
+        <button id="btnStart">${t(LANG,'startBtn')}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlayNode);
 
+  if (isMath) {
+    MathJax.typesetPromise([overlayNode]);
+  }
+
+  $('#btnStart').addEventListener('click', ()=>{
+    overlayNode.remove();
+    startGame();
+  }, { once: true });
+}
     function showLevelCompleteOverlay(current, total, onNext){
       if (overlayNode) overlayNode.remove();
       overlayNode = document.createElement('div');
