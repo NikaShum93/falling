@@ -228,45 +228,96 @@
 
   <script>
     /* ===================== Локализация ===================== */
-    const I18N = {
-      ru:{startTitle:"Игра «Падающие элементы»",startBtn:"Начать",contBtn:"Продолжить",nextBtn:"Следующий уровень",
-          restartBtn:"Играть снова",level:n=>`Уровень ${n}`,levelOf:(n,t)=>`Уровень ${n} из ${t}`,time:"Время",
-          score:"Счёт",levelComplete:"Уровень пройден!",gameComplete:"Игра пройдена!",hits:"Попаданий",
-          wrong:"Мимо",missed:"Ушло правильных",total:"Итого",finalFeedbackTitle:"Молодец!",
-          defaultFinalFeedback:"Отличная работа!"},
-      en:{startTitle:"Falling Items",startBtn:"Start",contBtn:"Continue",nextBtn:"Next level",
-          restartBtn:"Play again",level:n=>`Level ${n}`,levelOf:(n,t)=>`Level ${n} of ${t}`,time:"Time",
-          score:"Score",levelComplete:"Level complete!",gameComplete:"Game complete!",hits:"Hits",
-          wrong:"Wrong clicks",missed:"Missed correct",total:"Total",finalFeedbackTitle:"Well done!",
-          defaultFinalFeedback:"Great job!"},
-      fr:{startTitle:"Objets Tombants",startBtn:"Commencer",contBtn:"Continuer",nextBtn:"Niveau suivant",
-          restartBtn:"Rejouer",level:n=>`Niveau ${n}`,levelOf:(n,t)=>`Niveau ${n} sur ${t}`,time:"Temps",
-          score:"Score",levelComplete:"Niveau terminé !",gameComplete:"Jeu terminé !",hits:"Touchés",
-          wrong:"Faux clics",missed:"Justes ratés",total:"Total",finalFeedbackTitle:"Bravo !",
-          defaultFinalFeedback:"Excellent travail !"},
-      es:{startTitle:"Elementos Cayendo",startBtn:"Comenzar",contBtn:"Continuar",nextBtn:"Siguiente nivel",
-          restartBtn:"Jugar de nuevo",level:n=>`Nivel ${n}`,levelOf:(n,t)=>`Nivel ${n} de ${t}`,time:"Tiempo",
-          score:"Puntuación",levelComplete:"¡Nivel completado!",gameComplete:"¡Juego completado!",hits:"Aciertos",
-          wrong:"Clics erróneos",missed:"Correctos perdidos",total:"Total",finalFeedbackTitle:"¡Bien hecho!",
-          defaultFinalFeedback:"¡Gran trabajo!"},
-      de:{startTitle:"Fallende Elemente",startBtn:"Start",contBtn:"Weiter",nextBtn:"Nächste Stufe",
-          restartBtn:"Nochmals spielen",level:n=>`Level ${n}`,levelOf:(n,t)=>`Level ${n} von ${t}`,time:"Zeit",
-          score:"Punkte",levelComplete:"Level geschafft!",gameComplete:"Spiel beendet!",hits:"Treffer",
-          wrong:"Falsche Klicks",missed:"Verpasste Richtige",total:"Gesamt",finalFeedbackTitle:"Gut gemacht!",
-          defaultFinalFeedback:"Weiter so!"},
-      zh:{startTitle:"下落元素",startBtn:"开始",contBtn:"继续",nextBtn:"下一关",restartBtn:"再玩一次",
-          level:n=>`第 ${n} 关`,levelOf:(n,t)=>`第 ${n}/${t} 关`,time:"时间",score:"分数",levelComplete:"关卡通过！",
-          gameComplete:"游戏完成！",hits:"命中",wrong:"误点",missed:"错过正确",total:"总分",finalFeedbackTitle:"做得好！",
-          defaultFinalFeedback:"继续努力！"},
-      ja:{startTitle:"落下アイテム",startBtn:"スタート",contBtn:"つづける",nextBtn:"次のレベル",restartBtn:"もう一度",
-          level:n=>`レベル ${n}`,levelOf:(n,t)=>`${t} 中 ${n} レベル`,time:"時間",score:"スコア",
-          levelComplete:"レベルクリア！",gameComplete:"ゲームクリア！",hits:"ヒット",wrong:"ミスクリック",
-          missed:"見逃した正解",total:"合計",finalFeedbackTitle:"よくできました！",defaultFinalFeedback:"その調子！"},
-      math:{startTitle:"Falling Items (Math)",startBtn:"Start",contBtn:"Continue",nextBtn:"Next level",
-          restartBtn:"Play again",level:n=>`Level ${n}`,levelOf:(n,t)=>`Level ${n} of ${t}`,time:"Time",
-          score:"Score",levelComplete:"Level complete!",gameComplete:"Game complete!",hits:"Hits",
-          wrong:"Wrong",missed:"Missed",total:"Total",finalFeedbackTitle:"Great!",defaultFinalFeedback:"Nice work!"}
-    };
+   const I18N = {
+  ru:{
+    startTitle:"Игра «Падающие элементы»",
+    startBtn:"Начать", contBtn:"Продолжить", nextBtn:"Следующий уровень",
+    restartBtn:"Играть снова", 
+    catchAll:"Поймай все",
+    level:n=>`Уровень ${n}`, levelOf:(n,t)=>`Уровень ${n} из ${t}`,
+    time:"Время", score:"Счёт",
+    levelComplete:"Уровень пройден!", gameComplete:"Игра пройдена!",
+    hits:"Попаданий", wrong:"Мимо", missed:"Ушло правильных", total:"Итого",
+    finalFeedbackTitle:"Молодец!", defaultFinalFeedback:"Отличная работа!"
+  },
+  en:{
+    startTitle:"Falling Items",
+    startBtn:"Start", contBtn:"Continue", nextBtn:"Next level",
+    restartBtn:"Play again",
+    catchAll:"Catch all",
+    level:n=>`Level ${n}`, levelOf:(n,t)=>`Level ${n} of ${t}`,
+    time:"Time", score:"Score",
+    levelComplete:"Level complete!", gameComplete:"Game complete!",
+    hits:"Hits", wrong:"Wrong clicks", missed:"Missed correct", total:"Total",
+    finalFeedbackTitle:"Well done!", defaultFinalFeedback:"Great job!"
+  },
+  fr:{
+    startTitle:"Objets Tombants",
+    startBtn:"Commencer", contBtn:"Continuer", nextBtn:"Niveau suivant",
+    restartBtn:"Rejouer",
+    catchAll:"Attrapez tous",
+    level:n=>`Niveau ${n}`, levelOf:(n,t)=>`Niveau ${n} sur ${t}`,
+    time:"Temps", score:"Score",
+    levelComplete:"Niveau terminé !", gameComplete:"Jeu terminé !",
+    hits:"Touchés", wrong:"Faux clics", missed:"Justes ratés", total:"Total",
+    finalFeedbackTitle:"Bravo !", defaultFinalFeedback:"Excellent travail !"
+  },
+  es:{
+    startTitle:"Elementos Cayendo",
+    startBtn:"Comenzar", contBtn:"Continuar", nextBtn:"Siguiente nivel",
+    restartBtn:"Jugar de nuevo",
+    catchAll:"Atrapa todos",
+    level:n=>`Nivel ${n}`, levelOf:(n,t)=>`Nivel ${n} de ${t}`,
+    time:"Tiempo", score:"Puntuación",
+    levelComplete:"¡Nivel completado!", gameComplete:"¡Juego completado!",
+    hits:"Aciertos", wrong:"Clics erróneos", missed:"Correctos perdidos", total:"Total",
+    finalFeedbackTitle:"¡Bien hecho!", defaultFinalFeedback:"¡Gran trabajo!"
+  },
+  de:{
+    startTitle:"Fallende Elemente",
+    startBtn:"Start", contBtn:"Weiter", nextBtn:"Nächste Stufe",
+    restartBtn:"Nochmals spielen",
+    catchAll:"Fange alle",
+    level:n=>`Level ${n}`, levelOf:(n,t)=>`Level ${n} von ${t}`,
+    time:"Zeit", score:"Punkte",
+    levelComplete:"Level geschafft!", gameComplete:"Spiel beendet!",
+    hits:"Treffer", wrong:"Falsche Klicks", missed:"Verpasste Richtige", total:"Gesamt",
+    finalFeedbackTitle:"Gut gemacht!", defaultFinalFeedback:"Weiter so!"
+  },
+  zh:{
+    startTitle:"下落元素",
+    startBtn:"开始", contBtn:"继续", nextBtn:"下一关",
+    restartBtn:"再玩一次",
+    catchAll:"抓住所有",
+    level:n=>`第 ${n} 关`, levelOf:(n,t)=>`第 ${n}/${t} 关`,
+    time:"时间", score:"分数",
+    levelComplete:"关卡通过！", gameComplete:"游戏完成！",
+    hits:"命中", wrong:"误点", missed:"错过正确", total:"总分",
+    finalFeedbackTitle:"做得好！", defaultFinalFeedback:"继续努力！"
+  },
+  ja:{
+    startTitle:"落下アイテム",
+    startBtn:"スタート", contBtn:"つづける", nextBtn:"次のレベル",
+    restartBtn:"もう一度",
+    catchAll:"全部キャッチ",
+    level:n=>`レベル ${n}`, levelOf:(n,t)=>`${t} 中 ${n} レベル`,
+    time:"時間", score:"スコア",
+    levelComplete:"レベルクリア！", gameComplete:"ゲームクリア！",
+    hits:"ヒット", wrong:"ミスクリック", missed:"見逃した正解", total:"合計",
+    finalFeedbackTitle:"よくできました！", defaultFinalFeedback:"その調子！"
+  },
+  math:{
+    startTitle:"Falling Items (Math)",
+    startBtn:"Start", contBtn:"Continue", nextBtn:"Next level",
+    restartBtn:"Play again",
+    catchAll:"Catch all",
+    level:n=>`Level ${n}`, levelOf:(n,t)=>`Level ${n} of ${t}`,
+    time:"Time", score:"Score",
+    levelComplete:"Level complete!", gameComplete:"Game complete!",
+    hits:"Hits", wrong:"Wrong", missed:"Missed", total:"Total",
+    finalFeedbackTitle:"Great!", defaultFinalFeedback:"Nice work!"
+  }
+};
     function t(lang,key,...args){
       const dict = I18N[lang]||I18N.ru; const v = dict[key];
       return (typeof v==="function")?v(...args):(v??key);
