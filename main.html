@@ -356,14 +356,14 @@
       overlayNode.className = 'overlay';
       const total = (cfg.levels||[]).length||0;
 
-      overlayNode.innerHTML = `
-        <div class="panel">
-          <h2>${t(LANG,'startTitle')}</h2>
-          <p style="opacity:.9">${t(LANG,'levelOf', 1, total)}</p>
-          <div class="row">
-            <button id="btnStart">${t(LANG,'startBtn')}</button>
-          </div>
-        </div>`;
+     overlayNode.innerHTML = `
+  <div class="panel">
+    <h2>${t(LANG,'startTitle')}</h2>
+    <p>${t(LANG,'catchAll')} ${cfg.levels[0]?.target || ''}</p>
+    <div class="row" style="margin-top:14px">
+      <button id="btnStart">${t(LANG,'startBtn')}</button>
+    </div>
+  </div>`;
       document.body.appendChild(overlayNode);
 
       $('#btnStart').addEventListener('click', ()=>{
