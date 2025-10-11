@@ -383,9 +383,7 @@
     const hudTimer = $('#hudTimer');
     const hudScore = $('#hudScore');
 
-    function updateHUD(current, total){
-      const title = cfg && cfg.levels && cfg.levels[current-1] ? (cfg.levels[current-1].target || "") : "";
-     function updateHUD(current, total){
+         function updateHUD(current, total){
   const title = cfg && cfg.levels && cfg.levels[current-1] ? (cfg.levels[current-1].target || "") : "";
   const isMath = (cfg.language || '') === 'math';
   const html = title
