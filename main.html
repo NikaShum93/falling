@@ -123,14 +123,15 @@
       background-repeat:no-repeat !important;
       background-size: contain !important;/* Картинка-рама масштабируется под бокс */
     }
-    .item .content{
+      .item .content{
       position:relative; z-index:1;
       display:flex; align-items:center; justify-content:center;
-      padding:22px 28px;                  /* «воздух» вокруг текста/иконки */
+      /* padding теперь задаётся из cfg.style.pad в JS */
       text-align:center;
       line-height:1.15;
       max-width:520px; max-height:300px;  /* безопасность; дальше автофит подрежет */
     }
+
     .item .content span{
       display:inline-block;
       font-weight:800;
@@ -206,6 +207,17 @@
       to  { transform:translate(var(--tx), var(--ty)) scale(0.1); opacity:0 }
     }
   </style>
+    <script>
+    // === Подключение Google Fonts из cfg.font ===
+    function loadGoogleFont(fontName){
+      if(!fontName) return;
+      const family = fontName.replace(/ /g, '+');
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = `https://fonts.googleapis.com/css2?family=${family}:wght@400;700&display=swap`;
+      document.head.appendChild(link);
+    }
+  </script>
 </head>
 <body>
 
@@ -360,8 +372,12 @@
         return;
       }
 
-      LANG = (cfg.language || 'ru').toLowerCase();
+    LANG = (cfg.language || 'ru').toLowerCase();
 
+      // Загружаем Google Font из конфигурации
+      if(cfg.font){
+        loadGoogleFont(cfg.font);
+      }
       // Цвет интерфейса — даже если рамка заменена картинкой, берём borderColor (или glowColor)
       const uiColor = (cfg.style && (cfg.style.borderColor || cfg.style.glowColor)) || '#ffd700';
       document.documentElement.style.setProperty('--ui', uiColor);
@@ -609,11 +625,17 @@
       el.style.setProperty('--glow', STYLE.glowColor || '#00f0ff');
 
       // структура
-      const bg = document.createElement('div');
+          const bg = document.createElement('div');
       bg.className = 'bg';
       const content = document.createElement('div');
       content.className = 'content';
+
+      // Применяем паддинги из редактора
+      const PAD = Number(STYLE.pad || 22);
+      content.style.padding = PAD + 'px';
+
       el.appendChild(bg); el.appendChild(content);
+
 
       // Фон рамки: либо картинка, либо цвет (строго взаимоисключающие)
       const bgImg = (STYLE.bgImage||'').trim();
@@ -761,11 +783,11 @@
     function autoFitText(el, startPx, minPx){
       const span = el.querySelector('.content span');
       if(!span) return;
-      let fs = startPx;
-      const pad = 18;
+    let fs = startPx;
+      const STYLE = cfg.style || {};
+      const pad = STYLE.pad ?? 18;
       const maxW = el.clientWidth - pad*2;
       const maxH = el.clientHeight - pad*2;
-
       const fits = ()=> {
         const rr = span.getBoundingClientRect();
         return (rr.width <= maxW && rr.height <= maxH);
