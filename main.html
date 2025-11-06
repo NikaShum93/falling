@@ -719,50 +719,63 @@ function showGameCompleteOverlay(stats){
     MathJax.typesetPromise([el]).then(()=> fitGeometryBox(el));
   }
 
-// Движение (учитываем DIR). Всё через transform, чтобы хитбокс совпадал с изображением.
-const vel = SPEED.vel;
-const swayAmp = rnd(6, 22);
-const swayFreq = rnd(0.003, 0.008);
-let t = 0;
-let alive = true;
+  // Движение (учитываем DIR). Вертикальные колышутся по X, горизонтальные — по Y.
+  const vel = SPEED.vel;
+  const swayAmp = rnd(6, 22);
+  const swayFreq = rnd(0.003, 0.008);
+  let t = 0;
+  let alive = true;
 
-// базовые координаты фиксируем один раз
-const baseX = x;
-const baseY = y;
-let tx = 0, ty = 0;
+  function step(){
+    if(!alive) return;
+    t += 1;
 
-function step(){
-  if(!alive) return;
-  t += 1;
+    if (DIR === 'down'){
+      y += vel;
+      const dx = Math.sin(t*swayFreq) * swayAmp;
+      el.style.top = y+'px';
+      el.style.transform = `translateX(${dx}px)`;
+      if (y > gh + 200){
+        alive = false;
+        if (el.dataset.good === '1') missedCorrect++;
+        el.remove(); return;
+      }
+    } else if (DIR === 'up'){
+      y -= vel;
+      const dx = Math.sin(t*swayFreq) * swayAmp;
+      el.style.top = y+'px';
+      el.style.transform = `translateX(${dx}px)`;
+      if (y < -200){
+        alive = false;
+        if (el.dataset.good === '1') missedCorrect++;
+        el.remove(); return;
+      }
+    } else if (DIR === 'left'){
+      x += vel;
+      const dy = Math.sin(t*swayFreq) * swayAmp;
+      el.style.left = x+'px';
+      el.style.transform = `translateY(${dy}px)`;
+      if (x > gw + 200){
+        alive = false;
+        if (el.dataset.good === '1') missedCorrect++;
+        el.remove(); return;
+      }
+    } else { // right
+      x -= vel;
+      const dy = Math.sin(t*swayFreq) * swayAmp;
+      el.style.left = x+'px';
+      el.style.transform = `translateY(${dy}px)`;
+      if (x < -200){
+        alive = false;
+        if (el.dataset.good === '1') missedCorrect++;
+        el.remove(); return;
+      }
+    }
 
-  if (DIR === 'down'){
-    ty += vel;
-    const dx = Math.sin(t*swayFreq) * swayAmp;
-    el.style.transform = `translate(${dx}px, ${ty}px)`;
-    if (baseY + ty > gh + 200){ alive = false; if (el.dataset.good==='1') missedCorrect++; el.remove(); return; }
-
-  } else if (DIR === 'up'){
-    ty -= vel;
-    const dx = Math.sin(t*swayFreq) * swayAmp;
-    el.style.transform = `translate(${dx}px, ${ty}px)`;
-    if (baseY + ty < -200){ alive = false; if (el.dataset.good==='1') missedCorrect++; el.remove(); return; }
-
-  } else if (DIR === 'left'){
-    tx += vel;
-    const dy = Math.sin(t*swayFreq) * swayAmp;
-    el.style.transform = `translate(${tx}px, ${dy}px)`;
-    if (baseX + tx > gw + 200){ alive = false; if (el.dataset.good==='1') missedCorrect++; el.remove(); return; }
-
-  } else { // right
-    tx -= vel;
-    const dy = Math.sin(t*swayFreq) * swayAmp;
-    el.style.transform = `translate(${tx}px, ${dy}px)`;
-    if (baseX + tx < -200){ alive = false; if (el.dataset.good==='1') missedCorrect++; el.remove(); return; }
+    requestAnimationFrame(step);
   }
-
   requestAnimationFrame(step);
-}
-requestAnimationFrame(step);
+
 
       // Клик
       el.addEventListener('click', ()=>{
