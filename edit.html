@@ -114,16 +114,30 @@
     <section class="card stack">
       <h2>⚙️ Общие настройки</h2>
 
-      <div class="row">
-        <div>
-          <label>Язык / режим</label>
-          <select id="language"></select>
-        </div>
-        <div>
-          <label>Шрифт</label>
-          <select id="font"></select>
-        </div>
-      </div>
+    <div class="row">
+  <div>
+    <label>Скорость падения (1–10)</label>
+    <input type="number" id="speed" value="5" min="1" max="10">
+  </div>
+  <div>
+    <label>Кастомный курсор (URL, опц.)</label>
+    <input type="url" id="cursorUrl" placeholder="https://.../cursor.png">
+  </div>
+</div>
+
+<!-- НОВОЕ: Направление -->
+<div class="row">
+  <div>
+    <label>Направление движения</label>
+    <select id="direction">
+      <option value="down">Сверху вниз</option>
+      <option value="up">Снизу вверх</option>
+      <option value="left">Слева направо</option>
+      <option value="right">Справа налево</option>
+    </select>
+  </div>
+</div>
+
 
       <div class="row">
         <div>
@@ -147,19 +161,24 @@
         </div>
       </div>
 
-      <div class="card">
-        <h2>🎨 Оформление элементов (для всех уровней)</h2>
-        <div class="row">
-          <div>
-            <label>Фигура</label>
-            <select id="shape">
-              <option value="rect">Прямоугольник</option>
-              <option value="rounded">Скруглённый</option>
-              <option value="circle">Круг</option>
-              <option value="diamond">Ромб</option>
-              <option value="star">Звезда</option>
-            </select>
-          </div>
+    <!-- НОВОЕ: 🚀 Запуск квиза -->
+<div class="card">
+  <h2>🚀 Запуск квиза</h2>
+  <label>Текст при запуске (заголовок/фраза)</label>
+  <input type="text" id="startTitle" placeholder="Например: Игра «Парящий квиз»" />
+  <label>Текст кнопки запуска</label>
+  <input type="text" id="startBtnText" placeholder="Начать" />
+  <div class="hint">Если оставить пустым — возьмётся локализованный текст.</div>
+</div>
+
+<!-- как было -->
+<div class="card">
+  <h2>🏁 Финальный фидбек</h2>
+  <label>Текст, который появится после завершения игры</label>
+  <textarea id="finalFeedback" placeholder="Например: Отличная работа!"></textarea>
+  <div class="hint">Если оставить пустым, будет показан стандартный текст («Отличная работа!» или локализованный).</div>
+</div>
+
           <div>
             <label>Фон — цвет</label>
             <input type="color" id="bgColor" value="#1a1a1a">
@@ -451,39 +470,40 @@ function collectConfig(){
     });
   });
 
-  const cfg = {
-    language: $('#language').value,
-    font: $('#font').value,
-    fontSize: Math.max(10, parseInt($('#fontSize').value||'24',10)),
-    textColor: $('#textColor').value,
-    speed: Math.max(1, Math.min(10, parseInt($('#speed').value||'5',10))),
-    style: {
-      shape: $('#shape').value,
-      pad: Math.max(0, parseInt($('#pad').value||'22',10)),
-      bgColor: $('#bgColor').value,
-      bgImage: $('#bgImage').value.trim(),
-      borderOn: $('#borderOn').checked,
-      borderColor: $('#borderColor').value,
-      borderWidth: Math.max(0, parseInt($('#borderWidth').value||'0', 10)),
-      shadow: $('#shadowOn').checked,
-      glow: $('#glowOn').checked,
-      glowColor: $('#glowColor').value,
-      fx3d: $('#fx3d').checked,
-      opacity: Math.max(0, Math.min(1, parseFloat($('#opacity').value||'1'))),
-    },
-    cursor: $('#cursorUrl').value.trim(),
-    randomLevels: false,
+ const cfg = {
+  language: $('#language').value,
+  font: $('#font').value,
+  fontSize: Math.max(10, parseInt($('#fontSize').value||'24',10)),
+  textColor: $('#textColor').value,
+  speed: Math.max(1, Math.min(10, parseInt($('#speed').value||'5',10))),
+  style: {
+    shape: $('#shape').value,
+    pad: Math.max(0, parseInt($('#pad').value||'22',10)),
+    bgColor: $('#bgColor').value,
+    bgImage: $('#bgImage').value.trim(),
+    borderOn: $('#borderOn').checked,
+    borderColor: $('#borderColor').value,
+    borderWidth: Math.max(0, parseInt($('#borderWidth').value||'0', 10)),
+    shadow: $('#shadowOn').checked,
+    glow: $('#glowOn').checked,
+    glowColor: $('#glowColor').value,
+    fx3d: $('#fx3d').checked,
+    opacity: Math.max(0, Math.min(1, parseFloat($('#opacity').value||'1'))),
+  },
+  cursor: $('#cursorUrl').value.trim(),
+  randomLevels: false,
 
-    // ✅ НОВОЕ:
-    start: {
-      title: ($('#startTitle')?.value || '').trim(),
-      btnText: ($('#startBtnText')?.value || '').trim()
-    },
-    direction: ($('#direction')?.value || 'down'),
+  /* НОВОЕ */
+  start: {
+    title: ($('#startTitle')?.value || '').trim(),
+    btnText: ($('#startBtnText')?.value || '').trim()
+  },
+  direction: ($('#direction')?.value || 'down'),
 
-    finalFeedback: $('#finalFeedback').value.trim(),
-    levels
-  };
+  finalFeedback: $('#finalFeedback').value.trim(),
+  levels
+};
+
   return cfg;
 }
 
@@ -577,9 +597,12 @@ function collectConfig(){
     $('#font').addEventListener('change', e=> { applyGoogleFont(e.target.value); updatePreview(); });
     $('#fontSize').addEventListener('input', ()=> { applyGoogleFont($('#font').value); updatePreview(); });
 
-    // предпросмотр реагирует на всё
-  ;['textColor','opacity','shape','bgColor','bgImage','borderColor','borderWidth','borderOn','shadowOn','glowOn','glowColor','fx3d','previewValue','speed','pad','cursorUrl']
-  .forEach(id => { $('#'+id).addEventListener('input', updatePreview); $('#'+id).addEventListener('change', updatePreview); });
+// предпросмотр реагирует на всё
+;['textColor','opacity','shape','bgColor','bgImage','borderColor','borderWidth','borderOn','shadowOn','glowOn','glowColor','fx3d','previewValue','speed','pad','cursorUrl',
+  // ✅ НОВОЕ:
+  'direction','startTitle','startBtnText'
+]
+.forEach(id => { if($('#'+id)){ $('#'+id).addEventListener('input', updatePreview); $('#'+id).addEventListener('change', updatePreview); }});
 
     // переключатели предпросмотра
     $('#btnText').onclick = (e)=>{ e.preventDefault(); const it=$('#previewItem'); it.dataset.mode='text'; updatePreview(); }
