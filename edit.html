@@ -439,44 +439,54 @@ document.body.style.fontFamily = $('#font').value + ", system-ui, sans-serif";
     }
 
     // сбор формы → JSON
-    function collectConfig(){
-      const levels = [];
-      $$('#levels .level').forEach(div=>{
-        levels.push({
-          target: div.querySelector('.target').value.trim(),
-          correct: div.querySelector('.correct').value.split('\n').map(s=>s.trim()).filter(Boolean),
-          wrong:   div.querySelector('.wrong').value.split('\n').map(s=>s.trim()).filter(Boolean),
-          timer:   Math.max(5, parseInt(div.querySelector('.timer').value||'30',10))
-        });
-      });
+   // сбор формы → JSON
+function collectConfig(){
+  const levels = [];
+  $$('#levels .level').forEach(div=>{
+    levels.push({
+      target: div.querySelector('.target').value.trim(),
+      correct: div.querySelector('.correct').value.split('\n').map(s=>s.trim()).filter(Boolean),
+      wrong:   div.querySelector('.wrong').value.split('\n').map(s=>s.trim()).filter(Boolean),
+      timer:   Math.max(5, parseInt(div.querySelector('.timer').value||'30',10))
+    });
+  });
 
-      const cfg = {
-        language: $('#language').value,
-        font: $('#font').value,
-        fontSize: Math.max(10, parseInt($('#fontSize').value||'24',10)),
-        textColor: $('#textColor').value,
-        speed: Math.max(1, Math.min(10, parseInt($('#speed').value||'5',10))),
-        style: {
-          shape: $('#shape').value,
-          pad: Math.max(0, parseInt($('#pad').value||'22',10)),
-          bgColor: $('#bgColor').value,
-          bgImage: $('#bgImage').value.trim(),
-          borderOn: $('#borderOn').checked,
-          borderColor: $('#borderColor').value,
-          borderWidth: Math.max(0, parseInt($('#borderWidth').value||'0', 10)),
-          shadow: $('#shadowOn').checked,
-          glow: $('#glowOn').checked,
-          glowColor: $('#glowColor').value,
-          fx3d: $('#fx3d').checked,
-          opacity: Math.max(0, Math.min(1, parseFloat($('#opacity').value||'1'))),
-        },
-        cursor: $('#cursorUrl').value.trim(),
-  randomLevels: false,
-  finalFeedback: $('#finalFeedback').value.trim(),
-  levels
-};
-      return cfg;
-    }
+  const cfg = {
+    language: $('#language').value,
+    font: $('#font').value,
+    fontSize: Math.max(10, parseInt($('#fontSize').value||'24',10)),
+    textColor: $('#textColor').value,
+    speed: Math.max(1, Math.min(10, parseInt($('#speed').value||'5',10))),
+    style: {
+      shape: $('#shape').value,
+      pad: Math.max(0, parseInt($('#pad').value||'22',10)),
+      bgColor: $('#bgColor').value,
+      bgImage: $('#bgImage').value.trim(),
+      borderOn: $('#borderOn').checked,
+      borderColor: $('#borderColor').value,
+      borderWidth: Math.max(0, parseInt($('#borderWidth').value||'0', 10)),
+      shadow: $('#shadowOn').checked,
+      glow: $('#glowOn').checked,
+      glowColor: $('#glowColor').value,
+      fx3d: $('#fx3d').checked,
+      opacity: Math.max(0, Math.min(1, parseFloat($('#opacity').value||'1'))),
+    },
+    cursor: $('#cursorUrl').value.trim(),
+    randomLevels: false,
+
+    // ✅ НОВОЕ:
+    start: {
+      title: ($('#startTitle')?.value || '').trim(),
+      btnText: ($('#startBtnText')?.value || '').trim()
+    },
+    direction: ($('#direction')?.value || 'down'),
+
+    finalFeedback: $('#finalFeedback').value.trim(),
+    levels
+  };
+  return cfg;
+}
+
 
     // валидация
     function validate(cfg){
