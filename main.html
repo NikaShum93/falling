@@ -481,32 +481,31 @@ function showStartOverlay(){
       }, { once:true });
     }
 
-    function showGameCompleteOverlay(stats){
-  if (overlayNode) overlayNode.remove();
-  overlayNode = document.createElement('div');
-  overlayNode.className = 'overlay';
+ const custom = (cfg.finalFeedback || cfg.feedback || "").trim();
+const fbTitle = t(LANG,'finalFeedbackTitle');
+const fbText  = t(LANG,'defaultFinalFeedback');
 
-  const custom = (cfg.finalFeedback || cfg.feedback || "").trim();
-  const fbTitle = t(LANG,'finalFeedbackTitle');
-  const fbText = custom || t(LANG,'defaultFinalFeedback');
+overlayNode.innerHTML = `
+  <div class="panel">
+    <h2>${t(LANG,'gameComplete')}</h2>
+    ${
+      custom
+        ? `<p style="white-space:pre-wrap">${custom}</p>`
+        : `<p style="margin:6px 0 6px; font-size:18px; color:var(--ui)">${fbTitle}</p>
+           <p style="white-space:pre-wrap">${fbText}</p>`
+    }
+    <div style="margin-top:12px; display:grid; grid-template-columns:1fr 1fr; gap:10px; text-align:left">
+      <div>${t(LANG,'hits')}: <b>${stats.hits}</b></div>
+      <div>${t(LANG,'wrong')}: <b>${stats.wrong}</b></div>
+      <div>${t(LANG,'missed')}: <b>${stats.missed}</b></div>
+      <div>${t(LANG,'total')}: <b>${stats.total}</b></div>
+    </div>
 
-  overlayNode.innerHTML = `
-    <div class="panel">
-      <h2>${t(LANG,'gameComplete')}</h2>
-      <p style="margin:6px 0 6px; font-size:18px; color:var(--ui)">${fbTitle}</p>
-      <p style="white-space:pre-wrap">${fbText}</p>
+    <div class="row" style="margin-top:14px">
+      <button id="btnRestart">${t(LANG,'restartBtn')}</button>
+    </div>
+  </div>`;
 
-      <div style="margin-top:12px; display:grid; grid-template-columns:1fr 1fr; gap:10px; text-align:left">
-        <div>${t(LANG,'hits')}: <b>${stats.hits}</b></div>
-        <div>${t(LANG,'wrong')}: <b>${stats.wrong}</b></div>
-        <div>${t(LANG,'missed')}: <b>${stats.missed}</b></div>
-        <div>${t(LANG,'total')}: <b>${stats.total}</b></div>
-      </div>
-
-      <div class="row" style="margin-top:14px">
-        <button id="btnRestart">${t(LANG,'restartBtn')}</button>
-      </div>
-    </div>`;
   document.body.appendChild(overlayNode);
 
   $('#btnRestart').addEventListener('click', ()=> location.reload(), { once:true });
