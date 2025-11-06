@@ -89,8 +89,6 @@
   object-fit:contain;
 }
 
-    .preview-item img{max-width:200px; max-height:140px; display:block}
-
     /* ФИГУРЫ */
     .shape-rect{border-radius:10px}
     .shape-rounded{border-radius:20px}
@@ -420,12 +418,6 @@ document.body.style.fontFamily = $('#font').value + ", system-ui, sans-serif";
   item.style.removeProperty('--ch');
 }
 
-        item.dataset.mode = 'text';
-        const img = item.querySelector('img');
-        if(img) img.remove();
-        text.style.display = 'block';
-        text.textContent = val || 'Preview';
-      }
 
       // Гарантируем нормальные отступы предпросмотра
       const pad = Math.max(0, parseInt($('#pad').value||'22', 10));
@@ -623,10 +615,10 @@ function collectConfig(){
     $('#fontSize').addEventListener('input', ()=> { applyGoogleFont($('#font').value); updatePreview(); });
 
 // предпросмотр реагирует на всё
-;['textColor','opacity','shape','bgColor','bgImage','borderColor','borderWidth','borderOn','shadowOn','glowOn','glowColor','fx3d','previewValue','speed','pad',
-  // ✅ НОВОЕ:
-  'direction','startTitle','startBtnText'
+['textColor','opacity','shape','bgColor','bgImage','borderColor','borderWidth','borderOn','shadowOn','glowOn','glowColor','fx3d','previewValue','speed','pad',
+  'direction','startTitle','startBtnText','imgBox'
 ]
+
 .forEach(id => { if($('#'+id)){ $('#'+id).addEventListener('input', updatePreview); $('#'+id).addEventListener('change', updatePreview); }});
 
     // переключатели предпросмотра
