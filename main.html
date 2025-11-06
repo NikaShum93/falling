@@ -730,50 +730,42 @@ function showGameCompleteOverlay(stats){
     if(!alive) return;
     t += 1;
 
-    if (DIR === 'down'){
-      y += vel;
-      const dx = Math.sin(t*swayFreq) * swayAmp;
-      el.style.top = y+'px';
-      el.style.transform = `translateX(${dx}px)`;
-      if (y > gh + 200){
-        alive = false;
-        if (el.dataset.good === '1') missedCorrect++;
-        el.remove(); return;
-      }
-    } else if (DIR === 'up'){
-      y -= vel;
-      const dx = Math.sin(t*swayFreq) * swayAmp;
-      el.style.top = y+'px';
-      el.style.transform = `translateX(${dx}px)`;
-      if (y < -200){
-        alive = false;
-        if (el.dataset.good === '1') missedCorrect++;
-        el.remove(); return;
-      }
-    } else if (DIR === 'left'){
-      x += vel;
-      const dy = Math.sin(t*swayFreq) * swayAmp;
-      el.style.left = x+'px';
-      el.style.transform = `translateY(${dy}px)`;
-      if (x > gw + 200){
-        alive = false;
-        if (el.dataset.good === '1') missedCorrect++;
-        el.remove(); return;
-      }
-    } else { // right
-      x -= vel;
-      const dy = Math.sin(t*swayFreq) * swayAmp;
-      el.style.left = x+'px';
-      el.style.transform = `translateY(${dy}px)`;
-      if (x < -200){
-        alive = false;
-        if (el.dataset.good === '1') missedCorrect++;
-        el.remove(); return;
-      }
-    }
+   // базовые координаты фиксируем один раз
+const baseX = x;
+const baseY = y;
+let tx = 0, ty = 0;
 
-    requestAnimationFrame(step);
+function step(){
+  if(!alive) return;
+  t += 1;
+
+  if (DIR === 'down'){
+    ty += vel;
+    const dx = Math.sin(t*swayFreq) * swayAmp;
+    el.style.transform = `translate(${dx}px, ${ty}px)`;
+    if (baseY + ty > gh + 200){ alive = false; if (el.dataset.good==='1') missedCorrect++; el.remove(); return; }
+
+  } else if (DIR === 'up'){
+    ty -= vel;
+    const dx = Math.sin(t*swayFreq) * swayAmp;
+    el.style.transform = `translate(${dx}px, ${ty}px)`;
+    if (baseY + ty < -200){ alive = false; if (el.dataset.good==='1') missedCorrect++; el.remove(); return; }
+
+  } else if (DIR === 'left'){
+    tx += vel;
+    const dy = Math.sin(t*swayFreq) * swayAmp;
+    el.style.transform = `translate(${tx}px, ${dy}px)`;
+    if (baseX + tx > gw + 200){ alive = false; if (el.dataset.good==='1') missedCorrect++; el.remove(); return; }
+
+  } else { // right
+    tx -= vel;
+    const dy = Math.sin(t*swayFreq) * swayAmp;
+    el.style.transform = `translate(${tx}px, ${dy}px)`;
+    if (baseX + tx < -200){ alive = false; if (el.dataset.good==='1') missedCorrect++; el.remove(); return; }
   }
+
+  requestAnimationFrame(step);
+}
   requestAnimationFrame(step);
 
 
