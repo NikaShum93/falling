@@ -136,6 +136,8 @@
       font-weight:800;
       white-space:nowrap;
     }
+    /* MathJax должен наследовать размер от контейнера */
+.item .content .mjx-container{ font-size: inherit !important; }
    .item .content img{
   display:block;
   width:100%;          /* важно: картинка занимает контент-бокс */
@@ -704,7 +706,10 @@ if (/^https?:\/\//i.test(obj.val)) {
   const span = document.createElement('span');
   span.textContent = `\\(${obj.val}\\)`;
   span.style.color = TEXT_COLOR;
+  span.style.fontSize = `${FONT_SIZE}px`;                // <- размер из редактора
+  span.style.fontFamily = `${FONT}, system-ui, sans-serif`;
   content.appendChild(span);
+
 
 } else {
   const span = document.createElement('span');
