@@ -113,7 +113,16 @@
   <!-- ЛЕВАЯ КОЛОНКА -->
 <section class="card stack">
   <h2>⚙️ Общие настройки</h2>
-
+<div class="row">
+  <div>
+    <label>Язык / режим</label>
+    <select id="language"></select>
+  </div>
+  <div>
+    <label>Шрифт</label>
+    <select id="font"></select>
+  </div>
+</div>
   <!-- Скорость + Курсор (ОДИН раз) -->
   <div class="row">
     <div>
@@ -168,7 +177,16 @@
     <textarea id="finalFeedback" placeholder="Например: Отличная работа!"></textarea>
     <div class="hint">Если оставить пустым, будет показан стандартный текст («Отличная работа!» или локализованный).</div>
   </div>
-
+<div>
+  <label>Фигура</label>
+  <select id="shape">
+    <option value="rect">Прямоугольник</option>
+    <option value="rounded" selected>Скруглённый</option>
+    <option value="circle">Круг</option>
+    <option value="diamond">Ромб</option>
+    <option value="star">Звезда</option>
+  </select>
+</div>
   <!-- Оформление элементов -->
   <div>
     <label>Фон — цвет</label>
