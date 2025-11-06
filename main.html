@@ -123,27 +123,28 @@
       background-repeat:no-repeat !important;
       background-size: contain !important;/* Картинка-рама масштабируется под бокс */
     }
-      .item .content{
-      position:relative; z-index:1;
-      display:flex; align-items:center; justify-content:center;
-      /* padding теперь задаётся из cfg.style.pad в JS */
-      text-align:center;
-      line-height:1.15;
-      max-width:520px; max-height:300px;  /* безопасность; дальше автофит подрежет */
-    }
-
+  .item .content{
+  position:relative; z-index:1;
+  display:flex; align-items:center; justify-content:center;
+  text-align:center; line-height:1.15;
+  /* размеры для картинок задаём через CSS-переменные */
+  width: var(--cw, auto);
+  height: var(--ch, auto);
+}
     .item .content span{
       display:inline-block;
       font-weight:800;
       white-space:nowrap;
     }
-    .item .content img{
-      display:block;
-      max-width:180px; max-height:140px;
-      object-fit:contain;
-      pointer-events:none;
-    }
-
+   .item .content img{
+  display:block;
+  width:100%;          /* важно: картинка занимает контент-бокс */
+  height:100%;
+  max-width:none;      /* никаких «рандомных» 180x140 */
+  max-height:none;
+  object-fit:contain;  /* вписать внутрь бокса */
+  pointer-events:none;
+}
     /* Фигуры — применяются только к .bg (фон-слой), контент не клипается */
     .shape-rect    .bg{ border-radius:10px }
     .shape-rounded .bg{ border-radius:20px }
@@ -642,6 +643,7 @@ function showGameCompleteOverlay(stats){
   // Применяем паддинги из редактора
   const PAD = Number(STYLE.pad || 22);
   content.style.padding = PAD + 'px';
+const IMG_BOX = Number(STYLE.imgBox || 160); // фикс-бокс для картинок (квадрат)
 
   el.appendChild(bg); el.appendChild(content);
 
@@ -669,23 +671,50 @@ function showGameCompleteOverlay(stats){
   }
 
   // Контент: картинка/математика/текст
-  if(/^https?:\/\//i.test(obj.val)){
-    const img = document.createElement('img');
-    img.src = obj.val;
-    content.appendChild(img);
-  } else if ((cfg.language||'') === 'math'){
-    const span = document.createElement('span');
-    span.textContent = `\\(${obj.val}\\)`;
-    span.style.color = TEXT_COLOR;
-    content.appendChild(span);
-  } else {
-    const span = document.createElement('span');
-    span.textContent = String(obj.val);
-    span.style.color = TEXT_COLOR;
-    span.style.fontFamily = `${FONT}, system-ui, sans-serif`;
-    span.style.fontSize = `${FONT_SIZE}px`;
-    content.appendChild(span);
+if (/^https?:\/\//i.test(obj.val)) {
+  const img = document.createElement('img');
+  img.src = obj.val;
+  content.appendChild(img);
+
+  // фиксированная рабочая область под картинку
+  content.style.setProperty('--cw', IMG_BOX + 'px');
+  content.style.setProperty('--ch', IMG_BOX + 'px');
+
+  // сразу задаём общий бокс элемента (рамка/«воздух» + паддинги контента)
+  const shape = (STYLE.shape || 'rounded');
+  const hasImageFrame = Boolean((STYLE.bgImage||'').trim());
+  const padX = hasImageFrame ? 30 : 22;
+  const padY = hasImageFrame ? 24 : 18;
+
+  let W = IMG_BOX + padX*2 + PAD*2;
+  let H = IMG_BOX + padY*2 + PAD*2;
+
+  if (shape === 'circle' || shape === 'diamond' || shape === 'star') {
+    const S = Math.max(W, H);
+    W = H = S;
   }
+
+  el.style.width  = W + 'px';
+  el.style.height = H + 'px';
+
+  // на случай поздней загрузки картинки
+  img.onload = () => { el.style.width = W + 'px'; el.style.height = H + 'px'; };
+
+} else if ((cfg.language||'') === 'math'){
+  const span = document.createElement('span');
+  span.textContent = `\\(${obj.val}\\)`;
+  span.style.color = TEXT_COLOR;
+  content.appendChild(span);
+
+} else {
+  const span = document.createElement('span');
+  span.textContent = String(obj.val);
+  span.style.color = TEXT_COLOR;
+  span.style.fontFamily = `${FONT}, system-ui, sans-serif`;
+  span.style.fontSize = `${FONT_SIZE}px`;
+  content.appendChild(span);
+}
+
 
   // === Направление движения (НОВОЕ)
   const DIR = (cfg.direction || 'down'); // down|up|left|right
@@ -805,10 +834,16 @@ function showGameCompleteOverlay(stats){
     }
 
     /* ===================== Геометрия/автофит ===================== */
-    function fitGeometryBox(el){
-      const STYLE = cfg.style || {};
-      const shape = STYLE.shape || 'rounded';
-      const content = el.querySelector('.content');
+  function fitGeometryBox(el){
+  const STYLE = cfg.style || {};
+  const content = el.querySelector('.content');
+
+  // если для контента задана фикс-ширина через переменную — это картинка,
+  // размеры уже выставлены в drop(), выходим
+  if (content && content.style.getPropertyValue('--cw')) return;
+
+  const shape = STYLE.shape || 'rounded';
+
 
       // Сбросим, чтобы измерить «натуральный» размер
       el.style.width = ''; el.style.height='';
