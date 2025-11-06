@@ -719,18 +719,14 @@ function showGameCompleteOverlay(stats){
     MathJax.typesetPromise([el]).then(()=> fitGeometryBox(el));
   }
 
-  // Движение (учитываем DIR). Вертикальные колышутся по X, горизонтальные — по Y.
-  const vel = SPEED.vel;
-  const swayAmp = rnd(6, 22);
-  const swayFreq = rnd(0.003, 0.008);
-  let t = 0;
-  let alive = true;
+// Движение (учитываем DIR). Всё через transform, чтобы хитбокс совпадал с изображением.
+const vel = SPEED.vel;
+const swayAmp = rnd(6, 22);
+const swayFreq = rnd(0.003, 0.008);
+let t = 0;
+let alive = true;
 
-  function step(){
-    if(!alive) return;
-    t += 1;
-
-   // базовые координаты фиксируем один раз
+// базовые координаты фиксируем один раз
 const baseX = x;
 const baseY = y;
 let tx = 0, ty = 0;
@@ -766,8 +762,7 @@ function step(){
 
   requestAnimationFrame(step);
 }
-  requestAnimationFrame(step);
-
+requestAnimationFrame(step);
 
       // Клик
       el.addEventListener('click', ()=>{
