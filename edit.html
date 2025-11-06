@@ -129,13 +129,7 @@
       <label>Скорость падения (1–10)</label>
       <input type="number" id="speed" value="5" min="1" max="10">
     </div>
-    <div>
-      <label>Кастомный курсор (URL, опц.)</label>
-      <input type="url" id="cursorUrl" placeholder="https://.../cursor.png">
-    </div>
-  </div>
-
-  <!-- Направление -->
+    <!-- Направление -->
   <div class="row">
     <div>
       <label>Направление движения</label>
@@ -492,7 +486,6 @@ function collectConfig(){
     fx3d: $('#fx3d').checked,
     opacity: Math.max(0, Math.min(1, parseFloat($('#opacity').value||'1'))),
   },
-  cursor: $('#cursorUrl').value.trim(),
   randomLevels: false,
 
   /* НОВОЕ */
@@ -600,7 +593,7 @@ function collectConfig(){
     $('#fontSize').addEventListener('input', ()=> { applyGoogleFont($('#font').value); updatePreview(); });
 
 // предпросмотр реагирует на всё
-;['textColor','opacity','shape','bgColor','bgImage','borderColor','borderWidth','borderOn','shadowOn','glowOn','glowColor','fx3d','previewValue','speed','pad','cursorUrl',
+;['textColor','opacity','shape','bgColor','bgImage','borderColor','borderWidth','borderOn','shadowOn','glowOn','glowColor','fx3d','previewValue','speed','pad',
   // ✅ НОВОЕ:
   'direction','startTitle','startBtnText'
 ]
