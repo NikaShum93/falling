@@ -78,6 +78,17 @@
       padding:18px 22px; min-width:160px; min-height:70px; transition:all .2s ease;
       background-size:cover !important; background-position:center !important; background-repeat:no-repeat !important;
     }
+    /* Размер превью через переменные (для картинок) */
+.preview-item{
+  width: var(--cw, auto);
+  height: var(--ch, auto);
+}
+.preview-item img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+
     .preview-item img{max-width:200px; max-height:140px; display:block}
 
     /* ФИГУРЫ */
@@ -227,10 +238,14 @@
   <div class="row">
     <div>
       <label>Внутренние отступы (px)</label>
-      <input type="number" id="pad" value="22" min="0" max="120">
+            <input type="number" id="pad" value="22" min="0" max="120">
     </div>
   </div>
-
+<div>
+  <label>Размер картинки (px)</label>
+  <input type="range" id="imgBox" min="80" max="260" value="160" step="10">
+  <div class="hint">Применяется только к объектам-картинкам. По умолчанию 160×160.</div>
+</div>
   <!-- 🧪 Предпросмотр -->
   <div class="card" style="border-style:dashed">
     <h2>🧪 Предпросмотр</h2>
@@ -380,16 +395,31 @@
 // Применяем выбранный шрифт ко всему интерфейсу редактора
 document.body.style.fontFamily = $('#font').value + ", system-ui, sans-serif";
       // Контент
-      if(asImage){
-        item.dataset.mode = 'image';
-        text.style.display = 'none';
-        if(!item.querySelector('img')){
-          const img = document.createElement('img');
-          item.appendChild(img);
-        }
-        const img = item.querySelector('img');
-        img.src = val || 'https://via.placeholder.com/200x140?text=Image';
-      } else {
+     if(asImage){
+  item.dataset.mode = 'image';
+  text.style.display = 'none';
+  if(!item.querySelector('img')){
+    const img = document.createElement('img');
+    item.appendChild(img);
+  }
+  const img = item.querySelector('img');
+  img.src = val || 'https://via.placeholder.com/200x140?text=Image';
+
+  // размер рабочего квадрата
+  const box = Math.max(80, Math.min(260, parseInt($('#imgBox').value||'160',10)));
+  item.style.setProperty('--cw', box + 'px');
+  item.style.setProperty('--ch', box + 'px');
+} else {
+  item.dataset.mode = 'text';
+  const img = item.querySelector('img');
+  if(img) img.remove();
+  text.style.display = 'block';
+  text.textContent = val || 'Preview';
+  // для текста сбрасываем фикс-размер
+  item.style.removeProperty('--cw');
+  item.style.removeProperty('--ch');
+}
+
         item.dataset.mode = 'text';
         const img = item.querySelector('img');
         if(img) img.remove();
@@ -484,6 +514,7 @@ function collectConfig(){
     glowColor: $('#glowColor').value,
     fx3d: $('#fx3d').checked,
     opacity: Math.max(0, Math.min(1, parseFloat($('#opacity').value||'1'))),
+    imgBox: Math.max(80, Math.min(260, parseInt($('#imgBox').value||'160',10))),
   },
   randomLevels: false,
 
