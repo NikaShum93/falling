@@ -424,7 +424,7 @@
 
     let overlayNode = null;
 
-  function showStartOverlay(){
+function showStartOverlay(){
   if (overlayNode) overlayNode.remove();
   overlayNode = document.createElement('div');
   overlayNode.className = 'overlay';
@@ -434,12 +434,15 @@
   const isMath = (cfg.language || '') === 'math';
   const targetHtml = targetVal ? (isMath ? `\\(${targetVal}\\)` : targetVal) : "";
 
+  const title  = (cfg.start && cfg.start.title)   ? cfg.start.title   : t(LANG,'startTitle');
+  const btnTxt = (cfg.start && cfg.start.btnText) ? cfg.start.btnText : t(LANG,'startBtn');
+
   overlayNode.innerHTML = `
     <div class="panel">
-      <h2>${t(LANG,'startTitle')}</h2>
+      <h2>${title}</h2>
       <p>${t(LANG,'catchAll')} ${targetHtml}</p>
       <div class="row" style="margin-top:14px">
-        <button id="btnStart">${t(LANG,'startBtn')}</button>
+        <button id="btnStart">${btnTxt}</button>
       </div>
     </div>
   `;
@@ -448,6 +451,13 @@
   if (isMath && targetHtml) {
     MathJax.typesetPromise([overlayNode]);
   }
+
+  $('#btnStart').addEventListener('click', ()=>{
+    overlayNode.remove();
+    startGame();
+  }, { once: true });
+}
+
 
   // Теперь кнопка реально есть
   $('#btnStart').addEventListener('click', ()=>{
@@ -613,116 +623,161 @@
     }
 
     /* ===================== Элемент: создание/падение/клик ===================== */
-    function drop(obj){
-      const STYLE = cfg.style || {};
-      const FONT = cfg.font || 'Rubik';
-      const FONT_SIZE = Number(cfg.fontSize || 24);
-      const TEXT_COLOR = cfg.textColor || '#ffffff';
+  function drop(obj){
+  const STYLE = cfg.style || {};
+  const FONT = cfg.font || 'Rubik';
+  const FONT_SIZE = Number(cfg.fontSize || 24);
+  const TEXT_COLOR = cfg.textColor || '#ffffff';
 
-      const el = document.createElement('div');
-      el.className = `item shape-${STYLE.shape || 'rounded'} ${STYLE.shadow?'fx-shadow':''} ${STYLE.fx3d?'fx-3d':''} ${STYLE.glow?'fx-glow':''} ${STYLE.borderOn && STYLE.borderWidth>0 ? 'fx-border' : ''}`;
-      el.dataset.good = obj.good ? '1' : '0';
-      el.style.setProperty('--glow', STYLE.glowColor || '#00f0ff');
+  const el = document.createElement('div');
+  el.className = `item shape-${STYLE.shape || 'rounded'} ${STYLE.shadow?'fx-shadow':''} ${STYLE.fx3d?'fx-3d':''} ${STYLE.glow?'fx-glow':''} ${STYLE.borderOn && STYLE.borderWidth>0 ? 'fx-border' : ''}`;
+  el.dataset.good = obj.good ? '1' : '0';
+  el.style.setProperty('--glow', STYLE.glowColor || '#00f0ff');
 
-      // структура
-          const bg = document.createElement('div');
-      bg.className = 'bg';
-      const content = document.createElement('div');
-      content.className = 'content';
+  // структура
+  const bg = document.createElement('div');
+  bg.className = 'bg';
+  const content = document.createElement('div');
+  content.className = 'content';
 
-      // Применяем паддинги из редактора
-      const PAD = Number(STYLE.pad || 22);
-      content.style.padding = PAD + 'px';
+  // Применяем паддинги из редактора
+  const PAD = Number(STYLE.pad || 22);
+  content.style.padding = PAD + 'px';
 
-      el.appendChild(bg); el.appendChild(content);
+  el.appendChild(bg); el.appendChild(content);
 
+  // Фон рамки: либо картинка, либо цвет (строго взаимоисключающие)
+  const bgImg = (STYLE.bgImage||'').trim();
+  const bgCol = STYLE.bgColor || 'transparent';
 
-      // Фон рамки: либо картинка, либо цвет (строго взаимоисключающие)
-      const bgImg = (STYLE.bgImage||'').trim();
-      const bgCol = STYLE.bgColor || 'transparent';
+  if (bgImg) {
+    bg.style.backgroundImage = `url(${bgImg})`;
+    bg.style.backgroundColor = 'transparent';           // не смешиваем цвет с картинкой
+  } else {
+    bg.style.backgroundImage = 'none';
+    bg.style.backgroundColor = bgCol;                   // чистый цвет
+  }
 
-      if (bgImg) {
-        bg.style.backgroundImage = `url(${bgImg})`;
-        bg.style.backgroundColor = 'transparent';           // не смешиваем цвет с картинкой
-      } else {
-        bg.style.backgroundImage = 'none';
-        bg.style.backgroundColor = bgCol;                   // чистый цвет
+  // Прозрачность фон-слоя
+  bg.style.opacity = String(clamp(Number(STYLE.opacity ?? 1), 0, 1));
+
+  // Рамка (граница) — только если включена
+  if (STYLE.borderOn && STYLE.borderWidth>0){
+    bg.style.borderColor = STYLE.borderColor || '#fff';
+    bg.style.borderWidth = `${parseInt(STYLE.borderWidth,10)}px`;
+  } else {
+    bg.style.borderWidth = '0px';
+  }
+
+  // Контент: картинка/математика/текст
+  if(/^https?:\/\//i.test(obj.val)){
+    const img = document.createElement('img');
+    img.src = obj.val;
+    content.appendChild(img);
+  } else if ((cfg.language||'') === 'math'){
+    const span = document.createElement('span');
+    span.textContent = `\\(${obj.val}\\)`;
+    span.style.color = TEXT_COLOR;
+    content.appendChild(span);
+  } else {
+    const span = document.createElement('span');
+    span.textContent = String(obj.val);
+    span.style.color = TEXT_COLOR;
+    span.style.fontFamily = `${FONT}, system-ui, sans-serif`;
+    span.style.fontSize = `${FONT_SIZE}px`;
+    content.appendChild(span);
+  }
+
+  // === Направление движения (НОВОЕ)
+  const DIR = (cfg.direction || 'down'); // down|up|left|right
+
+  // Стартовая позиция (переписана под 4 направления; поведение по умолчанию прежнее)
+  const gw = game.clientWidth;
+  const gh = game.clientHeight;
+  let x, y;
+
+  if (DIR === 'down' || DIR === 'up') {
+    x = Math.max(16, Math.min(gw-220, rnd(0, gw-220)));
+    y = (DIR === 'down') ? -160 : (gh + 160);
+  } else {
+    y = Math.max(16, Math.min(gh-140, rnd(0, gh-140)));
+    x = (DIR === 'left') ? -220 : (gw + 220);
+  }
+
+  el.style.left = x + 'px';
+  el.style.top  = y + 'px';
+
+  game.appendChild(el);
+
+  // Подгоняем геометрию под контент + воздух
+  fitGeometryBox(el);
+
+  // Автофит текста
+  autoFitText(el, FONT_SIZE, 12);
+
+  // Если математический режим — перетайпсетить и ещё раз подровнять
+  if ((cfg.language||'') === 'math'){
+    MathJax.typesetPromise([el]).then(()=> fitGeometryBox(el));
+  }
+
+  // Движение (учитываем DIR). Вертикальные колышутся по X, горизонтальные — по Y.
+  const vel = SPEED.vel;
+  const swayAmp = rnd(6, 22);
+  const swayFreq = rnd(0.003, 0.008);
+  let t = 0;
+  let alive = true;
+
+  function step(){
+    if(!alive) return;
+    t += 1;
+
+    if (DIR === 'down'){
+      y += vel;
+      const dx = Math.sin(t*swayFreq) * swayAmp;
+      el.style.top = y+'px';
+      el.style.transform = `translateX(${dx}px)`;
+      if (y > gh + 200){
+        alive = false;
+        if (el.dataset.good === '1') missedCorrect++;
+        el.remove(); return;
       }
-
-      // Прозрачность фон-слоя
-      bg.style.opacity = String(clamp(Number(STYLE.opacity ?? 1), 0, 1));
-
-      // Рамка (граница) — только если включена
-      if (STYLE.borderOn && STYLE.borderWidth>0){
-        bg.style.borderColor = STYLE.borderColor || '#fff';
-        bg.style.borderWidth = `${parseInt(STYLE.borderWidth,10)}px`;
-      } else {
-        bg.style.borderWidth = '0px';
+    } else if (DIR === 'up'){
+      y -= vel;
+      const dx = Math.sin(t*swayFreq) * swayAmp;
+      el.style.top = y+'px';
+      el.style.transform = `translateX(${dx}px)`;
+      if (y < -200){
+        alive = false;
+        if (el.dataset.good === '1') missedCorrect++;
+        el.remove(); return;
       }
-
-      // Контент: картинка/математика/текст
-      if(/^https?:\/\//i.test(obj.val)){
-        const img = document.createElement('img');
-        img.src = obj.val;
-        content.appendChild(img);
-      } else if ((cfg.language||'') === 'math'){
-        const span = document.createElement('span');
-        span.textContent = `\\(${obj.val}\\)`;
-        span.style.color = TEXT_COLOR;
-        content.appendChild(span);
-      } else {
-        const span = document.createElement('span');
-        span.textContent = String(obj.val);
-        span.style.color = TEXT_COLOR;
-        span.style.fontFamily = `${FONT}, system-ui, sans-serif`;
-        span.style.fontSize = `${FONT_SIZE}px`;
-        content.appendChild(span);
+    } else if (DIR === 'left'){
+      x += vel;
+      const dy = Math.sin(t*swayFreq) * swayAmp;
+      el.style.left = x+'px';
+      el.style.transform = `translateY(${dy}px)`;
+      if (x > gw + 200){
+        alive = false;
+        if (el.dataset.good === '1') missedCorrect++;
+        el.remove(); return;
       }
-
-      // Стартовая позиция
-      const gw = game.clientWidth;
-      const startX = Math.max(16, Math.min(gw-220, rnd(0, gw-220)));
-      el.style.left = startX + 'px';
-      el.style.top = '-160px';
-
-      game.appendChild(el);
-
-      // Подгоняем геометрию под контент + воздух
-      fitGeometryBox(el);
-
-      // Автофит текста
-      autoFitText(el, FONT_SIZE, 12);
-
-      // Если математический режим — перетайпсетить и ещё раз подровнять
-      if ((cfg.language||'') === 'math'){
-        MathJax.typesetPromise([el]).then(()=> fitGeometryBox(el));
+    } else { // right
+      x -= vel;
+      const dy = Math.sin(t*swayFreq) * swayAmp;
+      el.style.left = x+'px';
+      el.style.transform = `translateY(${dy}px)`;
+      if (x < -200){
+        alive = false;
+        if (el.dataset.good === '1') missedCorrect++;
+        el.remove(); return;
       }
+    }
 
-      // Падение
-      const vel = SPEED.vel;
-      const swayAmp = rnd(6, 22);
-      const swayFreq = rnd(0.003, 0.008);
-      let y = -160;
-      let t = 0;
-      let alive = true;
+    requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
 
-      function step(){
-        if(!alive) return;
-        y += vel; t += 1;
-        const dx = Math.sin(t*swayFreq) * swayAmp;
-        el.style.top = y+'px';
-        el.style.transform = `translateX(${dx}px)`;
-        if(y > game.clientHeight + 200){
-          alive = false;
-          if (el.dataset.good === '1') {
-            missedCorrect++;
-          }
-          el.remove();
-          return;
-        }
-        requestAnimationFrame(step);
-      }
-      requestAnimationFrame(step);
 
       // Клик
       el.addEventListener('click', ()=>{
