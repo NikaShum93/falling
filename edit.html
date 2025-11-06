@@ -492,7 +492,7 @@ function collectConfig(){
     title: ($('#startTitle')?.value || '').trim(),
     btnText: ($('#startBtnText')?.value || '').trim()
   },
-  direction: ($('#direction')?.value || 'down'),
+ direction: (['down','up'].includes($('#direction')?.value) ? $('#direction').value : 'down'),
 
   finalFeedback: $('#finalFeedback').value.trim(),
   levels
