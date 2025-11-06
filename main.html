@@ -434,8 +434,13 @@ function showStartOverlay(){
   const isMath = (cfg.language || '') === 'math';
   const targetHtml = targetVal ? (isMath ? `\\(${targetVal}\\)` : targetVal) : "";
 
-  const title  = (cfg.start && cfg.start.title)   ? cfg.start.title   : t(LANG,'startTitle');
-  const btnTxt = (cfg.start && cfg.start.btnText) ? cfg.start.btnText : t(LANG,'startBtn');
+  // ✅ НОВОЕ: даём возможность переопределить заголовок и текст кнопки из конфигурации
+  const title  = (cfg.start && typeof cfg.start.title === 'string' && cfg.start.title.trim())
+                 ? cfg.start.title.trim()
+                 : t(LANG,'startTitle');
+  const btnTxt = (cfg.start && typeof cfg.start.btnText === 'string' && cfg.start.btnText.trim())
+                 ? cfg.start.btnText.trim()
+                 : t(LANG,'startBtn');
 
   overlayNode.innerHTML = `
     <div class="panel">
@@ -458,13 +463,6 @@ function showStartOverlay(){
   }, { once: true });
 }
 
-
-  // Теперь кнопка реально есть
-  $('#btnStart').addEventListener('click', ()=>{
-    overlayNode.remove();
-    startGame();
-  }, { once: true });
-}
 
     function showLevelCompleteOverlay(current, total, onNext){
       if (overlayNode) overlayNode.remove();
