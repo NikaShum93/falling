@@ -590,62 +590,98 @@ function showGameCompleteOverlay(stats){
       startLevel();
     }
 
-    function shuffleCopy(arr){
-      const a = (arr||[]).slice();
-      for (let i=a.length-1;i>0;i--){
-        const j = Math.floor(Math.random()*(i+1));
-        [a[i],a[j]] = [a[j],a[i]];
-      }
-      return a;
+  function startLevel(){
+  currentLevel++;
+  const levels = Array.isArray(cfg.levels) ? cfg.levels : [];
+  if(currentLevel > levels.length){
+    running = false;
+    fireworks();
+    try{ winSound.currentTime=0; winSound.play(); }catch(_){}
+    showGameCompleteOverlay({hits, wrong:wrongClicks, missed: missedCorrect, total: score});
+    return;
+  }
+
+  updateHUD(currentLevel, levels.length);
+  const lv = levels[currentLevel-1];
+
+  // Таймер уровня
+  let timeLeft = Math.max(5, Number(lv.timer || 30));
+  hudTimer.textContent = timeLeft.toString().padStart(2,'0');
+  if (levelTimerHandle) clearInterval(levelTimerHandle);
+  levelTimerHandle = setInterval(()=>{
+    if(!running) return;
+    timeLeft--;
+    hudTimer.textContent = timeLeft.toString().padStart(2,'0');
+    if(timeLeft <= 0){
+      clearInterval(levelTimerHandle);
+      if (spawnerHandle) { clearTimeout(spawnerHandle); spawnerHandle = null; }
+
+      // Почистим сцену
+      document.querySelectorAll('.item').forEach(n=>n.remove());
+      // Мини-фейерверк и переход
+      fireworks(5);
+      try{ winSound.currentTime=0; winSound.play(); }catch(_){}
+      showLevelCompleteOverlay(currentLevel, levels.length, ()=> startLevel());
+    }
+  }, 1000);
+
+  // === УМНЫЙ РАВНОМЕРНЫЙ СПАУН (зависит от скорости, таймера и высоты сцены) ===
+  if (spawnerHandle) { clearTimeout(spawnerHandle); spawnerHandle = null; }
+
+  const correct = (lv.correct || []).map(v => ({ val: v, good: true }));
+  const wrong   = (lv.wrong   || []).map(v => ({ val: v, good: false }));
+  const pool = [...correct, ...wrong];
+  if (pool.length === 0) return;
+
+  const totalTime = Math.max(5, Number(lv.timer || 30)) * 1000;
+
+  // Геометрия падения
+  const gh  = game.clientHeight;
+  const fps = 60;                     // rAF ~60fps
+  const fallDistPx  = gh + 320;       // запас сверху/снизу
+  const fallTimeSec = fallDistPx / (SPEED.vel * fps); // vel — px/кадр → сек
+
+  // Целевая «заполненность» экрана
+  const sNorm = clamp((Number(cfg?.speed ?? 5) - 1) / 9, 0, 1);
+  const targetActive = Math.round(3 + sNorm * (10 - 3));  // 3..10
+  const maxActive    = targetActive + 1;
+
+  // Интервал между спавнами из желаемой активности
+  let interval = (fallTimeSec / targetActive) * 1000;
+  interval = clamp(interval, 300, 2200);
+
+  // Сколько всего появлений влезет за уровень
+  const totalSpawns = Math.max(1, Math.floor(totalTime / interval));
+
+  // Равномерное распределение: разница по каждому слову ≤ 1
+  const U = pool.length;
+  const perItem = Math.floor(totalSpawns / U);
+  const extras  = totalSpawns % U;
+
+  let schedule = [];
+  for (let i = 0; i < perItem; i++) schedule = schedule.concat(shuffleCopy(pool));
+  if (extras > 0) schedule = schedule.concat(shuffleCopy(pool).slice(0, extras));
+
+  // Спавн с джиттером и ограничением числа одновременных элементов
+  let index = 0;
+  function spawnNext(){
+    if (!running || index >= schedule.length) return;
+
+    const activeNow = document.querySelectorAll('.item').length;
+    if (activeNow >= maxActive){
+      spawnerHandle = setTimeout(spawnNext, 120);
+      return;
     }
 
-    function startLevel(){
-      currentLevel++;
-      const levels = Array.isArray(cfg.levels) ? cfg.levels : [];
-      if(currentLevel > levels.length){
-        running = false;
-        fireworks();
-        try{ winSound.currentTime=0; winSound.play(); }catch(_){}
-        showGameCompleteOverlay({hits, wrong:wrongClicks, missed: missedCorrect, total: score});
-        return;
-      }
+    drop(schedule[index++]);
 
-      updateHUD(currentLevel, levels.length);
-      const lv = levels[currentLevel-1];
+    const jitter = interval * (0.9 + Math.random() * 0.2);
+    spawnerHandle = setTimeout(spawnNext, Math.max(120, jitter));
+  }
 
-      // Таймер уровня
-      let timeLeft = Math.max(5, Number(lv.timer || 30));
-      hudTimer.textContent = timeLeft.toString().padStart(2,'0');
-      if (levelTimerHandle) clearInterval(levelTimerHandle);
-      levelTimerHandle = setInterval(()=>{
-        if(!running) return;
-        timeLeft--;
-        hudTimer.textContent = timeLeft.toString().padStart(2,'0');
-        if(timeLeft <= 0){
-          clearInterval(levelTimerHandle);
-          if (spawnerHandle) clearInterval(spawnerHandle);
-          // Почистим сцену
-          document.querySelectorAll('.item').forEach(n=>n.remove());
-          // Мини-фейерверк и переход
-          fireworks(5);
-          try{ winSound.currentTime=0; winSound.play(); }catch(_){}
-          showLevelCompleteOverlay(currentLevel, levels.length, ()=> startLevel());
-        }
-      }, 1000);
-
-      // Спавн
-      if (spawnerHandle) clearInterval(spawnerHandle);
-      const pool = [
-        ...(lv.correct||[]).map(v=>({val:v, good:true})),
-        ...(lv.wrong||[]).map(v=>({val:v, good:false}))
-      ];
-      const delay = clamp(SPEED.spawn, 300, 2200);
-      spawnerHandle = setInterval(()=>{
-        if(!running) return;
-        const obj = pool[Math.floor(Math.random()*pool.length)] || {val:'?', good:false};
-        drop(obj);
-      }, delay);
-    }
+  // Старт
+  spawnNext();
+}
 
     /* ===================== Элемент: создание/падение/клик ===================== */
   function drop(obj){
