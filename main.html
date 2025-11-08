@@ -568,7 +568,20 @@ function showGameCompleteOverlay(stats){
       const basePts = 8 + (s-1) * (50-8)/9;      // ~8..50
       return { vel, spawn, basePts: Math.round(basePts) };
     }
+// Перемешивает копию массива
+function shuffleCopy(arr){
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
+// Безопасная обрезка чисел
+function clamp(v, min, max){
+  return Math.min(max, Math.max(min, v));
+}
     // Инициализируем после загрузки cfg
     let SPEED = { vel: 1.5, spawn: 1000, basePts: 20 };
 
