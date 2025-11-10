@@ -819,16 +819,19 @@ if (/^https?:\/\//i.test(obj.val)) {
   const gh = game.clientHeight;
   let x, y;
 
-/// Минимальный отступ, чтобы не вылезало за край
-const MARGIN = 20;
+// --- фикс: минимальный безопасный отступ только по бокам ---
+const MARGIN = 20; // минимальный зазор слева и справа
 
 if (DIR === 'down' || DIR === 'up') {
+  // предметы падают сверху, ограничиваем только по X
   x = rnd(MARGIN, gw - MARGIN - 160);
   y = (DIR === 'down') ? -160 : (gh + 160);
 } else {
+  // горизонтальное движение (оставляем как было)
   y = rnd(16, gh - 140);
   x = (DIR === 'left') ? -220 : (gw + 220);
 }
+
 
   el.style.left = x + 'px';
   el.style.top  = y + 'px';
