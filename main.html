@@ -819,13 +819,16 @@ if (/^https?:\/\//i.test(obj.val)) {
   const gh = game.clientHeight;
   let x, y;
 
-  if (DIR === 'down' || DIR === 'up') {
-    x = Math.max(16, Math.min(gw-220, rnd(0, gw-220)));
-    y = (DIR === 'down') ? -160 : (gh + 160);
-  } else {
-    y = Math.max(16, Math.min(gh-140, rnd(0, gh-140)));
-    x = (DIR === 'left') ? -220 : (gw + 220);
-  }
+/// Минимальный отступ, чтобы не вылезало за край
+const MARGIN = 20;
+
+if (DIR === 'down' || DIR === 'up') {
+  x = rnd(MARGIN, gw - MARGIN - 160);
+  y = (DIR === 'down') ? -160 : (gh + 160);
+} else {
+  y = rnd(16, gh - 140);
+  x = (DIR === 'left') ? -220 : (gw + 220);
+}
 
   el.style.left = x + 'px';
   el.style.top  = y + 'px';
