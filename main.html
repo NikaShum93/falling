@@ -819,20 +819,18 @@ if (/^https?:\/\//i.test(obj.val)) {
   const gh = game.clientHeight;
   let x, y;
 
-// --- фикс: минимальный безопасный отступ только по бокам ---
-const MARGIN = 20; // минимальный зазор слева и справа
+// --- минимальный отступ только по бокам ---
+const MARGIN = 20;
 
 if (DIR === 'down' || DIR === 'up') {
-  // предметы падают сверху, ограничиваем только по X
-  x = rnd(MARGIN, gw - MARGIN - 160);
+  // пока предварительно — точную X подожмём позже, уже зная ширину элемента
+  x = rnd(0, gw);
   y = (DIR === 'down') ? -160 : (gh + 160);
 } else {
-  // горизонтальное движение (оставляем как было)
+  // горизонтальные направления оставляем как было
   y = rnd(16, gh - 140);
   x = (DIR === 'left') ? -220 : (gw + 220);
 }
-
-
   el.style.left = x + 'px';
   el.style.top  = y + 'px';
 
@@ -845,17 +843,31 @@ if (DIR === 'down' || DIR === 'up') {
   autoFitText(el, FONT_SIZE, 12);
 
   // Если математический режим — перетайпсетить и ещё раз подровнять
-  if ((cfg.language||'') === 'math'){
-    MathJax.typesetPromise([el]).then(()=> fitGeometryBox(el));
-  }
+ if ((cfg.language||'') === 'math'){
+  MathJax.typesetPromise([el]).then(()=>{
+    fitGeometryBox(el);  // после перерасчёта размеров
+    adjustX();           // ещё раз поджимаем X, уже с финальной шириной
+  });
+}
 
   // Движение (учитываем DIR). Вертикальные колышутся по X, горизонтальные — по Y.
   const vel = SPEED.vel;
   const swayAmp = rnd(6, 22);
   const swayFreq = rnd(0.003, 0.008);
+    // поджимаем X так, чтобы с учётом ширины и качания элемент не мог вылезти за кадр
+function adjustX(){
+  if (!(DIR === 'down' || DIR === 'up')) return; // для вертикального падения
+  const W = el.offsetWidth;              // реальная ширина элемента
+  const safe = swayAmp;                   // запас на покачивание по X
+  const min = MARGIN + safe;
+  const max = Math.max(min, gw - W - MARGIN - safe);
+  x = clamp(x, min, max);
+  el.style.left = x + 'px';
+}
+
   let t = 0;
   let alive = true;
-
+adjustX();
   function step(){
     if(!alive) return;
     t += 1;
