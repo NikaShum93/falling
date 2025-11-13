@@ -356,7 +356,11 @@
       const dict = I18N[lang]||I18N.ru; const v = dict[key];
       return (typeof v==="function")?v(...args):(v??key);
     }
-
+function parseBgList(v){
+  if(!v) return [];
+  if(Array.isArray(v)) return v.filter(Boolean);
+  return String(v).split(/[\n\r,|;]+/).map(s=>s.trim()).filter(Boolean);
+}
     /* ===================== Утилиты ===================== */
     const $ = sel => document.querySelector(sel);
     const rnd = (a,b)=> a + Math.random()*(b-a);
@@ -756,27 +760,35 @@ const IMG_BOX = Number(STYLE.imgBox || 160); // фикс-бокс для кар�
 
   el.appendChild(bg); el.appendChild(content);
 
-  // Фон рамки: либо картинка, либо цвет (строго взаимоисключающие)
- // Фон-держатель задания: одна строка ИЛИ массив ссылок; выбираем случайную на каждый drop()
-const bgCol = STYLE.bgColor || 'transparent';
+   // --- Фон-держатель задания: поддержка нескольких URL и старых игр ---
+  const bgCol = STYLE.bgColor || 'transparent';
 
-// Собираем список картинок из разных форматов: bgImage: "url" | "url1,url2" | ["url1","url2"] | bgImages: [...]
-let bgList = [];
-if (Array.isArray(STYLE.bgImage)) bgList = STYLE.bgImage;
-else if (typeof STYLE.bgImage === 'string') bgList = STYLE.bgImage.split(/[,\|]/).map(s=>s.trim()).filter(Boolean);
-if (Array.isArray(STYLE.bgImages)) bgList = bgList.concat(STYLE.bgImages.filter(Boolean));
+  // Собираем список ссылок на фоны из любых форматов:
+  // - bgImage: "url", "url1,url2", "url1\nurl2", ["url1","url2"]
+  // - bgImages: массив
+  let bgList = [];
+  bgList = bgList.concat(parseBgList(STYLE.bgImage));
+  bgList = bgList.concat(parseBgList(STYLE.bgImages));
+  bgList = bgList.filter(Boolean);
 
-bgList = bgList.filter(Boolean);
-const chosenBg = bgList.length ? bgList[Math.floor(Math.random()*bgList.length)] : '';
+  // Выбираем случайный фон
+  const chosenBg = bgList.length
+    ? bgList[Math.floor(Math.random() * bgList.length)]
+    : '';
 
-// Применяем: если есть картинка — только она; если нет — сплошной цвет
-if (chosenBg) {
-  bg.style.backgroundImage = `url(${chosenBg})`;
-  bg.style.backgroundColor = 'transparent';   // не смешиваем цвет с картинкой
-} else {
-  bg.style.backgroundImage = 'none';
-  bg.style.backgroundColor = bgCol;           // чистый цвет
-}
+  if (chosenBg) {
+    // только картинка, цвет под ней не мешает прозрачности
+    bg.style.backgroundImage = `url("${chosenBg}")`;
+    bg.style.backgroundColor = 'transparent';
+    bg.style.backgroundRepeat = 'no-repeat';
+    bg.style.backgroundSize = 'contain';
+    bg.style.backgroundPosition = 'center';
+  } else {
+    // нет картинок — используем чистый цвет
+    bg.style.backgroundImage = 'none';
+    bg.style.backgroundColor = bgCol;
+  }
+
   // Прозрачность фон-слоя
   bg.style.opacity = String(clamp(Number(STYLE.opacity ?? 1), 0, 1));
 
