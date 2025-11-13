@@ -1028,7 +1028,9 @@ setTimeout(()=> el.classList.remove('tint-red'), 560);
       const r = content.getBoundingClientRect();
 
       // Воздух зависит от того, есть ли картинка-рамка
-    const hasImageFrame = (Array.isArray(STYLE.bgImage) ? STYLE.bgImage.length>0 : !!(STYLE.bgImage && String(STYLE.bgImage).trim())) || (Array.isArray(STYLE.bgImages) && STYLE.bgImages.length>0);
+ const hasImageFrame =
+  (Array.isArray(STYLE.bgImage) ? STYLE.bgImage.length > 0 : !!String(STYLE.bgImage||'').trim()) ||
+  (Array.isArray(STYLE.bgImages) ? STYLE.bgImages.length > 0 : false);
 
       const padX = hasImageFrame ? 30 : 22;
       const padY = hasImageFrame ? 24 : 18;
