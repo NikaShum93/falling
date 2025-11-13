@@ -217,28 +217,17 @@
     }
     /* 🔴 красная вспышка при ошибке */
 /* ✅ красный тинт поверх фона (работает и с bgImage, и с bgColor) */
-.item .bg::after{
-  content:"";
-  position:absolute; inset:0; pointer-events:none;
-  opacity:0;
-  background: rgba(255,0,0,.45);
-  mix-blend-mode: multiply;      /* перекрывает картинку */
-  transition: opacity .12s ease;
+/* ✅ красный фильтр, не заливает прозрачные участки */
+.tint-red .bg {
+  animation: redTintOnly 550ms ease;
 }
-.tint-red .bg{ animation: redTint 550ms ease; }
-.tint-red .bg::after{ animation: redOverlay 550ms ease; }
 
-@keyframes redTint{
+@keyframes redTintOnly {
   0%   { filter: none; }
-  20%  { filter: sepia(1) saturate(6) hue-rotate(-15deg) brightness(1.05) contrast(1.1); }
+  15%  { filter: hue-rotate(-25deg) saturate(3) brightness(1.2) contrast(1.2); }
+  50%  { filter: hue-rotate(-10deg) saturate(2.5) brightness(1.1) contrast(1.1); }
   100% { filter: none; }
 }
-@keyframes redOverlay{
-  0%   { opacity:0; }
-  20%  { opacity:1; }
-  100% { opacity:0; }
-}
-
   </style>
     <script>
     // === Подключение Google Fonts из cfg.font ===
