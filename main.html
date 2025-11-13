@@ -822,7 +822,7 @@ if (/^https?:\/\//i.test(obj.val)) {
 
   // сразу задаём общий бокс элемента (рамка/«воздух» + паддинги контента)
   const shape = (STYLE.shape || 'rounded');
-  const hasImageFrame = Boolean((STYLE.bgImage||'').trim());
+ const hasImageFrame = (Array.isArray(STYLE.bgImage) ? STYLE.bgImage.length>0 : !!(STYLE.bgImage && String(STYLE.bgImage).trim())) || (Array.isArray(STYLE.bgImages) && STYLE.bgImages.length>0);
   const padX = hasImageFrame ? 30 : 22;
   const padY = hasImageFrame ? 24 : 18;
 
@@ -1028,7 +1028,8 @@ setTimeout(()=> el.classList.remove('tint-red'), 560);
       const r = content.getBoundingClientRect();
 
       // Воздух зависит от того, есть ли картинка-рамка
-      const hasImageFrame = Boolean((STYLE.bgImage||'').trim());
+    const hasImageFrame = (Array.isArray(STYLE.bgImage) ? STYLE.bgImage.length>0 : !!(STYLE.bgImage && String(STYLE.bgImage).trim())) || (Array.isArray(STYLE.bgImages) && STYLE.bgImages.length>0);
+
       const padX = hasImageFrame ? 30 : 22;
       const padY = hasImageFrame ? 24 : 18;
 
