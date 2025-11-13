@@ -760,26 +760,47 @@ const IMG_BOX = Number(STYLE.imgBox || 160); // фикс-бокс для кар�
 
   el.appendChild(bg); el.appendChild(content);
 
-   // --- Фон-держатель задания: поддержка нескольких URL и старых игр ---
-   // --- Фон-держатель задания: поддержка ОДНОЙ и НЕСКОЛЬКИХ картинок ---
+   // --- Фон-держатель задания: одна или несколько картинок + запасной цвет ---
   const bgCol = STYLE.bgColor || 'transparent';
 
-  // Берём ссылки из style.bgImage и style.bgImages (на будущее)
   let bgList = [];
-  bgList = bgList.concat(parseBgList(STYLE.bgImage));
-  bgList = bgList.concat(parseBgList(STYLE.bgImages));
-  bgList = bgList.filter(Boolean);
 
-  // если ничего нет — просто цвет
-  if (!bgList.length) {
-    bg.style.background = bgCol;
-  } else {
-    // выбираем случайную картинку
-    const chosenBg = bgList[Math.floor(Math.random() * bgList.length)];
-    // используем СТАРУЮ схему, которая у тебя уже работала
-    bg.style.background = `url(${chosenBg}) center/contain no-repeat`;
+  // 1) style.bgImage — строка с одной или несколькими ссылками через \n, запятую, |, ;
+  if (STYLE.bgImage) {
+    bgList = bgList.concat(
+      String(STYLE.bgImage)
+        .split(/[\n\r,|;]+/)
+        .map(s => s.trim())
+        .filter(Boolean)
+    );
   }
 
+  // 2) style.bgImages — массив ИЛИ строка, как в редакторе
+  if (STYLE.bgImages) {
+    if (Array.isArray(STYLE.bgImages)) {
+      bgList = bgList.concat(STYLE.bgImages.filter(Boolean));
+    } else {
+      bgList = bgList.concat(
+        String(STYLE.bgImages)
+          .split(/[\n\r,|;]+/)
+          .map(s => s.trim())
+          .filter(Boolean)
+      );
+    }
+  }
+
+  bgList = bgList.filter(Boolean);
+
+  if (!bgList.length) {
+    // нет ни одной картинки → просто цвет
+    bg.style.backgroundImage = 'none';
+    bg.style.backgroundColor = bgCol;
+  } else {
+    // выбираем случайную картинку-держатель
+    const chosenBg = bgList[Math.floor(Math.random() * bgList.length)];
+    bg.style.backgroundImage = `url(${chosenBg})`;
+    bg.style.backgroundColor = 'transparent';
+  }
 
   // Прозрачность фон-слоя
   bg.style.opacity = String(clamp(Number(STYLE.opacity ?? 1), 0, 1));
