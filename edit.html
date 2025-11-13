@@ -502,28 +502,41 @@ function collectConfig(){
     });
   });
 
- const cfg = {
-  language: $('#language').value,
-  font: $('#font').value,
-  fontSize: Math.max(10, parseInt($('#fontSize').value||'24',10)),
-  textColor: $('#textColor').value,
-  speed: Math.max(1, Math.min(10, parseInt($('#speed').value||'5',10))),
- style: {
-  shape: $('#shape').value,
-  pad: Math.max(0, parseInt($('#pad').value||'22',10)),
-  bgColor: $('#bgColor').value,
-  bgImages: parseBgList(),            // ← массив URL фонов-держателей
-  bgImage: "",                        // ← для совместимости (не используется)
-  borderOn: $('#borderOn').checked,
-  borderColor: $('#borderColor').value,
-  borderWidth: Math.max(0, parseInt($('#borderWidth').value||'0', 10)),
-  shadow: $('#shadowOn').checked,
-  glow: $('#glowOn').checked,
-  glowColor: $('#glowColor').value,
-  fx3d: $('#fx3d').checked,
-  opacity: Math.max(0, Math.min(1, parseFloat($('#opacity').value||'1'))),
-  imgBox: Math.max(80, Math.min(260, parseInt($('#imgBox').value||'160',10))),
-},
+  const cfg = {
+    language: $('#language').value,
+    font: $('#font').value,
+    fontSize: Math.max(10, parseInt($('#fontSize').value||'24',10)),
+    textColor: $('#textColor').value,
+    speed: Math.max(1, Math.min(10, parseInt($('#speed').value||'5',10))),
+    style: {
+      shape: $('#shape').value,
+      pad: Math.max(0, parseInt($('#pad').value||'22',10)),
+      bgColor: $('#bgColor').value,
+
+      // 🔥 ВАЖНО: читаем из textarea #bgImages, а не из несуществующего #bgImage
+      bgImage: ($('#bgImages')?.value || '').trim(),
+      bgImages: parseBgList($('#bgImages')?.value || ''),
+
+      borderOn: $('#borderOn').checked,
+      borderColor: $('#borderColor').value,
+      borderWidth: Math.max(0, parseInt($('#borderWidth').value||'0', 10)),
+      shadow: $('#shadowOn').checked,
+      glow: $('#glowOn').checked,
+      glowColor: $('#glowColor').value,
+      fx3d: $('#fx3d').checked,
+      opacity: Math.max(0, Math.min(1, parseFloat($('#opacity').value||'1'))),
+      imgBox: Math.max(80, Math.min(260, parseInt($('#imgBox').value||'160',10))),
+    },
+    randomLevels: false,
+    start: {
+      title: ($('#startTitle')?.value || '').trim(),
+      btnText: ($('#startBtnText')?.value || '').trim()
+    },
+    direction: (['down','up'].includes($('#direction')?.value) ? $('#direction').value : 'down'),
+    finalFeedback: $('#finalFeedback').value.trim(),
+    levels
+  };
+
 
   randomLevels: false,
 
