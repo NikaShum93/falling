@@ -884,80 +884,78 @@ if (/^https?:\/\//i.test(obj.val)) {
 }
 
 
-  // === Направление движения (НОВОЕ)
-  const DIR = (cfg.direction || 'down'); // down|up|left|right
+   const DIR = (cfg.direction || 'down'); // down|up|left|right
 
   const gw = game.clientWidth  || window.innerWidth  || 800;
   const gh = game.clientHeight || window.innerHeight || 600;
+
+  // 🔧 ПРИМЕРНЫЕ размеры элемента, чтобы не падать на W/H
+  // (после fitGeometryBox они станут точными)
+  let W = el.offsetWidth  || (IMG_BOX + PAD * 4);
+  let H = el.offsetHeight || (IMG_BOX + PAD * 4);
 
   // --- отступы от краёв (совсем маленькие, чтобы реально использовать весь экран) ---
   const MARGIN = 10;
   const ZONES = 3;
 
-if (!drop._zoneState) drop._zoneState = {};
-if (!drop._zoneState[DIR]) {
-  drop._zoneState[DIR] = {
-    deck: [],
-    lastZone: -1,
-    lastPattern: null
-  };
-}
-
-const state = drop._zoneState[DIR];
-const deck  = state.deck;
-
-function arraysEqual(a, b){
-  if (!a || !b || a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++){
-    if (a[i] !== b[i]) return false;
-  }
-  return true;
-}
-
-function pickZone(){
-  if (!deck.length){
-    const base = [0,1,2];
-    let pattern;
-    let tries = 0;
-
-    do {
-      pattern = base.slice();
-      pattern.sort(() => Math.random() - 0.5);   // рандом 0-1-2
-      tries++;
-    } while (
-      ZONES > 1 &&
-      (
-        pattern[pattern.length - 1] === state.lastZone ||      // не та же зона подряд
-        (state.lastPattern && arraysEqual(pattern, state.lastPattern)) // не тот же паттерн
-      ) &&
-      tries < 20
-    );
-
-    deck.push(...pattern);
-    state.lastPattern = pattern.slice();
+  if (!drop._zoneState) drop._zoneState = {};
+  if (!drop._zoneState[DIR]) {
+    drop._zoneState[DIR] = {
+      deck: [],
+      lastZone: -1,
+      lastPattern: null
+    };
   }
 
-  const z = deck.pop();
-  state.lastZone = z;
-  return z;
-}
+  const state = drop._zoneState[DIR];
+  const deck  = state.deck;
 
-const zone = pickZone();
+  function arraysEqual(a, b){
+    if (!a || !b || a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++){
+      if (a[i] !== b[i]) return false;
+    }
+    return true;
+  }
 
+  function pickZone(){
+    if (!deck.length){
+      const base = [0,1,2];
+      let pattern;
+      let tries = 0;
+
+      do {
+        pattern = base.slice();
+        pattern.sort(() => Math.random() - 0.5);   // рандом 0-1-2
+        tries++;
+      } while (
+        ZONES > 1 &&
+        (
+          pattern[pattern.length - 1] === state.lastZone ||      // не та же зона подряд
+          (state.lastPattern && arraysEqual(pattern, state.lastPattern)) // не тот же паттерн
+        ) &&
+        tries < 20
+      );
+
+      deck.push(...pattern);
+      state.lastPattern = pattern.slice();
+    }
+
+    const z = deck.pop();
+    state.lastZone = z;
+    return z;
+  }
+
+  const zone = pickZone();
 
   let x, y;
 
   if (DIR === 'down' || DIR === 'up') {
-    // делим ось X на 3 равные зоны по ЦЕНТРУ
     const zoneWidth = (gw - 2 * MARGIN) / ZONES;
-
     const centerMin = MARGIN + zoneWidth * zone;
     const centerMax = MARGIN + zoneWidth * (zone + 1);
-
-    // случайный центр в пределах зоны
     let cx = rnd(centerMin, centerMax);
 
-    // центр не должен выходить так, чтобы лист вылез за экран
     const minCx = MARGIN + W / 2;
     const maxCx = gw - MARGIN - W / 2;
     cx = clamp(cx, minCx, maxCx);
@@ -966,12 +964,9 @@ const zone = pickZone();
     y = (DIR === 'down') ? -H - 20 : gh + 20;
 
   } else {
-    // делим ось Y на 3 равные зоны по ЦЕНТРУ
     const zoneHeight = (gh - 2 * MARGIN) / ZONES;
-
     const centerMin = MARGIN + zoneHeight * zone;
     const centerMax = MARGIN + zoneHeight * (zone + 1);
-
     let cy = rnd(centerMin, centerMax);
 
     const minCy = MARGIN + H / 2;
@@ -984,7 +979,6 @@ const zone = pickZone();
 
   el.style.left = x + 'px';
   el.style.top  = y + 'px';
-
 
   game.appendChild(el);
 
