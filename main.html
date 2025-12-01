@@ -916,23 +916,41 @@ if (/^https?:\/\//i.test(obj.val)) {
 
   const zone = pickZone();
 
-  if (DIR === 'down' || DIR === 'up') {
-    const zoneWidth = (gw - 2 * MARGIN) / ZONES;
-    const centerX   = MARGIN + zoneWidth * (zone + 0.5);
+// ширина/высота элемента (после fitGeometryBox они уже адекватные;
+// если вызываешь раньше — можно поставить запас, например 200)
+const W = el.offsetWidth  || 200;
+const H = el.offsetHeight || 200;
 
-    x = centerX;
-    y = (DIR === 'down') ? -160 : (gh + 160);
+if (DIR === 'down' || DIR === 'up') {
+  // делим всю ширину на 3 трети БЕЗ сдвига вправо
+  const zoneWidth = gw / ZONES;
 
-  } else {
-    const zoneHeight = (gh - 2 * MARGIN) / ZONES;
-    const centerY    = MARGIN + zoneHeight * (zone + 0.5);
+  // границы выбранной трети
+  const minX = zone * zoneWidth;
+  const maxX = (zone + 1) * zoneWidth - W; // чтобы целиком влезло
 
-    y = centerY;
-    x = (DIR === 'left') ? -220 : (gw + 220);
-  }
+  // случайное положение внутри трети
+  const left = clamp(rnd(minX, maxX), 0, gw - W);
 
-  el.style.left = x + 'px';
-  el.style.top  = y + 'px';
+  x = left;
+  y = (DIR === 'down') ? -H - 20 : gh + 20;
+
+} else {
+  // то же самое по высоте для left/right
+  const zoneHeight = gh / ZONES;
+
+  const minY = zone * zoneHeight;
+  const maxY = (zone + 1) * zoneHeight - H;
+
+  const top = clamp(rnd(minY, maxY), 0, gh - H);
+
+  y = top;
+  x = (DIR === 'left') ? -W - 20 : gw + 20;
+}
+
+el.style.left = x + 'px';
+el.style.top  = y + 'px';
+
 
   game.appendChild(el);
 
