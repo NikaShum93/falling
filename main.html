@@ -892,75 +892,52 @@ if (/^https?:\/\//i.test(obj.val)) {
   const gh = game.clientHeight;
   let x, y;
 
-// --- минимальный отступ только по бокам ---
-const MARGIN = 20;
+  // минимальный отступ от краёв
+  const MARGIN = 20;
 
-// --- количество полос (минимум 3, максимум 8) ---
-const lanesCount = (DIR === 'down' || DIR === 'up')
-  ? clamp(Math.floor(gw / 160), 3, 8)
-  : clamp(Math.floor(gh / 140), 3, 8);
+  // делим на 3 зоны по перпендикулярной оси
+  const ZONES = 3;
 
-// --- состояние полос ---
-if (!drop._laneState) drop._laneState = {};
-if (!drop._laneState[DIR])
-  drop._laneState[DIR] = { deck: [], lastPattern: [] };
+  // состояние по каждому направлению: последняя зона
+  if (!drop._zoneState) drop._zoneState = {};
+  if (!drop._zoneState[DIR]) drop._zoneState[DIR] = { last: null };
 
-const laneState = drop._laneState[DIR];
+  const zoneState = drop._zoneState[DIR];
 
-// --- функция сравнения перестановок ---
-function arraysEqual(a, b){
-  if (!a || !b || a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++)
-    if (a[i] !== b[i]) return false;
-  return true;
-}
-
-// --- выбор следующей полосы (без повторов) ---
-function pickLane(){
-  const base = [...Array(lanesCount).keys()];
-
-  // если колода пустая — создаём новую уникальную перестановку
-  if (!laneState.deck.length){
-    let pattern;
-    let tries = 0;
-    do {
-      pattern = shuffleCopy(base);
-      tries++;
-    } while (arraysEqual(pattern, laneState.lastPattern) && tries < 10);
-
-    laneState.deck = pattern.slice();
-    laneState.lastPattern = pattern.slice();
+  // выбираем зону так, чтобы она НЕ совпала с прошлой
+  function pickZone(){
+    const options = [];
+    for (let i = 0; i < ZONES; i++){
+      if (i !== zoneState.last) options.push(i);
+    }
+    const z = options[Math.floor(Math.random() * options.length)];
+    zoneState.last = z;
+    return z;
   }
 
-  return laneState.deck.pop();
-}
+  const zone = pickZone();
 
+  if (DIR === 'down' || DIR === 'up') {
+    // зоны по X: слева → справа
+    const zoneWidth = (gw - 2 * MARGIN) / ZONES;
+    const minX = MARGIN + zoneWidth * zone;
+    const maxX = minX + zoneWidth;
 
-// --- теперь выбираем позицию по полосам ---
-const lane = pickLane();
+    x = rnd(minX, maxX);
+    y = (DIR === 'down') ? -160 : (gh + 160);
 
-if (DIR === 'down' || DIR === 'up') {
-  const laneWidth = (gw - 2 * MARGIN) / lanesCount;
-  const centerX = MARGIN + laneWidth * (lane + 0.5);
+  } else {
+    // зоны по Y: сверху → вниз
+    const zoneHeight = (gh - 2 * MARGIN) / ZONES;
+    const minY = MARGIN + zoneHeight * zone;
+    const maxY = minY + zoneHeight;
 
-  const jitter = laneWidth * 0.3;
-  x = centerX + rnd(-jitter, jitter);
+    y = rnd(minY, maxY);
+    x = (DIR === 'left') ? -220 : (gw + 220);
+  }
 
-  y = (DIR === 'down') ? -160 : (gh + 160);
-
-} else {
-  const laneHeight = (gh - 2 * MARGIN) / lanesCount;
-  const centerY = MARGIN + laneHeight * (lane + 0.5);
-
-  const jitter = laneHeight * 0.3;
-  y = centerY + rnd(-jitter, jitter);
-
-  x = (DIR === 'left') ? -220 : (gw + 220);
-}
-
-el.style.left = x + 'px';
-el.style.top  = y + 'px';
-
+  el.style.left = x + 'px';
+  el.style.top  = y + 'px';
 
   game.appendChild(el);
 
