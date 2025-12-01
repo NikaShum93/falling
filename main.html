@@ -892,35 +892,58 @@ if (/^https?:\/\//i.test(obj.val)) {
 
   // --- отступы от краёв (совсем маленькие, чтобы реально использовать весь экран) ---
   const MARGIN = 10;
-  const ZONES  = 3; // 0 — левая/верхняя треть, 1 — центр, 2 — правая/нижняя
+  const ZONES = 3;
 
-  // временно поставим элемент за экран, добавим в DOM и посчитаем размеры
-  el.style.left = '-9999px';
-  el.style.top  = '-9999px';
-  game.appendChild(el);
+if (!drop._zoneState) drop._zoneState = {};
+if (!drop._zoneState[DIR]) {
+  drop._zoneState[DIR] = {
+    deck: [],
+    lastZone: -1,
+    lastPattern: null
+  };
+}
 
-  fitGeometryBox(el);
-  autoFitText(el, FONT_SIZE, 12);
+const state = drop._zoneState[DIR];
+const deck  = state.deck;
 
-  const W = el.offsetWidth  || 200;
-  const H = el.offsetHeight || 120;
+function arraysEqual(a, b){
+  if (!a || !b || a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++){
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
 
-  // ====== равномерное чередование зон 0–1–2 ======
-  if (!drop._zoneDeck) drop._zoneDeck = {};
-  if (!drop._zoneDeck[DIR]) drop._zoneDeck[DIR] = [];
+function pickZone(){
+  if (!deck.length){
+    const base = [0,1,2];
+    let pattern;
+    let tries = 0;
 
-  const deck = drop._zoneDeck[DIR];
+    do {
+      pattern = base.slice();
+      pattern.sort(() => Math.random() - 0.5);   // рандом 0-1-2
+      tries++;
+    } while (
+      ZONES > 1 &&
+      (
+        pattern[pattern.length - 1] === state.lastZone ||      // не та же зона подряд
+        (state.lastPattern && arraysEqual(pattern, state.lastPattern)) // не тот же паттерн
+      ) &&
+      tries < 20
+    );
 
-  function pickZone(){
-    if (!deck.length){
-      // новая тройка зон, тасуем
-      deck.push(0,1,2);
-      deck.sort(() => Math.random() - 0.5);
-    }
-    return deck.pop();
+    deck.push(...pattern);
+    state.lastPattern = pattern.slice();
   }
 
-  const zone = pickZone();
+  const z = deck.pop();
+  state.lastZone = z;
+  return z;
+}
+
+const zone = pickZone();
+
 
   let x, y;
 
