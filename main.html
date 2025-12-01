@@ -895,17 +895,72 @@ if (/^https?:\/\//i.test(obj.val)) {
 // --- минимальный отступ только по бокам ---
 const MARGIN = 20;
 
+// --- количество полос (минимум 3, максимум 8) ---
+const lanesCount = (DIR === 'down' || DIR === 'up')
+  ? clamp(Math.floor(gw / 160), 3, 8)
+  : clamp(Math.floor(gh / 140), 3, 8);
+
+// --- состояние полос ---
+if (!drop._laneState) drop._laneState = {};
+if (!drop._laneState[DIR])
+  drop._laneState[DIR] = { deck: [], lastPattern: [] };
+
+const laneState = drop._laneState[DIR];
+
+// --- функция сравнения перестановок ---
+function arraysEqual(a, b){
+  if (!a || !b || a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++)
+    if (a[i] !== b[i]) return false;
+  return true;
+}
+
+// --- выбор следующей полосы (без повторов) ---
+function pickLane(){
+  const base = [...Array(lanesCount).keys()];
+
+  // если колода пустая — создаём новую уникальную перестановку
+  if (!laneState.deck.length){
+    let pattern;
+    let tries = 0;
+    do {
+      pattern = shuffleCopy(base);
+      tries++;
+    } while (arraysEqual(pattern, laneState.lastPattern) && tries < 10);
+
+    laneState.deck = pattern.slice();
+    laneState.lastPattern = pattern.slice();
+  }
+
+  return laneState.deck.pop();
+}
+
+
+// --- теперь выбираем позицию по полосам ---
+const lane = pickLane();
+
 if (DIR === 'down' || DIR === 'up') {
-  // пока предварительно — точную X подожмём позже, уже зная ширину элемента
-  x = rnd(0, gw);
+  const laneWidth = (gw - 2 * MARGIN) / lanesCount;
+  const centerX = MARGIN + laneWidth * (lane + 0.5);
+
+  const jitter = laneWidth * 0.3;
+  x = centerX + rnd(-jitter, jitter);
+
   y = (DIR === 'down') ? -160 : (gh + 160);
+
 } else {
-  // горизонтальные направления оставляем как было
-  y = rnd(16, gh - 140);
+  const laneHeight = (gh - 2 * MARGIN) / lanesCount;
+  const centerY = MARGIN + laneHeight * (lane + 0.5);
+
+  const jitter = laneHeight * 0.3;
+  y = centerY + rnd(-jitter, jitter);
+
   x = (DIR === 'left') ? -220 : (gw + 220);
 }
-  el.style.left = x + 'px';
-  el.style.top  = y + 'px';
+
+el.style.left = x + 'px';
+el.style.top  = y + 'px';
+
 
   game.appendChild(el);
 
@@ -916,40 +971,61 @@ if (DIR === 'down' || DIR === 'up') {
   autoFitText(el, FONT_SIZE, 12);
 
   // Если математический режим — перетайпсетить и ещё раз подровнять
- if ((cfg.language||'') === 'math'){
+if ((cfg.language||'') === 'math'){
   MathJax.typesetPromise([el]).then(()=>{
-    fitGeometryBox(el);  // после перерасчёта размеров
-    adjustX();           // ещё раз поджимаем X, уже с финальной шириной
+    fitGeometryBox(el);
+    adjustX();
+    adjustY();
   });
 }
 
+
   // Движение (учитываем DIR). Вертикальные колышутся по X, горизонтальные — по Y.
-  const vel = SPEED.vel;
-  const swayAmp = rnd(6, 22);
+  // Движение (учитываем DIR). Вертикальные колышутся по X, горизонтальные — по Y.
+  const vel      = SPEED.vel;
+  const swayAmp  = rnd(6, 22);
   const swayFreq = rnd(0.003, 0.008);
-    // поджимаем X так, чтобы с учётом ширины и качания элемент не мог вылезти за кадр
-function adjustX(){
-  if (!(DIR === 'down' || DIR === 'up')) return; // для вертикального падения
-  const W = el.offsetWidth;              // реальная ширина элемента
-  const safe = swayAmp;                   // запас на покачивание по X
-  const min = MARGIN + safe;
-  const max = Math.max(min, gw - W - MARGIN - safe);
-  x = clamp(x, min, max);
-  el.style.left = x + 'px';
-}
+
+  // поджимаем X так, чтобы с учётом ширины и качания элемент не вылезал за левый/правый край
+  function adjustX(){
+    if (!(DIR === 'down' || DIR === 'up')) return; // только для вертикальных режимов
+    const W    = el.offsetWidth;
+    const safe = swayAmp;
+    const min  = MARGIN + safe;
+    const max  = Math.max(min, gw - W - MARGIN - safe);
+    let x      = parseFloat(el.style.left) || 0;
+    x = clamp(x, min, max);
+    el.style.left = x + 'px';
+  }
+
+  // поджимаем Y так, чтобы при качании по вертикали не вылезал за верх/низ экрана
+  function adjustY(){
+    if (!(DIR === 'left' || DIR === 'right')) return; // только для горизонтальных режимов
+    const H    = el.offsetHeight;
+    const safe = swayAmp;
+    const min  = MARGIN + safe;
+    const max  = Math.max(min, gh - H - MARGIN - safe);
+    let y      = parseFloat(el.style.top) || 0;
+    y = clamp(y, min, max);
+    el.style.top = y + 'px';
+  }
 
   let t = 0;
   let alive = true;
+
+  // поджимаем стартовую позицию с учётом качания
   adjustX();
+  adjustY();
 
   function step(){
     if(!alive) return;
     t += 1;
 
     if (DIR === 'down'){
+      let y = parseFloat(el.style.top) || 0;
       y += vel;
-      const dx = Math.sin(t*swayFreq) * swayAmp;
-      el.style.top = y+'px';
+      const dx = Math.sin(t * swayFreq) * swayAmp;
+      el.style.top       = y + 'px';
       el.style.transform = `translateX(${dx}px)`;
       if (y > gh + 200){
         alive = false;
@@ -957,9 +1033,10 @@ function adjustX(){
         el.remove(); return;
       }
     } else if (DIR === 'up'){
+      let y = parseFloat(el.style.top) || 0;
       y -= vel;
-      const dx = Math.sin(t*swayFreq) * swayAmp;
-      el.style.top = y+'px';
+      const dx = Math.sin(t * swayFreq) * swayAmp;
+      el.style.top       = y + 'px';
       el.style.transform = `translateX(${dx}px)`;
       if (y < -200){
         alive = false;
@@ -967,9 +1044,10 @@ function adjustX(){
         el.remove(); return;
       }
     } else if (DIR === 'left'){
+      let x = parseFloat(el.style.left) || 0;
       x += vel;
-      const dy = Math.sin(t*swayFreq) * swayAmp;
-      el.style.left = x+'px';
+      const dy = Math.sin(t * swayFreq) * swayAmp;
+      el.style.left      = x + 'px';
       el.style.transform = `translateY(${dy}px)`;
       if (x > gw + 200){
         alive = false;
@@ -977,9 +1055,10 @@ function adjustX(){
         el.remove(); return;
       }
     } else { // right
+      let x = parseFloat(el.style.left) || 0;
       x -= vel;
-      const dy = Math.sin(t*swayFreq) * swayAmp;
-      el.style.left = x+'px';
+      const dy = Math.sin(t * swayFreq) * swayAmp;
+      el.style.left      = x + 'px';
       el.style.transform = `translateY(${dy}px)`;
       if (x < -200){
         alive = false;
@@ -990,7 +1069,9 @@ function adjustX(){
 
     requestAnimationFrame(step);
   }
+
   requestAnimationFrame(step);
+
 
   // 👇 единый обработчик клика по элементу (внутри drop, но вне step)
   el.onclick = () => {
