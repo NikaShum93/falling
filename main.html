@@ -895,44 +895,39 @@ if (/^https?:\/\//i.test(obj.val)) {
   // минимальный отступ от краёв
   const MARGIN = 20;
 
-  // делим на 3 зоны по перпендикулярной оси
+  // ТРЕТИ: 0 — левая/верхняя, 1 — центральная, 2 — правая/нижняя
   const ZONES = 3;
 
-  // состояние по каждому направлению: последняя зона
-  if (!drop._zoneState) drop._zoneState = {};
-  if (!drop._zoneState[DIR]) drop._zoneState[DIR] = { last: null };
+  // Отдельное состояние по каждому направлению (down/up/left/right)
+  if (!drop._zoneDeck) drop._zoneDeck = {};
+  if (!drop._zoneDeck[DIR]) drop._zoneDeck[DIR] = [];
 
-  const zoneState = drop._zoneState[DIR];
+  const deck = drop._zoneDeck[DIR];
 
-  // выбираем зону так, чтобы она НЕ совпала с прошлой
+  // Берём зону из колоды 0–1–2, равномерно
   function pickZone(){
-    const options = [];
-    for (let i = 0; i < ZONES; i++){
-      if (i !== zoneState.last) options.push(i);
+    // если колода пустая — создаём новую 0,1,2 и тасуем
+    if (!deck.length){
+      deck.push(0,1,2);
+      deck.sort(() => Math.random() - 0.5); // shuffle
     }
-    const z = options[Math.floor(Math.random() * options.length)];
-    zoneState.last = z;
-    return z;
+    return deck.pop();
   }
 
   const zone = pickZone();
 
   if (DIR === 'down' || DIR === 'up') {
-    // зоны по X: слева → справа
     const zoneWidth = (gw - 2 * MARGIN) / ZONES;
-    const minX = MARGIN + zoneWidth * zone;
-    const maxX = minX + zoneWidth;
+    const centerX   = MARGIN + zoneWidth * (zone + 0.5);
 
-    x = rnd(minX, maxX);
+    x = centerX;
     y = (DIR === 'down') ? -160 : (gh + 160);
 
   } else {
-    // зоны по Y: сверху → вниз
     const zoneHeight = (gh - 2 * MARGIN) / ZONES;
-    const minY = MARGIN + zoneHeight * zone;
-    const maxY = minY + zoneHeight;
+    const centerY    = MARGIN + zoneHeight * (zone + 0.5);
 
-    y = rnd(minY, maxY);
+    y = centerY;
     x = (DIR === 'left') ? -220 : (gw + 220);
   }
 
