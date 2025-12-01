@@ -887,69 +887,80 @@ if (/^https?:\/\//i.test(obj.val)) {
   // === Направление движения (НОВОЕ)
   const DIR = (cfg.direction || 'down'); // down|up|left|right
 
-  // Стартовая позиция (переписана под 4 направления; поведение по умолчанию прежнее)
-  const gw = game.clientWidth;
-  const gh = game.clientHeight;
-  let x, y;
+  const gw = game.clientWidth  || window.innerWidth  || 800;
+  const gh = game.clientHeight || window.innerHeight || 600;
 
-  // минимальный отступ от краёв
-  const MARGIN = 20;
+  // --- отступы от краёв (совсем маленькие, чтобы реально использовать весь экран) ---
+  const MARGIN = 10;
+  const ZONES  = 3; // 0 — левая/верхняя треть, 1 — центр, 2 — правая/нижняя
 
-  // ТРЕТИ: 0 — левая/верхняя, 1 — центральная, 2 — правая/нижняя
-  const ZONES = 3;
+  // временно поставим элемент за экран, добавим в DOM и посчитаем размеры
+  el.style.left = '-9999px';
+  el.style.top  = '-9999px';
+  game.appendChild(el);
 
-  // Отдельное состояние по каждому направлению (down/up/left/right)
+  fitGeometryBox(el);
+  autoFitText(el, FONT_SIZE, 12);
+
+  const W = el.offsetWidth  || 200;
+  const H = el.offsetHeight || 120;
+
+  // ====== равномерное чередование зон 0–1–2 ======
   if (!drop._zoneDeck) drop._zoneDeck = {};
   if (!drop._zoneDeck[DIR]) drop._zoneDeck[DIR] = [];
 
   const deck = drop._zoneDeck[DIR];
 
-  // Берём зону из колоды 0–1–2, равномерно
   function pickZone(){
-    // если колода пустая — создаём новую 0,1,2 и тасуем
     if (!deck.length){
+      // новая тройка зон, тасуем
       deck.push(0,1,2);
-      deck.sort(() => Math.random() - 0.5); // shuffle
+      deck.sort(() => Math.random() - 0.5);
     }
     return deck.pop();
   }
 
   const zone = pickZone();
 
-// ширина/высота элемента (после fitGeometryBox они уже адекватные;
-// если вызываешь раньше — можно поставить запас, например 200)
-const W = el.offsetWidth  || 200;
-const H = el.offsetHeight || 200;
+  let x, y;
 
-if (DIR === 'down' || DIR === 'up') {
-  // делим всю ширину на 3 трети БЕЗ сдвига вправо
-  const zoneWidth = gw / ZONES;
+  if (DIR === 'down' || DIR === 'up') {
+    // делим ось X на 3 равные зоны по ЦЕНТРУ
+    const zoneWidth = (gw - 2 * MARGIN) / ZONES;
 
-  // границы выбранной трети
-  const minX = zone * zoneWidth;
-  const maxX = (zone + 1) * zoneWidth - W; // чтобы целиком влезло
+    const centerMin = MARGIN + zoneWidth * zone;
+    const centerMax = MARGIN + zoneWidth * (zone + 1);
 
-  // случайное положение внутри трети
-  const left = clamp(rnd(minX, maxX), 0, gw - W);
+    // случайный центр в пределах зоны
+    let cx = rnd(centerMin, centerMax);
 
-  x = left;
-  y = (DIR === 'down') ? -H - 20 : gh + 20;
+    // центр не должен выходить так, чтобы лист вылез за экран
+    const minCx = MARGIN + W / 2;
+    const maxCx = gw - MARGIN - W / 2;
+    cx = clamp(cx, minCx, maxCx);
 
-} else {
-  // то же самое по высоте для left/right
-  const zoneHeight = gh / ZONES;
+    x = cx - W / 2;
+    y = (DIR === 'down') ? -H - 20 : gh + 20;
 
-  const minY = zone * zoneHeight;
-  const maxY = (zone + 1) * zoneHeight - H;
+  } else {
+    // делим ось Y на 3 равные зоны по ЦЕНТРУ
+    const zoneHeight = (gh - 2 * MARGIN) / ZONES;
 
-  const top = clamp(rnd(minY, maxY), 0, gh - H);
+    const centerMin = MARGIN + zoneHeight * zone;
+    const centerMax = MARGIN + zoneHeight * (zone + 1);
 
-  y = top;
-  x = (DIR === 'left') ? -W - 20 : gw + 20;
-}
+    let cy = rnd(centerMin, centerMax);
 
-el.style.left = x + 'px';
-el.style.top  = y + 'px';
+    const minCy = MARGIN + H / 2;
+    const maxCy = gh - MARGIN - H / 2;
+    cy = clamp(cy, minCy, maxCy);
+
+    y = cy - H / 2;
+    x = (DIR === 'left') ? -W - 20 : gw + 20;
+  }
+
+  el.style.left = x + 'px';
+  el.style.top  = y + 'px';
 
 
   game.appendChild(el);
